@@ -1,28 +1,17 @@
----
-output: github_document
----
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
-)
-```
 
 # socialchange
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of socialchange is to ...
+The goal of socialchange is to …
 
 ## Installation
 
-You can install the development version of socialchange from [GitHub](https://github.com/) with:
+You can install the development version of socialchange from
+[GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("pak")
@@ -33,7 +22,7 @@ pak::pak("elbersb/social_change")
 
 This is a basic example which shows you how to solve a common problem:
 
-```{r example}
+``` r
 library(socialchange)
 ## basic example code
 ```
