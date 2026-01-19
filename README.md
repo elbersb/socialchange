@@ -15,7 +15,7 @@ You can install the development version of socialchange from
 
 ``` r
 # install.packages("pak")
-pak::pak("elbersb/social_change")
+pak::pak("elbersb/socialchange")
 ```
 
 ## Example
