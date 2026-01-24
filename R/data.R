@@ -14,11 +14,26 @@
 #' }
 "gssrac"
 
+#' WPP World Population data
+#'
+#' WPP
+#'
+#' @format A data frame with 43,186 rows and 3 variables:
+#' \describe{
+#'   \item{Location}{X}
+#'   \item{Time}{X}
+#'   \item{PopTotal}{X}
+#' }
+"wpp_data"
 
-
-
-
-
-
-
-
+#' EU Membership data
+#'
+#' EU Membership data
+#'
+#' @format A data frame with 29 rows and 3 variables:
+#' \describe{
+#'   \item{country}{X}
+#'   \item{date}{X}
+#'   \item{event_type}{X}
+#' }
+"eu_membership"

@@ -26,14 +26,68 @@ You can install the development version of socialchange from [GitHub](https://gi
 
 ``` r
 # install.packages("pak")
-pak::pak("elbersb/social_change")
+pak::pak("elbersb/socialchange")
 ```
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+As a basic example, we look at a decomposition of EU membership, and whether
+population growth in the EU is due to intracountry changes in population, or due to
+the admission of new countries. The decomposition unit is the country.
+To run the `event_decomposition` decomposition function, we need two datasets:
+One dataset contains the events, in this case the dates when countries entered
+or exited the EU. This dataset is included in the `socialchange` package:
+
+
+```{r}
+library(socialchange)
+socialchange::eu_membership
+```
+
+The second dataset contains the outcome that we want to decompose
+at any point in time where there are change events, plus the start and end period of interest.
+The EU was formed in 1952, and then countries entered or exited in 1973, 1981, 1986, 1995, 2004, 2007, 2013, and 2020.
+Countries, of course, entered on specific dates, but most population data is only provided at yearly resolutions, so
+we assume that the error introduced by using a yearly resolution is small. The `socialchange` package also includes
+total population data for all countries of the world from 1950 onwards, so it also includes the required data:
+
+```{r}
+library(data.table)
+wpp_data <- as.data.table(socialchange::wpp_data)
+# population data is in 1,000
+wpp_data[Location == "Belgium" & Time %in% c(1952, 1973, 1981, 1986, 1995, 2004, 2007, 2013, 2020)]
+```
+
+To run the `event_decomposition` function, we need to ensure that columns for the unit and time parameters
+are named the same, so we prepare the data as follows:
 
 ```{r example}
-library(socialchange)
-## basic example code
+# rename columns
+setnames(wpp_data, c("Location", "Time"), c("country", "year"))
+# population in millions
+wpp_data[, PopTotal := PopTotal / 1000]
+
+# coarsen to year - required as we don't have daily population data
+eu_membership <- as.data.table(socialchange::eu_membership)
+eu_membership[, year := year(as.Date(date))]
+```
+
+Finally, we run the decomposition. We specify the two datasets, and a formula of the form `Outcome ~ Unit + Time`.
+We also need to specify the end data, and an aggregation function. Often this will be mean, but in our case it needs
+to be `sum`:
+
+```{r}
+ev <- event_decomposition(eu_membership, wpp_data, PopTotal ~ country + year,
+  end_period = 2021, fun = sum)
+print(ev)
+```
+
+The outcome of the decomposition tells us that intracountry changes in population
+account for 30% of the total population increase (or 80 million), while additions and one (Br)exit
+account for 70% of the total population increase (or 184 million).
+
+It is also possible to produce a figure that shows the decomposition:
+
+```{r}
+plot(ev)
 ```
