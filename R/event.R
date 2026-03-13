@@ -137,7 +137,7 @@ plot.event_decomposition <- function(x, ...) {
     x$wide,
     aes(x = index_pre, xend = index_post, y = outcome_pre, yend = outcome_post)
   ) +
-    geom_segment(size = 1, aes(linetype = event_type)) +
+    geom_segment(linewidth = 1, aes(linetype = event_type)) +
     geom_line(data = x$ctf, aes(
       x = index, y = outcome, color = counterf,
       xend = NULL, yend = NULL
