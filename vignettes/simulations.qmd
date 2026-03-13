@@ -1,0 +1,166 @@
+---
+title: "Simulating social change"
+vignette: >
+  %\VignetteIndexEntry{Simulating social change}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: '#>'
+---
+
+The package contains a function `sim_social_change` that allows the user to explore different scenarios of how social change can happen. The complexity of the simulation is up to the user to define. We'll start simple and build up a more complicated simulation over time.
+
+## Starting with a simple simulation
+
+Building up a simulation requires three steps:
+
+* Define your population
+* Define the outcome function for the variable of interest
+* Define the population dynamics (coming of age, mortality, in- and out-migration)
+
+**Step 1**: The first step is to define an initial population. As an example, we define a simple population aged between 20 and 39, with a uniform distribution until age 30, declining up until age 39. The dataset that you define here needs at least two columns: `age` and `n`. You can add more columns if you want to describe more complicated populations, but we'll stick with the simple setup for now. We'll call each row of this dataset a _population cell_. In the extreme case, you can also define a population of individuals where each `n` is just 1.
+
+Here's our simple population:
+
+```{r}
+library("data.table")
+
+data <- data.table(
+    age = c(20:39),
+    n = c(rep(100, 10), seq.int(100, 10, by = -10))
+)
+
+data
+```
+
+**Step 2**: Next, we define the variable of interest that we want to simulate. To do this,
+define a function that takes as arguments your population cells and time as a continuous variable.
+Time really needs to be continuous here - we need to know the outcome of every individual in the
+population not only in terms of discrete 'years' (or whatever your time scale), but at every point in-between as well. In our example, we use an outcome that is only dependent on age: at age 20, the outcome is 0, and at age 40 the outcome is 1, with values linearly increasing by age. This is purely a function of age, not of time, so in a real-world survey, this outcome could be "support for investing in longevity research" or "support for increasing pensions" - we'll just use the latter as an example:
+
+```{r}
+support_for_pensions <- function(data, time) {
+    data[, (age - 20) * 1 / 20]
+}
+# e.g., at age 20,   support_for_pensions is 0
+#       at age 20.5, support_for_pensions is 0.026
+#       at age 40,   support_for_pensions is 1
+```
+
+Because we defined our population only in terms of one variable (age), all members of the same age
+also have an identical outcome value.
+
+**Step 3**: The next step is to define the population dynamics. This requires defining four functions:
+
+* `fun_mortality(data, period)` - needs to return a vector of counts for each population cell
+* `fun_outmigration(data, period)` - needs to return a vector of counts for each population cell
+* `fun_coming_of_age(data, period)` - needs to return a data frame with new population cells and a column `n`
+* `fun_inmigration(data, period)` - needs to return a data frame with new population cells and a column `n`
+
+All of these functions are defined period-over-period. In practice, this will often be years. For instance, the mortality function should return counts that define how many members of your population die within the next period, in each population cell. The out-migration function is defined in the same way, just for the number of people migrating out of each population cell.
+
+The coming of age function and in-migration functions are different: They should return a data frame that describes the new population members that are added period-over-period. These functions are flexible enough to describe very complicated real-world population dynamics. For our first simple example, we will define these functions in a way that keeps the population stable: we don't have any migration, and mortality and coming-of-age balances out perfectly - every period 100 new members of age 20 are added, and 100 members age 30 and over die:
+
+```{r}
+mortality <- function(data, period) {
+    data[, ifelse(age >= 30, 10, 0)]
+}
+outmigration <- function(data, period) {
+    0
+}
+coming_of_age <- function(data, period) {
+    data.table(age = 20, n = 100)
+}
+inmigration <- function(data, period) {
+    data.table(n = 0)
+}
+```
+
+We're now ready to start the simulation:
+
+```{r}
+library(socialchange)
+
+simresult <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = support_for_pensions,
+    fun_mortality = mortality,
+    fun_outmigration = outmigration,
+    fun_coming_of_age = coming_of_age,
+    fun_inmigration = inmigration
+)
+simresult
+```
+
+The simulation result displays both an overview for each period, as well as a summary
+for the total decomposition of change. The results by year show that indeed our population
+is stable: at the end of every period we have a population of 1550, and a stable mean of 0.38
+- i.e, 38% of this population supports increasing pensions. However, this stability is
+a bit deceptive, because everyone's opinion actually keeps constantly changing. We can see that by
+looking at the "Intraindividual change" component, which is +0.25. Roughly speaking, without
+population turnover, we would have expected that the mean support for increasing pensions
+would have increased quite a bit, to 63%. This makes sense, as we've designed this simulation in a way
+where support increases with age. In turn, younger people
+are much less likely to support increasing pensions. Hence, when they enter the population, that
+has the effect of decreasing the mean. The same is true for mortality. Hence, the population
+turnover component is negative. In this simulation, the two components balance out exactly,
+leading to the expected complete stabilty in the year-over-year mean.
+
+## Adding a covariate
+
+For a slightly more complex setup, we can add covariates to the simulation. For instance, we can
+introduce a gender covariate. As an example, we split the former population into two equally-distributed genders:
+
+```{r}
+
+data <- data.table(
+    age = c(20:39, 20:39),
+    gender = c(rep("f", 20), rep("m", 20)),
+    n = c(
+        c(rep(50, 10), seq.int(50, 5, by = -5)),
+        c(rep(50, 10), seq.int(50, 5, by = -5))
+    )
+)
+```
+
+We also adjust the population dynamics functions to keep the population stable. Note that these
+don't depend on gender (but they could):
+
+```{r}
+mortality <- function(data, period) {
+    data[, ifelse(age >= 30, 5, 0)]
+}
+coming_of_age <- function(data, period) {
+    data.table(age = c(20, 20), gender = c("f", "m"), n = c(50, 50))
+}
+```
+
+If you reran the simulation with these settings, you will get the exact same results
+as before. We will introduce a slight variation, though, and determine that one gender actually
+has a fixed opinion on the support for increasing pensions. The other gender behaves as before:
+
+```{r}
+support_for_pensions <- function(data, time) {
+    data[, ifelse(gender == "f", 0.3758, (age - 20) * 1 / 20)]
+}
+```
+
+```{r}
+simresult <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = support_for_pensions,
+    fun_mortality = mortality,
+    fun_outmigration = outmigration,
+    fun_coming_of_age = coming_of_age,
+    fun_inmigration = inmigration
+)
+simresult
+```
+
+Although the overall mean doesn't change over time, the decomposition results have changed.
+Because only men now contribute to both population turnover and intraindividual change, while
+women do not, the components are halved.
