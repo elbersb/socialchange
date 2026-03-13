@@ -115,7 +115,6 @@ For a slightly more complex setup, we can add covariates to the simulation. For 
 introduce a gender covariate. As an example, we split the former population into two equally-distributed genders:
 
 ```{r}
-
 data <- data.table(
     age = c(20:39, 20:39),
     gender = c(rep("f", 20), rep("m", 20)),
@@ -162,5 +161,59 @@ simresult
 ```
 
 Although the overall mean doesn't change over time, the decomposition results have changed.
-Because only men now contribute to both population turnover and intraindividual change, while
-women do not, the components are halved.
+Because only men now contribute to both population turnover and intraindividual change (and
+women do not), the components are half of what they were before.
+
+## Only intraindividual change
+
+In the previous scenario, the overall outcome was stable, and we had both intraindividual change as well as population turnover,
+cancelling each other out. We can also construct a case that shows only intraindividual change, by making the outcome function
+dependent only on time (and possibly other covariates, as we do here), but not on age.
+
+```{r}
+ic_only <- function(data, time) {
+    data[, ifelse(gender == "f", 0.2, 0.4) + time / 10]
+}
+```
+
+As expected, the results show that the outcome increased by 0.1 year-over-year, and that all of this change is due to intraindividual change:
+
+```{r}
+simresult <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = ic_only,
+    fun_mortality = mortality,
+    fun_outmigration = outmigration,
+    fun_coming_of_age = coming_of_age,
+    fun_inmigration = inmigration
+)
+simresult
+```
+
+## Only population turnover
+
+Conversely, we can also construct a scenario where all change is explained by population turnover - older cohorts being replaced by younger cohorts. For this, we define the outcome as a function of the individual's birth cohort:
+
+```{r}
+pt_only <- function(data, time) {
+    data[, ifelse(gender == "f", 0.2, 0.4) + 0.7516 + (time - age + 20) / 10]
+}
+```
+
+The constants have been chosen such that the two cases align. The important thing here is that the outcome depends only on the birth cohort (i.e. cohort = year - age).
+
+The results show the exact same dynamic as before -- an initial mean of 0.3 and an increase by 0.1 every year --, but very different explanations: Now the change is completely explained by population turnover. No one ever changes their mind, social change only occurs because older cohorts with low outcome values die out and younger cohorts with higher outcome values follow. Hence, both mortality and coming-of-age contribute equally to the total change.
+
+```{r}
+simresult <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = pt_only,
+    fun_mortality = mortality,
+    fun_outmigration = outmigration,
+    fun_coming_of_age = coming_of_age,
+    fun_inmigration = inmigration
+)
+simresult
+```

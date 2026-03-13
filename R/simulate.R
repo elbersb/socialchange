@@ -40,12 +40,13 @@ sim_social_change <- function(periods, data, fun_y, fun_mortality, fun_outmigrat
         for (event_tick in events_tick) {
             data[, age := age + event_tick - tick]
             tick <- event_tick
+            time <- i_period - 1 + tick
 
             # process y updates
             pre_mean <- data[, sum(n / sum(n) * y)]
-            data[, y := fun_y(data, i_period - 1 + tick)]
+            data[, y := fun_y(data, time)]
             post_ic_mean <- data[, sum(n / sum(n) * y)]
-            change_record[[length(change_record) + 1]] <- list("intraindividual", post_ic_mean - pre_mean)
+            change_record[[length(change_record) + 1]] <- list("intraindividual", time, post_ic_mean - pre_mean)
 
             # process single event
             event <- sample(names(event_counts), 1, prob = event_counts)
@@ -88,13 +89,13 @@ sim_social_change <- function(periods, data, fun_y, fun_mortality, fun_outmigrat
             }
             event_counts[event] <- event_counts[event] - 1
             post_event_mean <- data[, sum(n / sum(n) * y)]
-            change_record[[length(change_record) + 1]] <- list(event, post_event_mean - post_ic_mean)
+            change_record[[length(change_record) + 1]] <- list(event, time, post_event_mean - post_ic_mean)
         }
         # bring up to next period
         data[, age := age + 1 - tick]
-        data[, y := fun_y(data, year)]
+        data[, y := fun_y(data, i_period)]
         post_ic_mean <- data[, sum(n / sum(n) * y)]
-        change_record[[length(change_record) + 1]] <- list("intraindividual", post_ic_mean - post_event_mean)
+        change_record[[length(change_record) + 1]] <- list("intraindividual", i_period, post_ic_mean - post_event_mean)
 
         # clean up
         data <- data[n > 0]
@@ -102,7 +103,7 @@ sim_social_change <- function(periods, data, fun_y, fun_mortality, fun_outmigrat
 
         # summarize period change
         change_record_dt <- rbindlist(change_record)
-        names(change_record_dt) <- c("component", "delta")
+        names(change_record_dt) <- c("component", "time", "delta")
         by_component <- change_record_dt[, .(delta = sum(delta)), by = .(component)]
         record[[i_period]] <- change_record_dt
         summary[i_period + 1, mean := data[, sum(n / sum(n) * y)]]
