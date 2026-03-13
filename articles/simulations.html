@@ -170,10 +170,10 @@
 <span><span class="va">simresult</span></span>
 <span><span class="co">#&gt;   period   mean    N intraindividual mortality outmigration coming_of_age</span></span>
 <span><span class="co">#&gt;  initial 0.3758 1550              NA        NA           NA            NA</span></span>
-<span><span class="co">#&gt;        1 0.3758 1550            0.05  -0.02412            0      -0.02588</span></span>
-<span><span class="co">#&gt;        2 0.3758 1550            0.05  -0.02415            0      -0.02585</span></span>
-<span><span class="co">#&gt;        3 0.3758 1550            0.05  -0.02415            0      -0.02585</span></span>
-<span><span class="co">#&gt;        4 0.3758 1550            0.05  -0.02417            0      -0.02583</span></span>
+<span><span class="co">#&gt;        1 0.3758 1550            0.05  -0.02414            0      -0.02586</span></span>
+<span><span class="co">#&gt;        2 0.3758 1550            0.05  -0.02414            0      -0.02586</span></span>
+<span><span class="co">#&gt;        3 0.3758 1550            0.05  -0.02414            0      -0.02586</span></span>
+<span><span class="co">#&gt;        4 0.3758 1550            0.05  -0.02411            0      -0.02589</span></span>
 <span><span class="co">#&gt;        5 0.3758 1550            0.05  -0.02415            0      -0.02585</span></span>
 <span><span class="co">#&gt;  inmigration</span></span>
 <span><span class="co">#&gt;           NA</span></span>
@@ -201,8 +201,7 @@
 <p>For a slightly more complex setup, we can add covariates to the simulation. For instance, we can introduce a gender covariate. As an example, we split the former population into two equally-distributed genders:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
-<span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
 <span>    age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span><span class="op">:</span><span class="fl">39</span>, <span class="fl">20</span><span class="op">:</span><span class="fl">39</span><span class="op">)</span>,</span>
 <span>    gender <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"f"</span>, <span class="fl">20</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"m"</span>, <span class="fl">20</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
@@ -242,11 +241,11 @@
 <span><span class="va">simresult</span></span>
 <span><span class="co">#&gt;   period   mean    N intraindividual mortality outmigration coming_of_age</span></span>
 <span><span class="co">#&gt;  initial 0.3758 1550              NA        NA           NA            NA</span></span>
-<span><span class="co">#&gt;        1 0.3758 1550         0.02490  -0.01203            0      -0.01287</span></span>
-<span><span class="co">#&gt;        2 0.3758 1550         0.02495  -0.01203            0      -0.01291</span></span>
-<span><span class="co">#&gt;        3 0.3758 1550         0.02496  -0.01207            0      -0.01289</span></span>
-<span><span class="co">#&gt;        4 0.3758 1550         0.02507  -0.01213            0      -0.01294</span></span>
-<span><span class="co">#&gt;        5 0.3758 1550         0.02493  -0.01203            0      -0.01290</span></span>
+<span><span class="co">#&gt;        1 0.3758 1550         0.02495  -0.01204            0      -0.01292</span></span>
+<span><span class="co">#&gt;        2 0.3758 1550         0.02512  -0.01215            0      -0.01297</span></span>
+<span><span class="co">#&gt;        3 0.3758 1550         0.02504  -0.01209            0      -0.01296</span></span>
+<span><span class="co">#&gt;        4 0.3758 1550         0.02500  -0.01204            0      -0.01296</span></span>
+<span><span class="co">#&gt;        5 0.3758 1550         0.02499  -0.01206            0      -0.01293</span></span>
 <span><span class="co">#&gt;  inmigration</span></span>
 <span><span class="co">#&gt;           NA</span></span>
 <span><span class="co">#&gt;            0</span></span>
@@ -260,14 +259,113 @@
 <span><span class="co">#&gt;  At initial                0.37580</span></span>
 <span><span class="co">#&gt;  At end                    0.37580</span></span>
 <span><span class="co">#&gt;  Total change              0.00000</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.12480</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.12480</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.06029</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.12511</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.12511</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.06037</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.00000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06451</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06474</span></span>
 <span><span class="co">#&gt;    - In-migration          0.00000</span></span></code></pre></div>
 </div>
-<p>Although the overall mean doesn’t change over time, the decomposition results have changed. Because only men now contribute to both population turnover and intraindividual change, while women do not, the components are halved.</p>
+<p>Although the overall mean doesn’t change over time, the decomposition results have changed. Because only men now contribute to both population turnover and intraindividual change (and women do not), the components are half of what they were before.</p>
+</section><section class="level2"><h2 id="only-intraindividual-change">Only intraindividual change<a class="anchor" aria-label="anchor" href="#only-intraindividual-change"></a>
+</h2>
+<p>In the previous scenario, the overall outcome was stable, and we had both intraindividual change as well as population turnover, cancelling each other out. We can also construct a case that shows only intraindividual change, by making the outcome function dependent only on time (and possibly other covariates, as we do here), but not on age.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ic_only</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">time</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">gender</span> <span class="op">==</span> <span class="st">"f"</span>, <span class="fl">0.2</span>, <span class="fl">0.4</span><span class="op">)</span> <span class="op">+</span> <span class="va">time</span> <span class="op">/</span> <span class="fl">10</span><span class="op">]</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+</div>
+<p>As expected, the results show that the outcome increased by 0.1 year-over-year, and that all of this change is due to intraindividual change:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">simresult</span> <span class="op">&lt;-</span> <span class="fu">socialchange</span><span class="fu">::</span><span class="fu">sim_social_change</span><span class="op">(</span></span>
+<span>    periods <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>    data <span class="op">=</span> <span class="va">data</span>,</span>
+<span>    fun_y <span class="op">=</span> <span class="va">ic_only</span>,</span>
+<span>    fun_mortality <span class="op">=</span> <span class="va">mortality</span>,</span>
+<span>    fun_outmigration <span class="op">=</span> <span class="va">outmigration</span>,</span>
+<span>    fun_coming_of_age <span class="op">=</span> <span class="va">coming_of_age</span>,</span>
+<span>    fun_inmigration <span class="op">=</span> <span class="va">inmigration</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">simresult</span></span>
+<span><span class="co">#&gt;   period mean    N intraindividual    mortality outmigration coming_of_age</span></span>
+<span><span class="co">#&gt;  initial  0.3 1550              NA           NA           NA            NA</span></span>
+<span><span class="co">#&gt;        1  0.4 1550             0.1 -0.000014270            0   0.000014270</span></span>
+<span><span class="co">#&gt;        2  0.5 1550             0.1 -0.000005525            0   0.000005525</span></span>
+<span><span class="co">#&gt;        3  0.6 1550             0.1  0.000001456            0  -0.000001456</span></span>
+<span><span class="co">#&gt;        4  0.7 1550             0.1 -0.000007061            0   0.000007061</span></span>
+<span><span class="co">#&gt;        5  0.8 1550             0.1 -0.000012405            0   0.000012405</span></span>
+<span><span class="co">#&gt;  inmigration</span></span>
+<span><span class="co">#&gt;           NA</span></span>
+<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Decomposition of total change:</span></span>
+<span><span class="co">#&gt;                 Component     Value</span></span>
+<span><span class="co">#&gt;  At initial                0.300000</span></span>
+<span><span class="co">#&gt;  At end                    0.800000</span></span>
+<span><span class="co">#&gt;  Total change              0.500000</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.500000</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.000000</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.000038</span></span>
+<span><span class="co">#&gt;    - Out-migration         0.000000</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.000038</span></span>
+<span><span class="co">#&gt;    - In-migration          0.000000</span></span></code></pre></div>
+</div>
+</section><section class="level2"><h2 id="only-population-turnover">Only population turnover<a class="anchor" aria-label="anchor" href="#only-population-turnover"></a>
+</h2>
+<p>Conversely, we can also construct a scenario where all change is explained by population turnover - older cohorts being replaced by younger cohorts. For this, we define the outcome as a function of the individual’s birth cohort:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pt_only</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">time</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">gender</span> <span class="op">==</span> <span class="st">"f"</span>, <span class="fl">0.2</span>, <span class="fl">0.4</span><span class="op">)</span> <span class="op">+</span> <span class="fl">0.7516</span> <span class="op">+</span> <span class="op">(</span><span class="va">time</span> <span class="op">-</span> <span class="va">age</span> <span class="op">+</span> <span class="fl">20</span><span class="op">)</span> <span class="op">/</span> <span class="fl">10</span><span class="op">]</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+</div>
+<p>The constants have been chosen such that the two cases align. The important thing here is that the outcome depends only on the birth cohort (i.e. cohort = year - age).</p>
+<p>The results show the exact same dynamic as before – an initial mean of 0.3 and an increase by 0.1 every year –, but very different explanations: Now the change is completely explained by population turnover. No one ever changes their mind, social change only occurs because older cohorts with low outcome values die out and younger cohorts with higher outcome values follow. Hence, both mortality and coming-of-age contribute equally to the total change.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">simresult</span> <span class="op">&lt;-</span> <span class="fu">socialchange</span><span class="fu">::</span><span class="fu">sim_social_change</span><span class="op">(</span></span>
+<span>    periods <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>    data <span class="op">=</span> <span class="va">data</span>,</span>
+<span>    fun_y <span class="op">=</span> <span class="va">pt_only</span>,</span>
+<span>    fun_mortality <span class="op">=</span> <span class="va">mortality</span>,</span>
+<span>    fun_outmigration <span class="op">=</span> <span class="va">outmigration</span>,</span>
+<span>    fun_coming_of_age <span class="op">=</span> <span class="va">coming_of_age</span>,</span>
+<span>    fun_inmigration <span class="op">=</span> <span class="va">inmigration</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">simresult</span></span>
+<span><span class="co">#&gt;   period mean    N intraindividual mortality outmigration coming_of_age</span></span>
+<span><span class="co">#&gt;  initial  0.3 1550              NA        NA           NA            NA</span></span>
+<span><span class="co">#&gt;        1  0.4 1550               0   0.04835            0       0.05165</span></span>
+<span><span class="co">#&gt;        2  0.5 1550               0   0.04828            0       0.05172</span></span>
+<span><span class="co">#&gt;        3  0.6 1550               0   0.04832            0       0.05168</span></span>
+<span><span class="co">#&gt;        4  0.7 1550               0   0.04830            0       0.05170</span></span>
+<span><span class="co">#&gt;        5  0.8 1550               0   0.04835            0       0.05165</span></span>
+<span><span class="co">#&gt;  inmigration</span></span>
+<span><span class="co">#&gt;           NA</span></span>
+<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Decomposition of total change:</span></span>
+<span><span class="co">#&gt;                 Component  Value</span></span>
+<span><span class="co">#&gt;  At initial               0.3000</span></span>
+<span><span class="co">#&gt;  At end                   0.8000</span></span>
+<span><span class="co">#&gt;  Total change             0.5000</span></span>
+<span><span class="co">#&gt;  - Intraindividual change 0.0000</span></span>
+<span><span class="co">#&gt;  - Population turnover    0.5000</span></span>
+<span><span class="co">#&gt;    - Mortality            0.2416</span></span>
+<span><span class="co">#&gt;    - Out-migration        0.0000</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        0.2584</span></span>
+<span><span class="co">#&gt;    - In-migration         0.0000</span></span></code></pre></div>
+</div>
 </section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);

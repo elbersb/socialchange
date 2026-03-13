@@ -145,10 +145,10 @@ simresult <- socialchange::sim_social_change(
 simresult
 #>   period   mean    N intraindividual mortality outmigration coming_of_age
 #>  initial 0.3758 1550              NA        NA           NA            NA
-#>        1 0.3758 1550            0.05  -0.02412            0      -0.02588
-#>        2 0.3758 1550            0.05  -0.02415            0      -0.02585
-#>        3 0.3758 1550            0.05  -0.02415            0      -0.02585
-#>        4 0.3758 1550            0.05  -0.02417            0      -0.02583
+#>        1 0.3758 1550            0.05  -0.02414            0      -0.02586
+#>        2 0.3758 1550            0.05  -0.02414            0      -0.02586
+#>        3 0.3758 1550            0.05  -0.02414            0      -0.02586
+#>        4 0.3758 1550            0.05  -0.02411            0      -0.02589
 #>        5 0.3758 1550            0.05  -0.02415            0      -0.02585
 #>  inmigration
 #>           NA
@@ -197,7 +197,6 @@ example, we split the former population into two equally-distributed
 genders:
 
 ``` r
-
 data <- data.table(
     age = c(20:39, 20:39),
     gender = c(rep("f", 20), rep("m", 20)),
@@ -244,11 +243,11 @@ simresult <- socialchange::sim_social_change(
 simresult
 #>   period   mean    N intraindividual mortality outmigration coming_of_age
 #>  initial 0.3758 1550              NA        NA           NA            NA
-#>        1 0.3758 1550         0.02490  -0.01203            0      -0.01287
-#>        2 0.3758 1550         0.02495  -0.01203            0      -0.01291
-#>        3 0.3758 1550         0.02496  -0.01207            0      -0.01289
-#>        4 0.3758 1550         0.02507  -0.01213            0      -0.01294
-#>        5 0.3758 1550         0.02493  -0.01203            0      -0.01290
+#>        1 0.3758 1550         0.02495  -0.01204            0      -0.01292
+#>        2 0.3758 1550         0.02512  -0.01215            0      -0.01297
+#>        3 0.3758 1550         0.02504  -0.01209            0      -0.01296
+#>        4 0.3758 1550         0.02500  -0.01204            0      -0.01296
+#>        5 0.3758 1550         0.02499  -0.01206            0      -0.01293
 #>  inmigration
 #>           NA
 #>            0
@@ -262,15 +261,136 @@ simresult
 #>  At initial                0.37580
 #>  At end                    0.37580
 #>  Total change              0.00000
-#>  - Intraindividual change  0.12480
-#>  - Population turnover    -0.12480
-#>    - Mortality            -0.06029
+#>  - Intraindividual change  0.12511
+#>  - Population turnover    -0.12511
+#>    - Mortality            -0.06037
 #>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.06451
+#>    - Coming-of-age        -0.06474
 #>    - In-migration          0.00000
 ```
 
 Although the overall mean doesn’t change over time, the decomposition
 results have changed. Because only men now contribute to both population
-turnover and intraindividual change, while women do not, the components
-are halved.
+turnover and intraindividual change (and women do not), the components
+are half of what they were before.
+
+## Only intraindividual change
+
+In the previous scenario, the overall outcome was stable, and we had
+both intraindividual change as well as population turnover, cancelling
+each other out. We can also construct a case that shows only
+intraindividual change, by making the outcome function dependent only on
+time (and possibly other covariates, as we do here), but not on age.
+
+``` r
+ic_only <- function(data, time) {
+    data[, ifelse(gender == "f", 0.2, 0.4) + time / 10]
+}
+```
+
+As expected, the results show that the outcome increased by 0.1
+year-over-year, and that all of this change is due to intraindividual
+change:
+
+``` r
+simresult <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = ic_only,
+    fun_mortality = mortality,
+    fun_outmigration = outmigration,
+    fun_coming_of_age = coming_of_age,
+    fun_inmigration = inmigration
+)
+simresult
+#>   period mean    N intraindividual    mortality outmigration coming_of_age
+#>  initial  0.3 1550              NA           NA           NA            NA
+#>        1  0.4 1550             0.1 -0.000014270            0   0.000014270
+#>        2  0.5 1550             0.1 -0.000005525            0   0.000005525
+#>        3  0.6 1550             0.1  0.000001456            0  -0.000001456
+#>        4  0.7 1550             0.1 -0.000007061            0   0.000007061
+#>        5  0.8 1550             0.1 -0.000012405            0   0.000012405
+#>  inmigration
+#>           NA
+#>            0
+#>            0
+#>            0
+#>            0
+#>            0
+#> 
+#> Decomposition of total change:
+#>                 Component     Value
+#>  At initial                0.300000
+#>  At end                    0.800000
+#>  Total change              0.500000
+#>  - Intraindividual change  0.500000
+#>  - Population turnover     0.000000
+#>    - Mortality            -0.000038
+#>    - Out-migration         0.000000
+#>    - Coming-of-age         0.000038
+#>    - In-migration          0.000000
+```
+
+## Only population turnover
+
+Conversely, we can also construct a scenario where all change is
+explained by population turnover - older cohorts being replaced by
+younger cohorts. For this, we define the outcome as a function of the
+individual’s birth cohort:
+
+``` r
+pt_only <- function(data, time) {
+    data[, ifelse(gender == "f", 0.2, 0.4) + 0.7516 + (time - age + 20) / 10]
+}
+```
+
+The constants have been chosen such that the two cases align. The
+important thing here is that the outcome depends only on the birth
+cohort (i.e. cohort = year - age).
+
+The results show the exact same dynamic as before – an initial mean of
+0.3 and an increase by 0.1 every year –, but very different
+explanations: Now the change is completely explained by population
+turnover. No one ever changes their mind, social change only occurs
+because older cohorts with low outcome values die out and younger
+cohorts with higher outcome values follow. Hence, both mortality and
+coming-of-age contribute equally to the total change.
+
+``` r
+simresult <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = pt_only,
+    fun_mortality = mortality,
+    fun_outmigration = outmigration,
+    fun_coming_of_age = coming_of_age,
+    fun_inmigration = inmigration
+)
+simresult
+#>   period mean    N intraindividual mortality outmigration coming_of_age
+#>  initial  0.3 1550              NA        NA           NA            NA
+#>        1  0.4 1550               0   0.04835            0       0.05165
+#>        2  0.5 1550               0   0.04828            0       0.05172
+#>        3  0.6 1550               0   0.04832            0       0.05168
+#>        4  0.7 1550               0   0.04830            0       0.05170
+#>        5  0.8 1550               0   0.04835            0       0.05165
+#>  inmigration
+#>           NA
+#>            0
+#>            0
+#>            0
+#>            0
+#>            0
+#> 
+#> Decomposition of total change:
+#>                 Component  Value
+#>  At initial               0.3000
+#>  At end                   0.8000
+#>  Total change             0.5000
+#>  - Intraindividual change 0.0000
+#>  - Population turnover    0.5000
+#>    - Mortality            0.2416
+#>    - Out-migration        0.0000
+#>    - Coming-of-age        0.2584
+#>    - In-migration         0.0000
+```
