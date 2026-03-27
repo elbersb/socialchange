@@ -86,7 +86,7 @@ Because we defined our population only in terms of one variable (age),
 all members of the same age also have an identical outcome value.
 
 **Step 3**: The next step is to define the population dynamics. This
-requires defining four functions:
+requires defining up to four functions:
 
 - `fun_mortality(data, period)` - needs to return a vector of counts for
   each population cell
@@ -102,29 +102,24 @@ will often be years. For instance, the mortality function should return
 counts that define how many members of your population die within the
 next period, in each population cell. The out-migration function is
 defined in the same way, just for the number of people migrating out of
-each population cell.
+each population cell. The coming of age function and in-migration
+functions are different: They should return a data frame that describes
+the new population members that are added period-over-period.
 
-The coming of age function and in-migration functions are different:
-They should return a data frame that describes the new population
-members that are added period-over-period. These functions are flexible
-enough to describe very complicated real-world population dynamics. For
-our first simple example, we will define these functions in a way that
-keeps the population stable: we don’t have any migration, and mortality
-and coming-of-age balances out perfectly - every period 100 new members
-of age 20 are added, and 100 members age 30 and over die:
+These functions are flexible enough to describe very complicated
+real-world population dynamics. For our first simple example, we will
+define these functions in a way that keeps the population stable: we
+don’t have any migration, and mortality and coming-of-age balances out
+perfectly - every period 100 new members of age 20 are added, and 100
+members age 30 and over die. All four functions are optional, so we just
+define a coming-of-age and a mortality function:
 
 ``` r
-mortality <- function(data, period) {
-    data[, ifelse(age >= 30, 10, 0)]
-}
-outmigration <- function(data, period) {
-    0
-}
 coming_of_age <- function(data, period) {
     data.table(age = 20, n = 100)
 }
-inmigration <- function(data, period) {
-    data.table(n = 0)
+mortality <- function(data, period) {
+    data[, ifelse(age >= 30, 10, 0)]
 }
 ```
 
@@ -137,26 +132,24 @@ simresult <- socialchange::sim_social_change(
     periods = 5,
     data = data,
     fun_y = support_for_pensions,
-    fun_mortality = mortality,
-    fun_outmigration = outmigration,
     fun_coming_of_age = coming_of_age,
-    fun_inmigration = inmigration
+    fun_mortality = mortality
 )
 simresult
-#>   period   mean    N intraindividual mortality outmigration coming_of_age
-#>  initial 0.3758 1550              NA        NA           NA            NA
-#>        1 0.3758 1550            0.05  -0.02414            0      -0.02586
-#>        2 0.3758 1550            0.05  -0.02414            0      -0.02586
-#>        3 0.3758 1550            0.05  -0.02414            0      -0.02586
-#>        4 0.3758 1550            0.05  -0.02411            0      -0.02589
-#>        5 0.3758 1550            0.05  -0.02415            0      -0.02585
-#>  inmigration
-#>           NA
-#>            0
-#>            0
-#>            0
-#>            0
-#>            0
+#>   period   mean    N intraindividual coming_of_age mortality inmigration
+#>  initial 0.3758 1550              NA            NA        NA          NA
+#>        1 0.3758 1550            0.05      -0.02587  -0.02413           0
+#>        2 0.3758 1550            0.05      -0.02586  -0.02414           0
+#>        3 0.3758 1550            0.05      -0.02586  -0.02414           0
+#>        4 0.3758 1550            0.05      -0.02584  -0.02416           0
+#>        5 0.3758 1550            0.05      -0.02588  -0.02412           0
+#>  outmigration
+#>            NA
+#>             0
+#>             0
+#>             0
+#>             0
+#>             0
 #> 
 #> Decomposition of total change:
 #>                 Component   Value
@@ -189,7 +182,7 @@ population turnover component is negative. In this simulation, the two
 components balance out exactly, leading to the expected complete
 stabilty in the year-over-year mean.
 
-## Adding a covariate
+### Adding a covariate
 
 For a slightly more complex setup, we can add covariates to the
 simulation. For instance, we can introduce a gender covariate. As an
@@ -211,11 +204,11 @@ We also adjust the population dynamics functions to keep the population
 stable. Note that these don’t depend on gender (but they could):
 
 ``` r
-mortality <- function(data, period) {
-    data[, ifelse(age >= 30, 5, 0)]
-}
 coming_of_age <- function(data, period) {
     data.table(age = c(20, 20), gender = c("f", "m"), n = c(50, 50))
+}
+mortality <- function(data, period) {
+    data[, ifelse(age >= 30, 5, 0)]
 }
 ```
 
@@ -235,37 +228,35 @@ simresult <- socialchange::sim_social_change(
     periods = 5,
     data = data,
     fun_y = support_for_pensions,
-    fun_mortality = mortality,
-    fun_outmigration = outmigration,
     fun_coming_of_age = coming_of_age,
-    fun_inmigration = inmigration
+    fun_mortality = mortality
 )
 simresult
-#>   period   mean    N intraindividual mortality outmigration coming_of_age
-#>  initial 0.3758 1550              NA        NA           NA            NA
-#>        1 0.3758 1550         0.02495  -0.01204            0      -0.01292
-#>        2 0.3758 1550         0.02512  -0.01215            0      -0.01297
-#>        3 0.3758 1550         0.02504  -0.01209            0      -0.01296
-#>        4 0.3758 1550         0.02500  -0.01204            0      -0.01296
-#>        5 0.3758 1550         0.02499  -0.01206            0      -0.01293
-#>  inmigration
-#>           NA
-#>            0
-#>            0
-#>            0
-#>            0
-#>            0
+#>   period   mean    N intraindividual coming_of_age mortality inmigration
+#>  initial 0.3758 1550              NA            NA        NA          NA
+#>        1 0.3758 1550         0.02518      -0.01303  -0.01215           0
+#>        2 0.3758 1550         0.02504      -0.01295  -0.01209           0
+#>        3 0.3758 1550         0.02511      -0.01300  -0.01211           0
+#>        4 0.3758 1550         0.02501      -0.01295  -0.01206           0
+#>        5 0.3758 1550         0.02500      -0.01290  -0.01210           0
+#>  outmigration
+#>            NA
+#>             0
+#>             0
+#>             0
+#>             0
+#>             0
 #> 
 #> Decomposition of total change:
 #>                 Component    Value
 #>  At initial                0.37580
 #>  At end                    0.37580
 #>  Total change              0.00000
-#>  - Intraindividual change  0.12511
-#>  - Population turnover    -0.12511
-#>    - Mortality            -0.06037
+#>  - Intraindividual change  0.12533
+#>  - Population turnover    -0.12533
+#>    - Mortality            -0.06051
 #>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.06474
+#>    - Coming-of-age        -0.06482
 #>    - In-migration          0.00000
 ```
 
@@ -274,7 +265,7 @@ results have changed. Because only men now contribute to both population
 turnover and intraindividual change (and women do not), the components
 are half of what they were before.
 
-## Only intraindividual change
+### Only intraindividual change
 
 In the previous scenario, the overall outcome was stable, and we had
 both intraindividual change as well as population turnover, cancelling
@@ -297,41 +288,39 @@ simresult <- socialchange::sim_social_change(
     periods = 5,
     data = data,
     fun_y = ic_only,
-    fun_mortality = mortality,
-    fun_outmigration = outmigration,
     fun_coming_of_age = coming_of_age,
-    fun_inmigration = inmigration
+    fun_mortality = mortality
 )
 simresult
-#>   period mean    N intraindividual    mortality outmigration coming_of_age
-#>  initial  0.3 1550              NA           NA           NA            NA
-#>        1  0.4 1550             0.1 -0.000014270            0   0.000014270
-#>        2  0.5 1550             0.1 -0.000005525            0   0.000005525
-#>        3  0.6 1550             0.1  0.000001456            0  -0.000001456
-#>        4  0.7 1550             0.1 -0.000007061            0   0.000007061
-#>        5  0.8 1550             0.1 -0.000012405            0   0.000012405
-#>  inmigration
-#>           NA
-#>            0
-#>            0
-#>            0
-#>            0
-#>            0
+#>   period mean    N intraindividual coming_of_age    mortality inmigration
+#>  initial  0.3 1550              NA            NA           NA          NA
+#>        1  0.4 1550             0.1   0.000004841 -0.000004841           0
+#>        2  0.5 1550             0.1  -0.000002765  0.000002765           0
+#>        3  0.6 1550             0.1   0.000005333 -0.000005333           0
+#>        4  0.7 1550             0.1  -0.000012021  0.000012021           0
+#>        5  0.8 1550             0.1  -0.000005588  0.000005588           0
+#>  outmigration
+#>            NA
+#>             0
+#>             0
+#>             0
+#>             0
+#>             0
 #> 
 #> Decomposition of total change:
-#>                 Component     Value
-#>  At initial                0.300000
-#>  At end                    0.800000
-#>  Total change              0.500000
-#>  - Intraindividual change  0.500000
-#>  - Population turnover     0.000000
-#>    - Mortality            -0.000038
-#>    - Out-migration         0.000000
-#>    - Coming-of-age         0.000038
-#>    - In-migration          0.000000
+#>                 Component    Value
+#>  At initial                0.30000
+#>  At end                    0.80000
+#>  Total change              0.50000
+#>  - Intraindividual change  0.50000
+#>  - Population turnover     0.00000
+#>    - Mortality             0.00001
+#>    - Out-migration         0.00000
+#>    - Coming-of-age        -0.00001
+#>    - In-migration          0.00000
 ```
 
-## Only population turnover
+### Only population turnover
 
 Conversely, we can also construct a scenario where all change is
 explained by population turnover - older cohorts being replaced by
@@ -361,26 +350,24 @@ simresult <- socialchange::sim_social_change(
     periods = 5,
     data = data,
     fun_y = pt_only,
-    fun_mortality = mortality,
-    fun_outmigration = outmigration,
     fun_coming_of_age = coming_of_age,
-    fun_inmigration = inmigration
+    fun_mortality = mortality
 )
 simresult
-#>   period mean    N intraindividual mortality outmigration coming_of_age
-#>  initial  0.3 1550              NA        NA           NA            NA
-#>        1  0.4 1550               0   0.04835            0       0.05165
-#>        2  0.5 1550               0   0.04828            0       0.05172
-#>        3  0.6 1550               0   0.04832            0       0.05168
-#>        4  0.7 1550               0   0.04830            0       0.05170
-#>        5  0.8 1550               0   0.04835            0       0.05165
-#>  inmigration
-#>           NA
-#>            0
-#>            0
-#>            0
-#>            0
-#>            0
+#>   period mean    N intraindividual coming_of_age mortality inmigration
+#>  initial  0.3 1550              NA            NA        NA          NA
+#>        1  0.4 1550               0       0.05166   0.04834           0
+#>        2  0.5 1550               0       0.05177   0.04823           0
+#>        3  0.6 1550               0       0.05168   0.04832           0
+#>        4  0.7 1550               0       0.05171   0.04829           0
+#>        5  0.8 1550               0       0.05176   0.04824           0
+#>  outmigration
+#>            NA
+#>             0
+#>             0
+#>             0
+#>             0
+#>             0
 #> 
 #> Decomposition of total change:
 #>                 Component  Value
@@ -389,8 +376,8 @@ simresult
 #>  Total change             0.5000
 #>  - Intraindividual change 0.0000
 #>  - Population turnover    0.5000
-#>    - Mortality            0.2416
+#>    - Mortality            0.2414
 #>    - Out-migration        0.0000
-#>    - Coming-of-age        0.2584
+#>    - Coming-of-age        0.2586
 #>    - In-migration         0.0000
 ```

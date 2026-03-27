@@ -123,7 +123,7 @@
 <span><span class="co">#       at age 40,   support_for_pensions is 1</span></span></code></pre></div>
 </div>
 <p>Because we defined our population only in terms of one variable (age), all members of the same age also have an identical outcome value.</p>
-<p><strong>Step 3</strong>: The next step is to define the population dynamics. This requires defining four functions:</p>
+<p><strong>Step 3</strong>: The next step is to define the population dynamics. This requires defining up to four functions:</p>
 <ul>
 <li>
 <code>fun_mortality(data, period)</code> - needs to return a vector of counts for each population cell</li>
@@ -136,21 +136,15 @@
 <code>fun_inmigration(data, period)</code> - needs to return a data frame with new population cells and a column <code>n</code>
 </li>
 </ul>
-<p>All of these functions are defined period-over-period. In practice, this will often be years. For instance, the mortality function should return counts that define how many members of your population die within the next period, in each population cell. The out-migration function is defined in the same way, just for the number of people migrating out of each population cell.</p>
-<p>The coming of age function and in-migration functions are different: They should return a data frame that describes the new population members that are added period-over-period. These functions are flexible enough to describe very complicated real-world population dynamics. For our first simple example, we will define these functions in a way that keeps the population stable: we don’t have any migration, and mortality and coming-of-age balances out perfectly - every period 100 new members of age 20 are added, and 100 members age 30 and over die:</p>
+<p>All of these functions are defined period-over-period. In practice, this will often be years. For instance, the mortality function should return counts that define how many members of your population die within the next period, in each population cell. The out-migration function is defined in the same way, just for the number of people migrating out of each population cell. The coming of age function and in-migration functions are different: They should return a data frame that describes the new population members that are added period-over-period.</p>
+<p>These functions are flexible enough to describe very complicated real-world population dynamics. For our first simple example, we will define these functions in a way that keeps the population stable: we don’t have any migration, and mortality and coming-of-age balances out perfectly - every period 100 new members of age 20 are added, and 100 members age 30 and over die. All four functions are optional, so we just define a coming-of-age and a mortality function:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">mortality</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">period</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">age</span> <span class="op">&gt;=</span> <span class="fl">30</span>, <span class="fl">10</span>, <span class="fl">0</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="op">}</span></span>
-<span><span class="va">outmigration</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">period</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="fl">0</span></span>
-<span><span class="op">}</span></span>
-<span><span class="va">coming_of_age</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">period</span><span class="op">)</span> <span class="op">{</span></span>
+<code class="sourceCode R"><span><span class="va">coming_of_age</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">period</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>age <span class="op">=</span> <span class="fl">20</span>, n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="va">inmigration</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">period</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="va">mortality</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">period</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">age</span> <span class="op">&gt;=</span> <span class="fl">30</span>, <span class="fl">10</span>, <span class="fl">0</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 </div>
 <p>We’re now ready to start the simulation:</p>
@@ -162,26 +156,24 @@
 <span>    periods <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>    data <span class="op">=</span> <span class="va">data</span>,</span>
 <span>    fun_y <span class="op">=</span> <span class="va">support_for_pensions</span>,</span>
-<span>    fun_mortality <span class="op">=</span> <span class="va">mortality</span>,</span>
-<span>    fun_outmigration <span class="op">=</span> <span class="va">outmigration</span>,</span>
 <span>    fun_coming_of_age <span class="op">=</span> <span class="va">coming_of_age</span>,</span>
-<span>    fun_inmigration <span class="op">=</span> <span class="va">inmigration</span></span>
+<span>    fun_mortality <span class="op">=</span> <span class="va">mortality</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">simresult</span></span>
-<span><span class="co">#&gt;   period   mean    N intraindividual mortality outmigration coming_of_age</span></span>
-<span><span class="co">#&gt;  initial 0.3758 1550              NA        NA           NA            NA</span></span>
-<span><span class="co">#&gt;        1 0.3758 1550            0.05  -0.02414            0      -0.02586</span></span>
-<span><span class="co">#&gt;        2 0.3758 1550            0.05  -0.02414            0      -0.02586</span></span>
-<span><span class="co">#&gt;        3 0.3758 1550            0.05  -0.02414            0      -0.02586</span></span>
-<span><span class="co">#&gt;        4 0.3758 1550            0.05  -0.02411            0      -0.02589</span></span>
-<span><span class="co">#&gt;        5 0.3758 1550            0.05  -0.02415            0      -0.02585</span></span>
-<span><span class="co">#&gt;  inmigration</span></span>
-<span><span class="co">#&gt;           NA</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt;   period   mean    N intraindividual coming_of_age mortality inmigration</span></span>
+<span><span class="co">#&gt;  initial 0.3758 1550              NA            NA        NA          NA</span></span>
+<span><span class="co">#&gt;        1 0.3758 1550            0.05      -0.02587  -0.02413           0</span></span>
+<span><span class="co">#&gt;        2 0.3758 1550            0.05      -0.02586  -0.02414           0</span></span>
+<span><span class="co">#&gt;        3 0.3758 1550            0.05      -0.02586  -0.02414           0</span></span>
+<span><span class="co">#&gt;        4 0.3758 1550            0.05      -0.02584  -0.02416           0</span></span>
+<span><span class="co">#&gt;        5 0.3758 1550            0.05      -0.02588  -0.02412           0</span></span>
+<span><span class="co">#&gt;  outmigration</span></span>
+<span><span class="co">#&gt;            NA</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Decomposition of total change:</span></span>
 <span><span class="co">#&gt;                 Component   Value</span></span>
@@ -196,8 +188,8 @@
 <span><span class="co">#&gt;    - In-migration          0.0000</span></span></code></pre></div>
 </div>
 <p>The simulation result displays both an overview for each period, as well as a summary for the total decomposition of change. The results by year show that indeed our population is stable: at the end of every period we have a population of 1550, and a stable mean of 0.38 - i.e, 38% of this population supports increasing pensions. However, this stability is a bit deceptive, because everyone’s opinion actually keeps constantly changing. We can see that by looking at the “Intraindividual change” component, which is +0.25. Roughly speaking, without population turnover, we would have expected that the mean support for increasing pensions would have increased quite a bit, to 63%. This makes sense, as we’ve designed this simulation in a way where support increases with age. In turn, younger people are much less likely to support increasing pensions. Hence, when they enter the population, that has the effect of decreasing the mean. The same is true for mortality. Hence, the population turnover component is negative. In this simulation, the two components balance out exactly, leading to the expected complete stabilty in the year-over-year mean.</p>
-</section><section class="level2"><h2 id="adding-a-covariate">Adding a covariate<a class="anchor" aria-label="anchor" href="#adding-a-covariate"></a>
-</h2>
+<section class="level3"><h3 id="adding-a-covariate">Adding a covariate<a class="anchor" aria-label="anchor" href="#adding-a-covariate"></a>
+</h3>
 <p>For a slightly more complex setup, we can add covariates to the simulation. For instance, we can introduce a gender covariate. As an example, we split the former population into two equally-distributed genders:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
@@ -213,11 +205,11 @@
 <p>We also adjust the population dynamics functions to keep the population stable. Note that these don’t depend on gender (but they could):</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">mortality</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">period</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">age</span> <span class="op">&gt;=</span> <span class="fl">30</span>, <span class="fl">5</span>, <span class="fl">0</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="op">}</span></span>
-<span><span class="va">coming_of_age</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">period</span><span class="op">)</span> <span class="op">{</span></span>
+<code class="sourceCode R"><span><span class="va">coming_of_age</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">period</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">20</span><span class="op">)</span>, gender <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"f"</span>, <span class="st">"m"</span><span class="op">)</span>, n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">50</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="va">mortality</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">period</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">age</span> <span class="op">&gt;=</span> <span class="fl">30</span>, <span class="fl">5</span>, <span class="fl">0</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 </div>
 <p>If you reran the simulation with these settings, you will get the exact same results as before. We will introduce a slight variation, though, and determine that one gender actually has a fixed opinion on the support for increasing pensions. The other gender behaves as before:</p>
@@ -233,42 +225,40 @@
 <span>    periods <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>    data <span class="op">=</span> <span class="va">data</span>,</span>
 <span>    fun_y <span class="op">=</span> <span class="va">support_for_pensions</span>,</span>
-<span>    fun_mortality <span class="op">=</span> <span class="va">mortality</span>,</span>
-<span>    fun_outmigration <span class="op">=</span> <span class="va">outmigration</span>,</span>
 <span>    fun_coming_of_age <span class="op">=</span> <span class="va">coming_of_age</span>,</span>
-<span>    fun_inmigration <span class="op">=</span> <span class="va">inmigration</span></span>
+<span>    fun_mortality <span class="op">=</span> <span class="va">mortality</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">simresult</span></span>
-<span><span class="co">#&gt;   period   mean    N intraindividual mortality outmigration coming_of_age</span></span>
-<span><span class="co">#&gt;  initial 0.3758 1550              NA        NA           NA            NA</span></span>
-<span><span class="co">#&gt;        1 0.3758 1550         0.02495  -0.01204            0      -0.01292</span></span>
-<span><span class="co">#&gt;        2 0.3758 1550         0.02512  -0.01215            0      -0.01297</span></span>
-<span><span class="co">#&gt;        3 0.3758 1550         0.02504  -0.01209            0      -0.01296</span></span>
-<span><span class="co">#&gt;        4 0.3758 1550         0.02500  -0.01204            0      -0.01296</span></span>
-<span><span class="co">#&gt;        5 0.3758 1550         0.02499  -0.01206            0      -0.01293</span></span>
-<span><span class="co">#&gt;  inmigration</span></span>
-<span><span class="co">#&gt;           NA</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt;   period   mean    N intraindividual coming_of_age mortality inmigration</span></span>
+<span><span class="co">#&gt;  initial 0.3758 1550              NA            NA        NA          NA</span></span>
+<span><span class="co">#&gt;        1 0.3758 1550         0.02518      -0.01303  -0.01215           0</span></span>
+<span><span class="co">#&gt;        2 0.3758 1550         0.02504      -0.01295  -0.01209           0</span></span>
+<span><span class="co">#&gt;        3 0.3758 1550         0.02511      -0.01300  -0.01211           0</span></span>
+<span><span class="co">#&gt;        4 0.3758 1550         0.02501      -0.01295  -0.01206           0</span></span>
+<span><span class="co">#&gt;        5 0.3758 1550         0.02500      -0.01290  -0.01210           0</span></span>
+<span><span class="co">#&gt;  outmigration</span></span>
+<span><span class="co">#&gt;            NA</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Decomposition of total change:</span></span>
 <span><span class="co">#&gt;                 Component    Value</span></span>
 <span><span class="co">#&gt;  At initial                0.37580</span></span>
 <span><span class="co">#&gt;  At end                    0.37580</span></span>
 <span><span class="co">#&gt;  Total change              0.00000</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.12511</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.12511</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.06037</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.12533</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.12533</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.06051</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.00000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06474</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06482</span></span>
 <span><span class="co">#&gt;    - In-migration          0.00000</span></span></code></pre></div>
 </div>
 <p>Although the overall mean doesn’t change over time, the decomposition results have changed. Because only men now contribute to both population turnover and intraindividual change (and women do not), the components are half of what they were before.</p>
-</section><section class="level2"><h2 id="only-intraindividual-change">Only intraindividual change<a class="anchor" aria-label="anchor" href="#only-intraindividual-change"></a>
-</h2>
+</section><section class="level3"><h3 id="only-intraindividual-change">Only intraindividual change<a class="anchor" aria-label="anchor" href="#only-intraindividual-change"></a>
+</h3>
 <p>In the previous scenario, the overall outcome was stable, and we had both intraindividual change as well as population turnover, cancelling each other out. We can also construct a case that shows only intraindividual change, by making the outcome function dependent only on time (and possibly other covariates, as we do here), but not on age.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
@@ -283,41 +273,39 @@
 <span>    periods <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>    data <span class="op">=</span> <span class="va">data</span>,</span>
 <span>    fun_y <span class="op">=</span> <span class="va">ic_only</span>,</span>
-<span>    fun_mortality <span class="op">=</span> <span class="va">mortality</span>,</span>
-<span>    fun_outmigration <span class="op">=</span> <span class="va">outmigration</span>,</span>
 <span>    fun_coming_of_age <span class="op">=</span> <span class="va">coming_of_age</span>,</span>
-<span>    fun_inmigration <span class="op">=</span> <span class="va">inmigration</span></span>
+<span>    fun_mortality <span class="op">=</span> <span class="va">mortality</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">simresult</span></span>
-<span><span class="co">#&gt;   period mean    N intraindividual    mortality outmigration coming_of_age</span></span>
-<span><span class="co">#&gt;  initial  0.3 1550              NA           NA           NA            NA</span></span>
-<span><span class="co">#&gt;        1  0.4 1550             0.1 -0.000014270            0   0.000014270</span></span>
-<span><span class="co">#&gt;        2  0.5 1550             0.1 -0.000005525            0   0.000005525</span></span>
-<span><span class="co">#&gt;        3  0.6 1550             0.1  0.000001456            0  -0.000001456</span></span>
-<span><span class="co">#&gt;        4  0.7 1550             0.1 -0.000007061            0   0.000007061</span></span>
-<span><span class="co">#&gt;        5  0.8 1550             0.1 -0.000012405            0   0.000012405</span></span>
-<span><span class="co">#&gt;  inmigration</span></span>
-<span><span class="co">#&gt;           NA</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt;   period mean    N intraindividual coming_of_age    mortality inmigration</span></span>
+<span><span class="co">#&gt;  initial  0.3 1550              NA            NA           NA          NA</span></span>
+<span><span class="co">#&gt;        1  0.4 1550             0.1   0.000004841 -0.000004841           0</span></span>
+<span><span class="co">#&gt;        2  0.5 1550             0.1  -0.000002765  0.000002765           0</span></span>
+<span><span class="co">#&gt;        3  0.6 1550             0.1   0.000005333 -0.000005333           0</span></span>
+<span><span class="co">#&gt;        4  0.7 1550             0.1  -0.000012021  0.000012021           0</span></span>
+<span><span class="co">#&gt;        5  0.8 1550             0.1  -0.000005588  0.000005588           0</span></span>
+<span><span class="co">#&gt;  outmigration</span></span>
+<span><span class="co">#&gt;            NA</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Decomposition of total change:</span></span>
-<span><span class="co">#&gt;                 Component     Value</span></span>
-<span><span class="co">#&gt;  At initial                0.300000</span></span>
-<span><span class="co">#&gt;  At end                    0.800000</span></span>
-<span><span class="co">#&gt;  Total change              0.500000</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.500000</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.000000</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.000038</span></span>
-<span><span class="co">#&gt;    - Out-migration         0.000000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.000038</span></span>
-<span><span class="co">#&gt;    - In-migration          0.000000</span></span></code></pre></div>
+<span><span class="co">#&gt;                 Component    Value</span></span>
+<span><span class="co">#&gt;  At initial                0.30000</span></span>
+<span><span class="co">#&gt;  At end                    0.80000</span></span>
+<span><span class="co">#&gt;  Total change              0.50000</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.50000</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.00000</span></span>
+<span><span class="co">#&gt;    - Mortality             0.00001</span></span>
+<span><span class="co">#&gt;    - Out-migration         0.00000</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.00001</span></span>
+<span><span class="co">#&gt;    - In-migration          0.00000</span></span></code></pre></div>
 </div>
-</section><section class="level2"><h2 id="only-population-turnover">Only population turnover<a class="anchor" aria-label="anchor" href="#only-population-turnover"></a>
-</h2>
+</section><section class="level3"><h3 id="only-population-turnover">Only population turnover<a class="anchor" aria-label="anchor" href="#only-population-turnover"></a>
+</h3>
 <p>Conversely, we can also construct a scenario where all change is explained by population turnover - older cohorts being replaced by younger cohorts. For this, we define the outcome as a function of the individual’s birth cohort:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
@@ -333,26 +321,24 @@
 <span>    periods <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>    data <span class="op">=</span> <span class="va">data</span>,</span>
 <span>    fun_y <span class="op">=</span> <span class="va">pt_only</span>,</span>
-<span>    fun_mortality <span class="op">=</span> <span class="va">mortality</span>,</span>
-<span>    fun_outmigration <span class="op">=</span> <span class="va">outmigration</span>,</span>
 <span>    fun_coming_of_age <span class="op">=</span> <span class="va">coming_of_age</span>,</span>
-<span>    fun_inmigration <span class="op">=</span> <span class="va">inmigration</span></span>
+<span>    fun_mortality <span class="op">=</span> <span class="va">mortality</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">simresult</span></span>
-<span><span class="co">#&gt;   period mean    N intraindividual mortality outmigration coming_of_age</span></span>
-<span><span class="co">#&gt;  initial  0.3 1550              NA        NA           NA            NA</span></span>
-<span><span class="co">#&gt;        1  0.4 1550               0   0.04835            0       0.05165</span></span>
-<span><span class="co">#&gt;        2  0.5 1550               0   0.04828            0       0.05172</span></span>
-<span><span class="co">#&gt;        3  0.6 1550               0   0.04832            0       0.05168</span></span>
-<span><span class="co">#&gt;        4  0.7 1550               0   0.04830            0       0.05170</span></span>
-<span><span class="co">#&gt;        5  0.8 1550               0   0.04835            0       0.05165</span></span>
-<span><span class="co">#&gt;  inmigration</span></span>
-<span><span class="co">#&gt;           NA</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
-<span><span class="co">#&gt;            0</span></span>
+<span><span class="co">#&gt;   period mean    N intraindividual coming_of_age mortality inmigration</span></span>
+<span><span class="co">#&gt;  initial  0.3 1550              NA            NA        NA          NA</span></span>
+<span><span class="co">#&gt;        1  0.4 1550               0       0.05166   0.04834           0</span></span>
+<span><span class="co">#&gt;        2  0.5 1550               0       0.05177   0.04823           0</span></span>
+<span><span class="co">#&gt;        3  0.6 1550               0       0.05168   0.04832           0</span></span>
+<span><span class="co">#&gt;        4  0.7 1550               0       0.05171   0.04829           0</span></span>
+<span><span class="co">#&gt;        5  0.8 1550               0       0.05176   0.04824           0</span></span>
+<span><span class="co">#&gt;  outmigration</span></span>
+<span><span class="co">#&gt;            NA</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
+<span><span class="co">#&gt;             0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Decomposition of total change:</span></span>
 <span><span class="co">#&gt;                 Component  Value</span></span>
@@ -361,12 +347,12 @@
 <span><span class="co">#&gt;  Total change             0.5000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change 0.0000</span></span>
 <span><span class="co">#&gt;  - Population turnover    0.5000</span></span>
-<span><span class="co">#&gt;    - Mortality            0.2416</span></span>
+<span><span class="co">#&gt;    - Mortality            0.2414</span></span>
 <span><span class="co">#&gt;    - Out-migration        0.0000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        0.2584</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        0.2586</span></span>
 <span><span class="co">#&gt;    - In-migration         0.0000</span></span></code></pre></div>
 </div>
-</section><script id="quarto-html-after-body" type="application/javascript">
+</section></section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
