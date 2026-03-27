@@ -1,6 +1,6 @@
 #' @import data.table
 #' @export
-sim_social_change <- function(periods, data, fun_y, fun_mortality, fun_outmigration, fun_coming_of_age, fun_inmigration) {
+sim_social_change <- function(periods, data, fun_y, fun_coming_of_age = NULL, fun_mortality = NULL, fun_inmigration = NULL, fun_outmigration = NULL) {
     data <- copy(data)
     data[, age := as.double(age)]
     data[, y := fun_y(data, 0)]
@@ -13,25 +13,41 @@ sim_social_change <- function(periods, data, fun_y, fun_mortality, fun_outmigrat
         mean = 0,
         N = 0,
         intraindividual = NA_real_,
-        mortality = NA_real_,
-        outmigration = NA_real_,
         coming_of_age = NA_real_,
-        inmigration = NA_real_
+        mortality = NA_real_,
+        inmigration = NA_real_,
+        outmigration = NA_real_
     )
     summary[1, N := data[, sum(n)]]
     summary[1, mean := data[, sum(n / sum(n) * y)]]
 
     for (i_period in 1:periods) {
-        data[, n_mortality := fun_mortality(data, i_period)]
-        data[, n_outmigration := fun_outmigration(data, i_period)]
-        coming_of_age <- fun_coming_of_age(data, i_period)
-        inmigration <- fun_inmigration(data, i_period)
+        if (is.null(fun_mortality)) {
+            data[, n_mortality := 0]
+        } else {
+            data[, n_mortality := fun_mortality(data, i_period)]
+        }
+        if (is.null(fun_outmigration)) {
+            data[, n_outmigration := 0]
+        } else {
+            data[, n_outmigration := fun_outmigration(data, i_period)]
+        }
+        if (is.null(fun_coming_of_age)) {
+            coming_of_age <- data.table(n = 0)
+        } else {
+            coming_of_age <- fun_coming_of_age(data, i_period)
+        }
+        if (is.null(fun_inmigration)) {
+            inmigration <- data.table(n = 0)
+        } else {
+            inmigration <- fun_inmigration(data, i_period)
+        }
 
         event_counts <- c(
-            "mortality" = data[, sum(n_mortality)],
-            "outmigration" = data[, sum(n_outmigration)],
             "coming_of_age" = coming_of_age[, sum(n)],
-            "inmigration" = inmigration[, sum(n)]
+            "mortality" = data[, sum(n_mortality)],
+            "inmigration" = inmigration[, sum(n)],
+            "outmigration" = data[, sum(n_outmigration)]
         )
 
         change_record <- vector("list", 2 * sum(event_counts) + 1)

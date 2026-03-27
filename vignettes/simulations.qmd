@@ -52,29 +52,23 @@ support_for_pensions <- function(data, time) {
 Because we defined our population only in terms of one variable (age), all members of the same age
 also have an identical outcome value.
 
-**Step 3**: The next step is to define the population dynamics. This requires defining four functions:
+**Step 3**: The next step is to define the population dynamics. This requires defining up to four functions:
 
 * `fun_mortality(data, period)` - needs to return a vector of counts for each population cell
 * `fun_outmigration(data, period)` - needs to return a vector of counts for each population cell
 * `fun_coming_of_age(data, period)` - needs to return a data frame with new population cells and a column `n`
 * `fun_inmigration(data, period)` - needs to return a data frame with new population cells and a column `n`
 
-All of these functions are defined period-over-period. In practice, this will often be years. For instance, the mortality function should return counts that define how many members of your population die within the next period, in each population cell. The out-migration function is defined in the same way, just for the number of people migrating out of each population cell.
+All of these functions are defined period-over-period. In practice, this will often be years. For instance, the mortality function should return counts that define how many members of your population die within the next period, in each population cell. The out-migration function is defined in the same way, just for the number of people migrating out of each population cell. The coming of age function and in-migration functions are different: They should return a data frame that describes the new population members that are added period-over-period.
 
-The coming of age function and in-migration functions are different: They should return a data frame that describes the new population members that are added period-over-period. These functions are flexible enough to describe very complicated real-world population dynamics. For our first simple example, we will define these functions in a way that keeps the population stable: we don't have any migration, and mortality and coming-of-age balances out perfectly - every period 100 new members of age 20 are added, and 100 members age 30 and over die:
+These functions are flexible enough to describe very complicated real-world population dynamics. For our first simple example, we will define these functions in a way that keeps the population stable: we don't have any migration, and mortality and coming-of-age balances out perfectly - every period 100 new members of age 20 are added, and 100 members age 30 and over die. All four functions are optional, so we just define a coming-of-age and a mortality function:
 
 ```{r}
-mortality <- function(data, period) {
-    data[, ifelse(age >= 30, 10, 0)]
-}
-outmigration <- function(data, period) {
-    0
-}
 coming_of_age <- function(data, period) {
     data.table(age = 20, n = 100)
 }
-inmigration <- function(data, period) {
-    data.table(n = 0)
+mortality <- function(data, period) {
+    data[, ifelse(age >= 30, 10, 0)]
 }
 ```
 
@@ -87,10 +81,8 @@ simresult <- socialchange::sim_social_change(
     periods = 5,
     data = data,
     fun_y = support_for_pensions,
-    fun_mortality = mortality,
-    fun_outmigration = outmigration,
     fun_coming_of_age = coming_of_age,
-    fun_inmigration = inmigration
+    fun_mortality = mortality
 )
 simresult
 ```
@@ -109,7 +101,7 @@ has the effect of decreasing the mean. The same is true for mortality. Hence, th
 turnover component is negative. In this simulation, the two components balance out exactly,
 leading to the expected complete stabilty in the year-over-year mean.
 
-## Adding a covariate
+### Adding a covariate
 
 For a slightly more complex setup, we can add covariates to the simulation. For instance, we can
 introduce a gender covariate. As an example, we split the former population into two equally-distributed genders:
@@ -129,11 +121,11 @@ We also adjust the population dynamics functions to keep the population stable. 
 don't depend on gender (but they could):
 
 ```{r}
-mortality <- function(data, period) {
-    data[, ifelse(age >= 30, 5, 0)]
-}
 coming_of_age <- function(data, period) {
     data.table(age = c(20, 20), gender = c("f", "m"), n = c(50, 50))
+}
+mortality <- function(data, period) {
+    data[, ifelse(age >= 30, 5, 0)]
 }
 ```
 
@@ -152,10 +144,8 @@ simresult <- socialchange::sim_social_change(
     periods = 5,
     data = data,
     fun_y = support_for_pensions,
-    fun_mortality = mortality,
-    fun_outmigration = outmigration,
     fun_coming_of_age = coming_of_age,
-    fun_inmigration = inmigration
+    fun_mortality = mortality
 )
 simresult
 ```
@@ -164,7 +154,7 @@ Although the overall mean doesn't change over time, the decomposition results ha
 Because only men now contribute to both population turnover and intraindividual change (and
 women do not), the components are half of what they were before.
 
-## Only intraindividual change
+### Only intraindividual change
 
 In the previous scenario, the overall outcome was stable, and we had both intraindividual change as well as population turnover,
 cancelling each other out. We can also construct a case that shows only intraindividual change, by making the outcome function
@@ -183,15 +173,13 @@ simresult <- socialchange::sim_social_change(
     periods = 5,
     data = data,
     fun_y = ic_only,
-    fun_mortality = mortality,
-    fun_outmigration = outmigration,
     fun_coming_of_age = coming_of_age,
-    fun_inmigration = inmigration
+    fun_mortality = mortality
 )
 simresult
 ```
 
-## Only population turnover
+### Only population turnover
 
 Conversely, we can also construct a scenario where all change is explained by population turnover - older cohorts being replaced by younger cohorts. For this, we define the outcome as a function of the individual's birth cohort:
 
@@ -210,10 +198,8 @@ simresult <- socialchange::sim_social_change(
     periods = 5,
     data = data,
     fun_y = pt_only,
-    fun_mortality = mortality,
-    fun_outmigration = outmigration,
     fun_coming_of_age = coming_of_age,
-    fun_inmigration = inmigration
+    fun_mortality = mortality
 )
 simresult
 ```
