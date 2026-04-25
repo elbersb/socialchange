@@ -1,13 +1,20 @@
 #' @import data.table
 #' @export
-sim_social_change <- function(periods, data, fun_y, fun_coming_of_age = NULL, fun_mortality = NULL, fun_inmigration = NULL, fun_outmigration = NULL) {
-    data <- copy(data)
+sim_social_change <- function(periods, data, fun_y,
+                              fun_coming_of_age = NULL, fun_mortality = NULL,
+                              fun_inmigration = NULL, fun_outmigration = NULL, fun_transitions = NULL) {
+    data <- data[n > 0]
     data[, age := as.double(age)]
     data[, y := fun_y(data, 0)]
+    cols <- setdiff(names(data), "n")
+    data <- data[, .(n = sum(n)), by = cols]
     data[, cell_id := seq_len(.N)]
-    period <- 0
 
     record <- vector("list", periods)
+    snapshot <- vector("list", periods + 1)
+    snap <- data[, -"cell_id"]
+    snap[, period := 0]
+    snapshot[[1]] <- snap
     summary <- data.table(
         period = c("initial", 1:periods),
         mean = 0,
@@ -42,12 +49,20 @@ sim_social_change <- function(periods, data, fun_y, fun_coming_of_age = NULL, fu
         } else {
             inmigration <- fun_inmigration(data, i_period)
         }
+        if (is.null(fun_transitions)) {
+            transitions <- data.table(n = 0)
+        } else {
+            transitions <- fun_transitions(data, i_period)
+            transitions[, cell_id := seq_len(.N)]
+            # TODO: check whether format is correct
+        }
 
         event_counts <- c(
             "coming_of_age" = coming_of_age[, sum(n)],
             "mortality" = data[, sum(n_mortality)],
             "inmigration" = inmigration[, sum(n)],
-            "outmigration" = data[, sum(n_outmigration)]
+            "outmigration" = data[, sum(n_outmigration)],
+            "transitions" = transitions[, sum(n)]
         )
 
         change_record <- vector("list", 2 * sum(event_counts) + 1)
@@ -77,6 +92,28 @@ sim_social_change <- function(periods, data, fun_y, fun_coming_of_age = NULL, fu
                     sample(.N, 1, prob = n_outmigration),
                     `:=`(n = n - 1, n_outmigration = n_outmigration - 1)
                 ]
+            } else if (event == "transitions") {
+                # pick row from transitions table
+                pick_transition_id <- transitions[sample(.N, 1, prob = n), ][["cell_id"]]
+                transitions[cell_id == pick_transition_id, n := n - 1]
+                pick_transition <- transitions[cell_id == pick_transition_id][, -c("n", "cell_id")]
+                # union necessary so that result doesn't have reordered columns
+                pick <- merge(data[n > 0], pick_transition)[sample(.N, 1, prob = n)][, union(names(data), names(pick_transition)), with = FALSE]
+                data[cell_id == pick[["cell_id"]], n := n - 1]
+                to_cols <- names(pick)[grepl("^to_", names(pick))]
+                for (col in to_cols) {
+                    stripped_col <- sub("^to_", "", col)
+                    pick[[stripped_col]] <- pick[[col]]
+                    pick[, (col) := NULL]
+                }
+                pick[, `:=`(
+                    n = 1,
+                    cell_id = data[, max(cell_id) + 1],
+                    n_mortality = 0,
+                    n_outmigration = 0,
+                    y = fun_y(pick, i_period - 1 + tick)
+                )]
+                data <- rbindlist(list(data, pick))
             } else {
                 if (event == "coming_of_age") {
                     pick_id <- coming_of_age[, sample(.N, 1, prob = n)]
@@ -94,8 +131,8 @@ sim_social_change <- function(periods, data, fun_y, fun_coming_of_age = NULL, fu
                 pick[, `:=`(
                     # age needs to be adjusted such that this individual is <age> old at end of period
                     age = pick[["age"]] - (1 - tick),
-                    n = 1,
                     y = 0, # temp placeholder
+                    n = 1,
                     cell_id = new_cell_id,
                     n_mortality = 0,
                     n_outmigration = 0
@@ -105,6 +142,8 @@ sim_social_change <- function(periods, data, fun_y, fun_coming_of_age = NULL, fu
             }
             event_counts[event] <- event_counts[event] - 1
             post_event_mean <- data[, sum(n / sum(n) * y)]
+            # if transitions introduce a change in mean, that is subsumed under "intraindividual" change
+            if (event == "transitions") event <- "intraindividual"
             change_record[[length(change_record) + 1]] <- list(event, time, post_event_mean - post_ic_mean)
         }
         # bring up to next period
@@ -112,10 +151,6 @@ sim_social_change <- function(periods, data, fun_y, fun_coming_of_age = NULL, fu
         data[, y := fun_y(data, i_period)]
         post_ic_mean <- data[, sum(n / sum(n) * y)]
         change_record[[length(change_record) + 1]] <- list("intraindividual", i_period, post_ic_mean - post_event_mean)
-
-        # clean up
-        data <- data[n > 0]
-        data[, cell_id := seq_len(.N)]
 
         # summarize period change
         change_record_dt <- rbindlist(change_record)
@@ -132,9 +167,20 @@ sim_social_change <- function(periods, data, fun_y, fun_coming_of_age = NULL, fu
                 summary[i_period + 1, (comp) := 0]
             }
         }
+
+        # clean up
+        data <- data[n > 0, -c("cell_id", "n_mortality", "n_outmigration")]
+        cols <- setdiff(names(data), "n")
+        data <- data[, .(n = sum(n)), by = cols]
+        data[, cell_id := seq_len(.N)]
+
+        # store data snapshot
+        snap <- data[, -"cell_id"]
+        snap[, period := i_period]
+        snapshot[[i_period + 1]] <- snap
     }
 
-    ret <- list(summary = summary, record = record)
+    ret <- list(summary = summary, snapshot = snapshot, record = record)
     class(ret) <- c("list", "social_change_sim")
     ret
 }

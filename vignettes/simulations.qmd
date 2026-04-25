@@ -203,3 +203,169 @@ simresult <- socialchange::sim_social_change(
 )
 simresult
 ```
+
+## Adding state changes: Smoking and differential mortality
+
+As a second example, we try to simulate a somewhat realistic scenario in how attitudes towards smoking have
+changed in Western societies. We start simple and build up more complex simulations piece by piece. As an outcome,
+we consider a survey question such as "Should smoking in public be allowed?".
+
+We start with a similar population again, this time split up into smokers and non-smokers, where the vast majority of
+the population smokes (90% for the younger age groups). We construct this initial
+population already in a way such that it shows differential mortality: Smokers die early, meaning that a higher ages,
+the proportion of non-smokers increases:
+
+```{r}
+data <- data.table(
+    age = c(20:39, 20:39),
+    smoking = c(rep("smoker", 20), rep("nonsmoker", 20)),
+    n = c(
+        c(rep(90, 10), seq.int(90, 0, by = -12), 0, 0),
+        c(rep(10, 10), seq.int(10, 1, by = -1))
+    )
+)
+# reshape the data to show proportion non-smoking
+dcast(data, age ~ smoking, value.var = "n")[,
+    .(age, nonsmoker, smoker, prop_non_smoking = nonsmoker / (smoker + nonsmoker))
+]
+```
+
+We again disregard migration, and create a coming-of-age and mortality function that reproduces
+the current population:
+
+```{r}
+coming_of_age <- function(data, period) {
+    data.table(age = c(20, 20), smoking = c("smoker", "nonsmoker"), n = c(90, 10))
+}
+mortality <- function(data, period) {
+    data[, fcase(
+        # we need to make sure that we still have enough individuals, therefore the pmin
+        age >= 30 & smoking == "smoker", pmin(12, n),
+        age >= 30 & smoking == "nonsmoker", 1,
+        default = 0
+    )]
+}
+```
+
+Lastly, we define a static outcome that differs only between smokers and non-smokers, but is otherwise stable:
+90% of smokers agree that smoking in public should be allowed, while only 60% of non-smokers do:
+
+```{r}
+smoking_in_public <- function(data, time) {
+    data[, ifelse(smoking == "smoker", 0.9, 0.6)]
+}
+```
+
+Running the simulation for this scenario shows a static population:
+
+```{r}
+smoking1 <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = smoking_in_public,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+smoking1
+```
+
+There is neither intra-individual change nor any net effect of population turnover, although mortality decreases the mean
+(as smokers die earlier, drawing down the mean), while coming-of-age brings it back up. These two forces therefore
+perfectly cancel each other out.
+
+For a slightly more realistic scenario, we assume that both smokers and non-smokers change their mind about smoking in public,
+however, smokers change their mind only at half the rate compared to non-smokers:
+
+```{r}
+smoking_in_public <- function(data, time) {
+    data[, ifelse(smoking == "smoker", 0.9 - time*0.05, 0.6 - time*0.1)]
+}
+
+smoking2 <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = smoking_in_public,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+smoking2
+```
+
+As expected, the population turnover component is still effectively zero, showing the same dynamics as before. However,
+we now have substantial intraindividual change, which means that the outcome decreases from 87% to 59% - all of which is
+due to intraindividual change.
+
+If attitudes towards smoking are changing, it is likely that this is also reflected in individual behavior. This means that
+fewer people may pick up smoking in the first place. We can model that by altering the coming-of-age function:
+
+```{r}
+coming_of_age <- function(data, period) {
+    data.table(age = c(20, 20), smoking = c("smoker", "nonsmoker"), n = c(90 - period * 15, 10 + period * 15))
+}
+```
+
+We're still adding 100 members every year to the population, but every year the proportion of smokers declines:
+from three quarters in the first year to only 15% in the last year.
+
+```{r}
+smoking3 <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = smoking_in_public,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+smoking3
+```
+
+Given that we now more and more non-smokers are coming of age, we see now a bigger contribution of the population turnover component,
+driven by coming-of-age.
+
+A final mechanism for change is the behavior of existing smokers: every year, some of them give up smoking, which is likely to also
+influence their opinion on smoking in public. For simplicity, we assume here that former smokers start to behave exactly the same as
+non-smokers from the moment they stop smoking. We also keep our transitions logic quite simple - we assume that a random set of 15%
+of smokers become non-smokers in every period. We could make this more complicated, for instance, by also stratifying these transitions by age.
+
+```{r}
+transitions <- function(data, time) {
+    n_smokers <- data[smoking == "smoker", sum(n)]
+    # column names need to map to data - the to_ prefix indicates the transition
+    data.table(smoking = "smoker", to_smoking = "nonsmoker", n = round(n_smokers * 0.15))
+}
+```
+
+We now include the transition logic in the simulation:
+
+```{r}
+smoking4 <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = smoking_in_public,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality,
+    fun_transitions = transitions
+)
+smoking4
+```
+
+We now see a bigger contribution of intraindividual change as people become nonsmokers and start to share that group's
+opinion on smoking in public. A side effect of this new logic is that the population is no longer stable:
+The number of people in the population is increasing, as is the mean age. We now also have people that grow to be older than 39,
+as the mortality function that we setup before didn't account for more people attaining older ages:
+
+```{r}
+by_year <- rbindlist(smoking4$snapshot)
+by_year[, .(mean_age = weighted.mean(age, n), max_age = max(age)), by = .(period)]
+```
+
+This is a side effect of fewer people smoking, which decreases their chance of mortality. A more complicated simulation might
+introduce a "former smoker" group that retains some of the mortality disadvantage of smokers into old age.
+
+Graphically, we can show the proportion of smokers by age group as follows:
+
+```{r}
+library(ggplot2)
+
+p_smoker <- by_year[, .(p_smoker = weighted.mean(smoking == "smoker", n)), by = .(age, period)]
+ggplot(p_smoker, aes(x = period, y = age, fill = p_smoker)) + geom_tile() + theme_bw()
+```
