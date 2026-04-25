@@ -27,6 +27,11 @@ Here’s our simple population:
 
 ``` r
 library("data.table")
+#> 
+#> Attaching package: 'data.table'
+#> The following object is masked from 'package:base':
+#> 
+#>     %notin%
 
 data <- data.table(
     age = c(20:39),
@@ -138,11 +143,11 @@ simresult <- socialchange::sim_social_change(
 simresult
 #>   period   mean    N intraindividual coming_of_age mortality inmigration
 #>  initial 0.3758 1550              NA            NA        NA          NA
-#>        1 0.3758 1550            0.05      -0.02587  -0.02413           0
-#>        2 0.3758 1550            0.05      -0.02586  -0.02414           0
+#>        1 0.3758 1550            0.05      -0.02586  -0.02414           0
+#>        2 0.3758 1550            0.05      -0.02587  -0.02413           0
 #>        3 0.3758 1550            0.05      -0.02586  -0.02414           0
 #>        4 0.3758 1550            0.05      -0.02584  -0.02416           0
-#>        5 0.3758 1550            0.05      -0.02588  -0.02412           0
+#>        5 0.3758 1550            0.05      -0.02586  -0.02414           0
 #>  outmigration
 #>            NA
 #>             0
@@ -234,11 +239,11 @@ simresult <- socialchange::sim_social_change(
 simresult
 #>   period   mean    N intraindividual coming_of_age mortality inmigration
 #>  initial 0.3758 1550              NA            NA        NA          NA
-#>        1 0.3758 1550         0.02518      -0.01303  -0.01215           0
-#>        2 0.3758 1550         0.02504      -0.01295  -0.01209           0
-#>        3 0.3758 1550         0.02511      -0.01300  -0.01211           0
-#>        4 0.3758 1550         0.02501      -0.01295  -0.01206           0
-#>        5 0.3758 1550         0.02500      -0.01290  -0.01210           0
+#>        1 0.3758 1550         0.02511      -0.01298  -0.01213           0
+#>        2 0.3758 1550         0.02505      -0.01297  -0.01208           0
+#>        3 0.3758 1550         0.02502      -0.01293  -0.01208           0
+#>        4 0.3758 1550         0.02501      -0.01293  -0.01208           0
+#>        5 0.3758 1550         0.02509      -0.01297  -0.01212           0
 #>  outmigration
 #>            NA
 #>             0
@@ -252,11 +257,11 @@ simresult
 #>  At initial                0.37580
 #>  At end                    0.37580
 #>  Total change              0.00000
-#>  - Intraindividual change  0.12533
-#>  - Population turnover    -0.12533
-#>    - Mortality            -0.06051
+#>  - Intraindividual change  0.12527
+#>  - Population turnover    -0.12527
+#>    - Mortality            -0.06049
 #>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.06482
+#>    - Coming-of-age        -0.06477
 #>    - In-migration          0.00000
 ```
 
@@ -294,11 +299,11 @@ simresult <- socialchange::sim_social_change(
 simresult
 #>   period mean    N intraindividual coming_of_age    mortality inmigration
 #>  initial  0.3 1550              NA            NA           NA          NA
-#>        1  0.4 1550             0.1   0.000004841 -0.000004841           0
-#>        2  0.5 1550             0.1  -0.000002765  0.000002765           0
-#>        3  0.6 1550             0.1   0.000005333 -0.000005333           0
-#>        4  0.7 1550             0.1  -0.000012021  0.000012021           0
-#>        5  0.8 1550             0.1  -0.000005588  0.000005588           0
+#>        1  0.4 1550             0.1   0.000027744 -0.000027744           0
+#>        2  0.5 1550             0.1   0.000004245 -0.000004245           0
+#>        3  0.6 1550             0.1   0.000022138 -0.000022138           0
+#>        4  0.7 1550             0.1  -0.000007743  0.000007743           0
+#>        5  0.8 1550             0.1  -0.000019031  0.000019031           0
 #>  outmigration
 #>            NA
 #>             0
@@ -308,16 +313,16 @@ simresult
 #>             0
 #> 
 #> Decomposition of total change:
-#>                 Component    Value
-#>  At initial                0.30000
-#>  At end                    0.80000
-#>  Total change              0.50000
-#>  - Intraindividual change  0.50000
-#>  - Population turnover     0.00000
-#>    - Mortality             0.00001
-#>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.00001
-#>    - In-migration          0.00000
+#>                 Component     Value
+#>  At initial                0.300000
+#>  At end                    0.800000
+#>  Total change              0.500000
+#>  - Intraindividual change  0.500000
+#>  - Population turnover     0.000000
+#>    - Mortality            -0.000027
+#>    - Out-migration         0.000000
+#>    - Coming-of-age         0.000027
+#>    - In-migration          0.000000
 ```
 
 ### Only population turnover
@@ -356,11 +361,11 @@ simresult <- socialchange::sim_social_change(
 simresult
 #>   period mean    N intraindividual coming_of_age mortality inmigration
 #>  initial  0.3 1550              NA            NA        NA          NA
-#>        1  0.4 1550               0       0.05166   0.04834           0
-#>        2  0.5 1550               0       0.05177   0.04823           0
-#>        3  0.6 1550               0       0.05168   0.04832           0
-#>        4  0.7 1550               0       0.05171   0.04829           0
-#>        5  0.8 1550               0       0.05176   0.04824           0
+#>        1  0.4 1550               0       0.05172   0.04828           0
+#>        2  0.5 1550               0       0.05178   0.04822           0
+#>        3  0.6 1550               0       0.05173   0.04827           0
+#>        4  0.7 1550               0       0.05173   0.04827           0
+#>        5  0.8 1550               0       0.05173   0.04827           0
 #>  outmigration
 #>            NA
 #>             0
@@ -376,8 +381,336 @@ simresult
 #>  Total change             0.5000
 #>  - Intraindividual change 0.0000
 #>  - Population turnover    0.5000
-#>    - Mortality            0.2414
+#>    - Mortality            0.2413
 #>    - Out-migration        0.0000
-#>    - Coming-of-age        0.2586
+#>    - Coming-of-age        0.2587
 #>    - In-migration         0.0000
 ```
+
+## Adding state changes: Smoking and differential mortality
+
+As a second example, we try to simulate a somewhat realistic scenario in
+how attitudes towards smoking have changed in Western societies. We
+start simple and build up more complex simulations piece by piece. As an
+outcome, we consider a survey question such as “Should smoking in public
+be allowed?”.
+
+We start with a similar population again, this time split up into
+smokers and non-smokers, where the vast majority of the population
+smokes (90% for the younger age groups). We construct this initial
+population already in a way such that it shows differential mortality:
+Smokers die early, meaning that a higher ages, the proportion of
+non-smokers increases:
+
+``` r
+data <- data.table(
+    age = c(20:39, 20:39),
+    smoking = c(rep("smoker", 20), rep("nonsmoker", 20)),
+    n = c(
+        c(rep(90, 10), seq.int(90, 0, by = -12), 0, 0),
+        c(rep(10, 10), seq.int(10, 1, by = -1))
+    )
+)
+# reshape the data to show proportion non-smoking
+dcast(data, age ~ smoking, value.var = "n")[,
+    .(age, nonsmoker, smoker, prop_non_smoking = nonsmoker / (smoker + nonsmoker))
+]
+#> Key: <age>
+#>       age nonsmoker smoker prop_non_smoking
+#>     <int>     <num>  <num>            <num>
+#>  1:    20        10     90        0.1000000
+#>  2:    21        10     90        0.1000000
+#>  3:    22        10     90        0.1000000
+#>  4:    23        10     90        0.1000000
+#>  5:    24        10     90        0.1000000
+#>  6:    25        10     90        0.1000000
+#>  7:    26        10     90        0.1000000
+#>  8:    27        10     90        0.1000000
+#>  9:    28        10     90        0.1000000
+#> 10:    29        10     90        0.1000000
+#> 11:    30        10     90        0.1000000
+#> 12:    31         9     78        0.1034483
+#> 13:    32         8     66        0.1081081
+#> 14:    33         7     54        0.1147541
+#> 15:    34         6     42        0.1250000
+#> 16:    35         5     30        0.1428571
+#> 17:    36         4     18        0.1818182
+#> 18:    37         3      6        0.3333333
+#> 19:    38         2      0        1.0000000
+#> 20:    39         1      0        1.0000000
+#>       age nonsmoker smoker prop_non_smoking
+#>     <int>     <num>  <num>            <num>
+```
+
+We again disregard migration, and create a coming-of-age and mortality
+function that reproduces the current population:
+
+``` r
+coming_of_age <- function(data, period) {
+    data.table(age = c(20, 20), smoking = c("smoker", "nonsmoker"), n = c(90, 10))
+}
+mortality <- function(data, period) {
+    data[, fcase(
+        # we need to make sure that we still have enough individuals, therefore the pmin
+        age >= 30 & smoking == "smoker", pmin(12, n),
+        age >= 30 & smoking == "nonsmoker", 1,
+        default = 0
+    )]
+}
+```
+
+Lastly, we define a static outcome that differs only between smokers and
+non-smokers, but is otherwise stable: 90% of smokers agree that smoking
+in public should be allowed, while only 60% of non-smokers do:
+
+``` r
+smoking_in_public <- function(data, time) {
+    data[, ifelse(smoking == "smoker", 0.9, 0.6)]
+}
+```
+
+Running the simulation for this scenario shows a static population:
+
+``` r
+smoking1 <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = smoking_in_public,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+smoking1
+#>   period   mean    N intraindividual coming_of_age  mortality inmigration
+#>  initial 0.8677 1439              NA            NA         NA          NA
+#>        1 0.8677 1439               0     0.0001695 -0.0001695           0
+#>        2 0.8677 1439               0     0.0001685 -0.0001685           0
+#>        3 0.8677 1439               0     0.0001723 -0.0001723           0
+#>        4 0.8677 1439               0     0.0001526 -0.0001526           0
+#>        5 0.8677 1439               0     0.0001680 -0.0001680           0
+#>  outmigration
+#>            NA
+#>             0
+#>             0
+#>             0
+#>             0
+#>             0
+#> 
+#> Decomposition of total change:
+#>                 Component     Value
+#>  At initial                0.867686
+#>  At end                    0.867686
+#>  Total change              0.000000
+#>  - Intraindividual change  0.000000
+#>  - Population turnover     0.000000
+#>    - Mortality            -0.000831
+#>    - Out-migration         0.000000
+#>    - Coming-of-age         0.000831
+#>    - In-migration          0.000000
+```
+
+There is neither intra-individual change nor any net effect of
+population turnover, although mortality decreases the mean (as smokers
+die earlier, drawing down the mean), while coming-of-age brings it back
+up. These two forces therefore perfectly cancel each other out.
+
+For a slightly more realistic scenario, we assume that both smokers and
+non-smokers change their mind about smoking in public, however, smokers
+change their mind only at half the rate compared to non-smokers:
+
+``` r
+smoking_in_public <- function(data, time) {
+    data[, ifelse(smoking == "smoker", 0.9 - time*0.05, 0.6 - time*0.1)]
+}
+
+smoking2 <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = smoking_in_public,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+smoking2
+#>   period   mean    N intraindividual coming_of_age  mortality inmigration
+#>  initial 0.8677 1439              NA            NA         NA          NA
+#>        1 0.8123 1439        -0.05535     0.0001423 -0.0001775           0
+#>        2 0.7569 1439        -0.05541     0.0002047 -0.0001754           0
+#>        3 0.7015 1439        -0.05542     0.0002622 -0.0002284           0
+#>        4 0.6461 1439        -0.05549     0.0003839 -0.0002759           0
+#>        5 0.5908 1439        -0.05533     0.0002396 -0.0002946           0
+#>  outmigration
+#>            NA
+#>             0
+#>             0
+#>             0
+#>             0
+#>             0
+#> 
+#> Decomposition of total change:
+#>                 Component     Value
+#>  At initial                0.867686
+#>  At end                    0.590757
+#>  Total change             -0.276929
+#>  - Intraindividual change -0.277009
+#>  - Population turnover     0.000081
+#>    - Mortality            -0.001152
+#>    - Out-migration         0.000000
+#>    - Coming-of-age         0.001233
+#>    - In-migration          0.000000
+```
+
+As expected, the population turnover component is still effectively
+zero, showing the same dynamics as before. However, we now have
+substantial intraindividual change, which means that the outcome
+decreases from 87% to 59% - all of which is due to intraindividual
+change.
+
+If attitudes towards smoking are changing, it is likely that this is
+also reflected in individual behavior. This means that fewer people may
+pick up smoking in the first place. We can model that by altering the
+coming-of-age function:
+
+``` r
+coming_of_age <- function(data, period) {
+    data.table(age = c(20, 20), smoking = c("smoker", "nonsmoker"), n = c(90 - period * 15, 10 + period * 15))
+}
+```
+
+We’re still adding 100 members every year to the population, but every
+year the proportion of smokers declines: from three quarters in the
+first year to only 15% in the last year.
+
+``` r
+smoking3 <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = smoking_in_public,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+smoking3
+#>   period   mean    N intraindividual coming_of_age  mortality inmigration
+#>  initial 0.8677 1439              NA            NA         NA          NA
+#>        1 0.8087 1439        -0.05561     -0.003180 -0.0002429           0
+#>        2 0.7444 1439        -0.05635     -0.007197 -0.0006993           0
+#>        3 0.6734 1439        -0.05768     -0.011790 -0.0015534           0
+#>        4 0.5940 1439        -0.05943     -0.016895 -0.0030358           0
+#>        5 0.5048 1439        -0.06179     -0.022460 -0.0050147           0
+#>  outmigration
+#>            NA
+#>             0
+#>             0
+#>             0
+#>             0
+#>             0
+#> 
+#> Decomposition of total change:
+#>                 Component    Value
+#>  At initial                0.86769
+#>  At end                    0.50476
+#>  Total change             -0.36293
+#>  - Intraindividual change -0.29086
+#>  - Population turnover    -0.07207
+#>    - Mortality            -0.01055
+#>    - Out-migration         0.00000
+#>    - Coming-of-age        -0.06152
+#>    - In-migration          0.00000
+```
+
+Given that we now more and more non-smokers are coming of age, we see
+now a bigger contribution of the population turnover component, driven
+by coming-of-age.
+
+A final mechanism for change is the behavior of existing smokers: every
+year, some of them give up smoking, which is likely to also influence
+their opinion on smoking in public. For simplicity, we assume here that
+former smokers start to behave exactly the same as non-smokers from the
+moment they stop smoking. We also keep our transitions logic quite
+simple - we assume that a random set of 15% of smokers become
+non-smokers in every period. We could make this more complicated, for
+instance, by also stratifying these transitions by age.
+
+``` r
+transitions <- function(data, time) {
+    n_smokers <- data[smoking == "smoker", sum(n)]
+    # column names need to map to data - the to_ prefix indicates the transition
+    data.table(smoking = "smoker", to_smoking = "nonsmoker", n = round(n_smokers * 0.15))
+}
+```
+
+We now include the transition logic in the simulation:
+
+``` r
+smoking4 <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = smoking_in_public,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality,
+    fun_transitions = transitions
+)
+smoking4
+#>   period   mean    N intraindividual coming_of_age mortality inmigration
+#>  initial 0.8677 1439              NA            NA        NA          NA
+#>        1 0.7617 1439         -0.1028     -0.001565 -0.001581           0
+#>        2 0.6460 1439         -0.1079     -0.001940 -0.005836           0
+#>        3 0.5219 1444         -0.1114     -0.003061 -0.009779           0
+#>        4 0.3928 1463         -0.1129     -0.004622 -0.011784           0
+#>        5 0.2584 1486         -0.1135     -0.006566 -0.014261           0
+#>  outmigration
+#>            NA
+#>             0
+#>             0
+#>             0
+#>             0
+#>             0
+#> 
+#> Decomposition of total change:
+#>                 Component    Value
+#>  At initial                0.86769
+#>  At end                    0.25841
+#>  Total change             -0.60927
+#>  - Intraindividual change -0.54854
+#>  - Population turnover    -0.06099
+#>    - Mortality            -0.04324
+#>    - Out-migration         0.00000
+#>    - Coming-of-age        -0.01775
+#>    - In-migration          0.00000
+```
+
+We now see a bigger contribution of intraindividual change as people
+become nonsmokers and start to share that group’s opinion on smoking in
+public. A side effect of this new logic is that the population is no
+longer stable: The number of people in the population is increasing, as
+is the mean age. We now also have people that grow to be older than 39,
+as the mortality function that we setup before didn’t account for more
+people attaining older ages:
+
+``` r
+by_year <- rbindlist(smoking4$snapshot)
+by_year[, .(mean_age = weighted.mean(age, n), max_age = max(age)), by = .(period)]
+#>    period mean_age max_age
+#>     <num>    <num>   <num>
+#> 1:      0 26.87630      39
+#> 2:      1 26.87630      39
+#> 3:      2 26.88403      39
+#> 4:      3 26.92042      39
+#> 5:      4 27.05263      40
+#> 6:      5 27.22394      40
+```
+
+This is a side effect of fewer people smoking, which decreases their
+chance of mortality. A more complicated simulation might introduce a
+“former smoker” group that retains some of the mortality disadvantage of
+smokers into old age.
+
+Graphically, we can show the proportion of smokers by age group as
+follows:
+
+``` r
+library(ggplot2)
+
+p_smoker <- by_year[, .(p_smoker = weighted.mean(smoking == "smoker", n)), by = .(age, period)]
+ggplot(p_smoker, aes(x = period, y = age, fill = p_smoker)) + geom_tile() + theme_bw()
+```
+
+![](simulations_files/figure-html/unnamed-chunk-23-1.png)
