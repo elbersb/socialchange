@@ -4,6 +4,8 @@ vignette: >
   %\VignetteIndexEntry{Simulating social change}
   %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
+execute:
+  warning: false
 knitr:
   opts_chunk:
     collapse: true
@@ -12,7 +14,7 @@ knitr:
 
 The package contains a function `sim_social_change` that allows the user to explore different scenarios of how social change can happen. The complexity of the simulation is up to the user to define. We'll start simple and build up a more complicated simulation over time.
 
-## Starting with a simple simulation
+## Starting with a simple simulation (Scenario 1)
 
 Building up a simulation requires three steps:
 
@@ -101,7 +103,7 @@ has the effect of decreasing the mean. The same is true for mortality. Hence, th
 turnover component is negative. In this simulation, the two components balance out exactly,
 leading to the expected complete stabilty in the year-over-year mean.
 
-### Adding a covariate
+### Adding a covariate (Scenario 2)
 
 For a slightly more complex setup, we can add covariates to the simulation. For instance, we can
 introduce a gender covariate. As an example, we split the former population into two equally-distributed genders:
@@ -154,7 +156,7 @@ Although the overall mean doesn't change over time, the decomposition results ha
 Because only men now contribute to both population turnover and intraindividual change (and
 women do not), the components are half of what they were before.
 
-### Only intraindividual change
+### Only intraindividual change (Scenario 3)
 
 In the previous scenario, the overall outcome was stable, and we had both intraindividual change as well as population turnover,
 cancelling each other out. We can also construct a case that shows only intraindividual change, by making the outcome function
@@ -179,7 +181,7 @@ simresult <- socialchange::sim_social_change(
 simresult
 ```
 
-### Only population turnover
+### Only population turnover (Scenario 4)
 
 Conversely, we can also construct a scenario where all change is explained by population turnover - older cohorts being replaced by younger cohorts. For this, we define the outcome as a function of the individual's birth cohort:
 

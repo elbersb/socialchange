@@ -3,6 +3,15 @@
 sim_social_change <- function(periods, data, fun_y,
                               fun_coming_of_age = NULL, fun_mortality = NULL,
                               fun_inmigration = NULL, fun_outmigration = NULL, fun_transitions = NULL) {
+    checkmate::assert_data_frame(data)
+    checkmate::assert_subset(c("age"), names(data))
+    checkmate::assert_function(fun_y, nargs = 2)
+    checkmate::assert_function(fun_coming_of_age, nargs = 2, null.ok = TRUE)
+    checkmate::assert_function(fun_mortality, nargs = 2, null.ok = TRUE)
+    checkmate::assert_function(fun_inmigration, nargs = 2, null.ok = TRUE)
+    checkmate::assert_function(fun_outmigration, nargs = 2, null.ok = TRUE)
+    checkmate::assert_function(fun_transitions, nargs = 2, null.ok = TRUE)
+
     data <- data[n > 0]
     data[, age := as.double(age)]
     data[, y := fun_y(data, 0)]
@@ -187,9 +196,12 @@ sim_social_change <- function(periods, data, fun_y,
 
 #' @import data.table
 #' @export
-print.social_change_sim <- function(x, ...) {
+print.social_change_sim <- function(x, detailed = TRUE, ...) {
     options(digits = 4, scipen = 999)
-    print(x$summary, row.names = FALSE, class = FALSE, na.print = "")
+    if (detailed) {
+        cat("Overview by period:\n")
+        print(x$summary, row.names = FALSE, class = FALSE, na.print = "")
+    }
     intraindividual <- x$summary[period != "initial", round(sum(intraindividual), 6)]
     mortality <- x$summary[period != "initial", round(sum(mortality), 6)]
     outmigration <- x$summary[period != "initial", round(sum(outmigration), 6)]
@@ -200,7 +212,9 @@ print.social_change_sim <- function(x, ...) {
     mean0 <- round(x$summary[1][["mean"]], 6)
     meanN <- round(x$summary[.N][["mean"]], 6)
 
-    cat("\nDecomposition of total change:\n")
+    if (detailed) {
+        cat("\nDecomposition of total change:\n")
+    }
     decomp <- data.table(
         Component = c(
             "At initial",

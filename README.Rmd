@@ -34,7 +34,7 @@ pak::pak("elbersb/socialchange")
 As a basic example, we look at a decomposition of EU membership, and whether
 population growth in the EU is due to intracountry changes in population, or due to
 the admission of new countries. The decomposition unit is the country.
-To run the `event_decomposition` decomposition function, we need two datasets:
+To run the `decompose_events` decomposition function, we need two datasets:
 One dataset contains the events, in this case the dates when countries entered
 or exited the EU. This dataset is included in the `socialchange` package:
 
@@ -58,7 +58,7 @@ wpp_data <- as.data.table(socialchange::wpp_data)
 wpp_data[Location == "Belgium" & Time %in% c(1952, 1973, 1981, 1986, 1995, 2004, 2007, 2013, 2020)]
 ```
 
-To run the `event_decomposition` function, we need to ensure that columns for the unit and time parameters
+To run the `decompose_events` function, we need to ensure that columns for the unit and time parameters
 are named the same, so we prepare the data as follows:
 
 ```{r example}
@@ -77,7 +77,7 @@ We also need to specify the end data, and an aggregation function. Often this wi
 to be `sum`:
 
 ```{r}
-ev <- event_decomposition(eu_membership, wpp_data, PopTotal ~ country + year,
+ev <- decompose_events(eu_membership, wpp_data, PopTotal ~ country + year,
   end_period = 2021, fun = sum)
 print(ev)
 ```

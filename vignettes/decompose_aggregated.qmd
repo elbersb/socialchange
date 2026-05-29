@@ -1,0 +1,308 @@
+---
+title: "Decomposing social change on aggregated data"
+vignette: >
+  %\VignetteIndexEntry{Decomposing social change}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+execute:
+  warning: false
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: '#>'
+---
+
+To use the event-based decomposition, we assume you have some kind of aggregated data that measures the same outcome across several points in time. This could for instance be data from the General Social Survey, which asks the same population (but not necessarily the same people) the same question every year. The idea of the event-based decomposition is based on the idea that we can follow a group of similar people over time, which are assumed to have similar characteristics. For instance, we can observe the number of white women, age 35, in year 1, and then compare that number to the number of white women, age 36, in year 2. If we assume that individuals don't move across cells and ignore migration, it must be true that (Number of white women, age 36 in year 2) = (Number of white women, age 35 in year 1) - (Mortality between year 1 and year 2 within this cell). Mortality counts are thus directly estimable from the data. (This might be noisy when dealing with survey data with smaller sample sizes. Preprocessing might therefore be required.)
+
+If we continue to ignore migration, the only other input that is required is a function that predicts the outcome for a given cell. This function can be as complex or simple as needed, it just needs to fulfill a number of requirements:
+
+- Takes as inputs the defined cells (such as age and gender), plus current period. It is not necessary that these are all used for the model's predictions, though.
+- Needs to support fully continuous periods (e.g., for a survey it needs to provide a prediction not only for 2010 and 2011, but also for 2010.75 - three quarters of a year into 2010). This is required to estimate outcomes throughout the year as individuals leave and enter the population.
+- Needs to be complex enough to fully model the observed means in each period. The decomposition fully acts on the modeled outcomes, not on the observed outcomes, so if these means don't match the decomposition results will deviate from the observed data.
+
+## Starting with a simple simulation (Scenario 1)
+
+```{r}
+library("data.table")
+
+data <- data.table(
+    age = c(20:39),
+    n = c(rep(100, 10), seq.int(100, 10, by = -10))
+)
+
+support_for_pensions <- function(data, time) {
+    data[, (age - 20) * 1 / 20]
+}
+coming_of_age <- function(data, period) {
+    data.table(age = 20, n = 100)
+}
+mortality <- function(data, period) {
+    data[, ifelse(age >= 30, 10, 0)]
+}
+
+library("socialchange")
+simresult <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = support_for_pensions,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+print(simresult, detailed = FALSE)
+```
+
+We now feed the simulated data into the event-based decomposition:
+
+```{r}
+stacked_data <- rbindlist(simresult$snapshot)
+# we know that y depends only on age here
+model <- lm(y ~ age, data = stacked_data)
+predict_y <- function(newdata) { predict(model, newdata = newdata) }
+
+decompresult <- decompose_aggregated(stacked_data, predict_y)
+print(decompresult, detailed = FALSE)
+```
+
+The event-based decomposition has exactly recovered the results.
+
+## Adding a covariate (Scenario 2)
+
+```{r}
+data <- data.table(
+    age = c(20:39, 20:39),
+    gender = c(rep("f", 20), rep("m", 20)),
+    n = c(
+        c(rep(50, 10), seq.int(50, 5, by = -5)),
+        c(rep(50, 10), seq.int(50, 5, by = -5))
+    )
+)
+
+coming_of_age <- function(data, period) {
+    data.table(age = c(20, 20), gender = c("f", "m"), n = c(50, 50))
+}
+mortality <- function(data, period) {
+    data[, ifelse(age >= 30, 5, 0)]
+}
+support_for_pensions <- function(data, time) {
+    data[, ifelse(gender == "f", 0.3758, (age - 20) * 1 / 20)]
+}
+
+simresult <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = support_for_pensions,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+print(simresult, detailed = FALSE)
+```
+
+For the event-based decomposition, we first try a misspecified model that ignores gender entirely. Still, the decomposition in this case recovers the result almost exactly:
+
+```{r}
+stacked_data <- rbindlist(simresult$snapshot)
+model_no_gender <- lm(y ~ age + period, data = stacked_data)
+cor(stacked_data$y, predict(model_no_gender))
+predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
+
+decomp <- decompose_aggregated(stacked_data, predict_y)
+print(decomp, detailed = FALSE)
+```
+
+And here are the results for the fully-specified model:
+
+```{r}
+model_gender <- lm(y ~ age * gender, data = stacked_data)
+cor(stacked_data$y, predict(model_gender))
+predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
+
+decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+print(decomp, detailed = FALSE)
+```
+
+## Only intraindividual change (Scenario 3)
+
+```{r}
+ic_only <- function(data, time) {
+    data[, ifelse(gender == "f", 0.2, 0.4) + time / 10]
+}
+
+simresult <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = ic_only,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+print(simresult, detailed = FALSE)
+```
+
+Again, we first try a misspecified model that ignores gender entirely. Again, the decomposition recovers the result almost exactly despite the misspecification:
+
+```{r}
+stacked_data <- rbindlist(simresult$snapshot)
+model_no_gender <- lm(y ~ age + period, data = stacked_data)
+cor(stacked_data$y, predict(model_no_gender))
+predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
+
+decomp <- decompose_aggregated(stacked_data, predict_y)
+print(decomp, detailed = FALSE)
+```
+
+And here are the results for the fully-specified model:
+
+```{r}
+model_gender <- lm(y ~ age + period + gender, data = stacked_data)
+cor(stacked_data$y, predict(model_gender))
+predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
+
+decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+print(decomp, detailed = FALSE)
+```
+
+## Only population turnover (Scenario 4)
+
+```{r}
+pt_only <- function(data, time) {
+    data[, ifelse(gender == "f", 0.2, 0.4) + 0.7516 + (time - age + 20) / 10]
+}
+
+simresult <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = pt_only,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+print(simresult, detailed = FALSE)
+```
+
+Again, we first try a misspecified model that ignores gender entirely. Again, the decomposition recovers the result almost exactly despite the misspecification:
+
+```{r}
+stacked_data <- rbindlist(simresult$snapshot)
+model_no_gender <- lm(y ~ age + period, data = stacked_data)
+cor(stacked_data$y, predict(model_no_gender))
+predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
+
+decomp <- decompose_aggregated(stacked_data, predict_y)
+print(decomp, detailed = FALSE)
+```
+
+And here are the results for the fully-specified model:
+
+```{r}
+model_gender <- lm(y ~ age + period + gender, data = stacked_data)
+cor(stacked_data$y, predict(model_gender))
+predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
+
+decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+print(decomp, detailed = FALSE)
+```
+
+## Smoking (Scenario 5)
+
+### Static population (Scenario 5a)
+
+```{r}
+data <- data.table(
+    age = c(20:39, 20:39),
+    smoking = c(rep("smoker", 20), rep("nonsmoker", 20)),
+    n = c(
+        c(rep(90, 10), seq.int(90, 0, by = -12), 0, 0),
+        c(rep(10, 10), seq.int(10, 1, by = -1))
+    )
+)
+coming_of_age <- function(data, period) {
+    data.table(age = c(20, 20), smoking = c("smoker", "nonsmoker"), n = c(90, 10))
+}
+mortality <- function(data, period) {
+    data[, fcase(
+        # we need to make sure that we still have enough individuals, therefore the pmin
+        age >= 30 & smoking == "smoker", pmin(12, n),
+        age >= 30 & smoking == "nonsmoker", 1,
+        default = 0
+    )]
+}
+smoking_in_public <- function(data, time) {
+    data[, ifelse(smoking == "smoker", 0.9, 0.6)]
+}
+smoking1 <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = smoking_in_public,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+print(smoking1, detailed = FALSE)
+```
+
+Compare to decomposition:
+
+```{r}
+stacked_data <- rbindlist(smoking1$snapshot)
+model <- lm(y ~ age + period + smoking, data = stacked_data)
+cor(stacked_data$y, predict(model))
+predict_y <- function(newdata) { predict(model, newdata = newdata) }
+
+decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+print(decomp, detailed = FALSE)
+```
+
+### Intraindividual change (Scenario 5b)
+
+```{r}
+smoking_in_public <- function(data, time) {
+    data[, ifelse(smoking == "smoker", 0.9 - time*0.05, 0.6 - time*0.1)]
+}
+
+smoking2 <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = smoking_in_public,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+print(smoking2, detailed = FALSE)
+```
+
+Compare to decomposition:
+
+```{r}
+stacked_data <- rbindlist(smoking2$snapshot)
+model <- lm(y ~ age + period * smoking, data = stacked_data)
+cor(stacked_data$y, predict(model))
+predict_y <- function(newdata) { predict(model, newdata = newdata) }
+
+decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+print(decomp, detailed = FALSE)
+```
+
+### Coming of age (Scenario 5c)
+
+```{r}
+coming_of_age <- function(data, period) {
+    data.table(age = c(20, 20), smoking = c("smoker", "nonsmoker"), n = c(90 - period * 15, 10 + period * 15))
+}
+
+smoking3 <- socialchange::sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = smoking_in_public,
+    fun_coming_of_age = coming_of_age,
+    fun_mortality = mortality
+)
+print(smoking3, detailed = FALSE)
+```
+
+Compare to decomposition:
+
+```{r}
+stacked_data <- rbindlist(smoking3$snapshot)
+model <- lm(y ~ age + period * smoking, data = stacked_data)
+cor(stacked_data$y, predict(model))
+predict_y <- function(newdata) { predict(model, newdata = newdata) }
+
+decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+print(decomp, detailed = FALSE)
+```

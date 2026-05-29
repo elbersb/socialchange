@@ -1,8 +1,9 @@
 #' @import data.table
 #' @export
-event_decomposition <- function(
-    events, outcomes, formula, end_period = NULL,
-    event_type = "event_type", fun = mean) {
+decompose_events <- function(
+  events, outcomes, formula, end_period = NULL,
+  event_type = "event_type", fun = mean
+) {
   vars <- all.vars(formula)
   checkmate::assert_vector(vars, len = 3, any.missing = FALSE)
   checkmate::assert_data_frame(events)
@@ -119,20 +120,20 @@ event_decomposition <- function(
   ctf <- rbindlist(list(ctf, forward, backward))
 
   ret <- list(long = summ, wide = wide, decomp = decomp, ctf = ctf)
-  class(ret) <- c("list", "event_decomposition")
+  class(ret) <- c("list", "decompose_events")
   ret
 }
 
 #' @import data.table
 #' @export
-print.event_decomposition <- function(x, ...) {
+print.decompose_events <- function(x, ...) {
   print(x$decomp)
 }
 
 #' @import data.table
 #' @import ggplot2
 #' @export
-plot.event_decomposition <- function(x, ...) {
+plot.decompose_events <- function(x, ...) {
   ggplot(
     x$wide,
     aes(x = index_pre, xend = index_post, y = outcome_pre, yend = outcome_post)

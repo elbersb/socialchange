@@ -11,9 +11,9 @@ Imports: data.table, ggplot2, checkmate, weightedcontrasts
 Remotes: elbersb/weightedcontrasts
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.3
 URL: https://elbersb.github.io/socialchange/
 Suggests: 
     knitr,
     quarto
 VignetteBuilder: quarto
+Config/roxygen2/version: 8.0.0
