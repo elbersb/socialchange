@@ -8,6 +8,7 @@ You can install the development version of socialchange from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 # install.packages("pak")
 pak::pak("elbersb/socialchange")
 ```
@@ -17,12 +18,13 @@ pak::pak("elbersb/socialchange")
 As a basic example, we look at a decomposition of EU membership, and
 whether population growth in the EU is due to intracountry changes in
 population, or due to the admission of new countries. The decomposition
-unit is the country. To run the `event_decomposition` decomposition
+unit is the country. To run the `decompose_events` decomposition
 function, we need two datasets: One dataset contains the events, in this
 case the dates when countries entered or exited the EU. This dataset is
 included in the `socialchange` package:
 
 ``` r
+
 library(socialchange)
 socialchange::eu_membership
 #>           country       date event_type
@@ -68,7 +70,13 @@ package also includes total population data for all countries of the
 world from 1950 onwards, so it also includes the required data:
 
 ``` r
+
 library(data.table)
+#> 
+#> Attaching package: 'data.table'
+#> The following object is masked from 'package:base':
+#> 
+#>     %notin%
 wpp_data <- as.data.table(socialchange::wpp_data)
 # population data is in 1,000
 wpp_data[Location == "Belgium" & Time %in% c(1952, 1973, 1981, 1986, 1995, 2004, 2007, 2013, 2020)]
@@ -85,11 +93,12 @@ wpp_data[Location == "Belgium" & Time %in% c(1952, 1973, 1981, 1986, 1995, 2004,
 #> 9:  Belgium  2020 11561.717
 ```
 
-To run the `event_decomposition` function, we need to ensure that
-columns for the unit and time parameters are named the same, so we
-prepare the data as follows:
+To run the `decompose_events` function, we need to ensure that columns
+for the unit and time parameters are named the same, so we prepare the
+data as follows:
 
 ``` r
+
 # rename columns
 setnames(wpp_data, c("Location", "Time"), c("country", "year"))
 # population in millions
@@ -106,7 +115,8 @@ end data, and an aggregation function. Often this will be mean, but in
 our case it needs to be `sum`:
 
 ``` r
-ev <- event_decomposition(eu_membership, wpp_data, PopTotal ~ country + year,
+
+ev <- decompose_events(eu_membership, wpp_data, PopTotal ~ country + year,
   end_period = 2021, fun = sum)
 print(ev)
 #>     event_type      term    total      pct
@@ -123,13 +133,8 @@ population increase (or 184 million).
 It is also possible to produce a figure that shows the decomposition:
 
 ``` r
+
 plot(ev)
-#> Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
-#> ℹ Please use `linewidth` instead.
-#> ℹ The deprecated feature was likely used in the socialchange package.
-#>   Please report the issue to the authors.
-#> This warning is displayed once per session.
-#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
 ```
 
 ![](reference/figures/README-unnamed-chunk-5-1.png)
