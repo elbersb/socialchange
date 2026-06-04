@@ -113,3 +113,28 @@ Located in `data/`:
 
 Dataset documentation is in `R/data.R` and `man/*.Rd` files.
 Data preparation scripts are in `data-raw/`.
+
+## Known Limitations
+
+### Migration
+
+Funcationality not implemented yet.
+
+### Aggregated Decomposition with Transitions
+
+**`decompose_aggregated()` does not properly handle within-cell transitions** (e.g., smokers becoming non-smokers). The function only decomposes change into:
+- Intraindividual change
+- Mortality
+- Coming-of-age
+- Migration (optional)
+
+When the input data includes transitions between cells, these transition effects are **not separately identified** and instead get absorbed into the intraindividual change component. Additionally:
+
+- Mortality and coming-of-age are estimated from simple population differences between periods: `mortality = n1 - n2` and `coming_of_age = n2 - n1`
+- When transitions occur, these differences no longer accurately reflect demographic events
+- The code uses `pmax(0, ...)` to prevent negative mortality/coming-of-age counts, but this masks the underlying problem
+- Cells with net inflow from transitions will show 0 mortality even if deaths occurred
+
+**Workaround**: This is a fundamental limitation of the aggregated decomposition approach. The simulation function `sim_social_change()` properly tracks transitions as a separate component, but `decompose_aggregated()` cannot recover this from already-aggregated data.
+
+**In practice**: Use `decompose_aggregated()` only for data without significant within-cell transitions, or be aware that transition effects will be misattributed to intraindividual change.

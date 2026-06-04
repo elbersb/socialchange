@@ -55,8 +55,11 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
         data[, cell_id := seq_len(.N)]
 
         min_age <- data[, min(age)]
-        data[, coming_of_age := ifelse(age == min_age, n2 - n1, 0)]
-        data[, mortality := ifelse(age == min_age, 0, n1 - n2)]
+        # LIMITATION: pmax() prevents negative probabilities but doesn't account for
+        # transitions between cells (e.g., smoker -> non-smoker). This is a known limitation
+        # of the aggregated decomposition approach for data with within-cell transitions.
+        data[, coming_of_age := ifelse(age == min_age, pmax(0, n2 - n1), 0)]
+        data[, mortality := ifelse(age == min_age, 0, pmax(0, n1 - n2))]
 
         event_counts <- c(
             "coming_of_age" = data[, sum(coming_of_age)],
@@ -73,17 +76,23 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
 
         events_tick <- sort(runif(sum(event_counts)))
         tick <- 0
-        event_tick <- events_tick[[1]]
+
+        # running sums allow O(1) weighted mean updates after each demographic event
+        sum_n <- sum(data$n)
+        sum_yn <- sum(data$y * data$n)
+        post_event_mean <- sum_yn / sum_n
+
         for (event_tick in events_tick) {
             data[, age := age + event_tick - tick]
             data[, period := period + event_tick - tick]
             tick <- event_tick
             time <- i_period - 1 + tick
 
-            # process y updates
-            pre_mean <- data[, weighted.mean(y, n)]
+            # pre_mean is free: it equals the previous iteration's post_event_mean
+            pre_mean <- post_event_mean
             data[, y := fun_y(data)]
-            post_ic_mean <- data[, weighted.mean(y, n)]
+            sum_yn <- sum(data$y * data$n)  # recompute after all y values change
+            post_ic_mean <- sum_yn / sum_n
 
             change_record[change_record_index, `:=`(component = "intraindividual", time = time, delta = post_ic_mean - pre_mean)]
             change_record_index <- change_record_index + 1
@@ -92,20 +101,22 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
             event <- sample(names(event_counts), 1, prob = event_counts)
 
             if (event == "mortality") {
-                pick_id <- data[, sample(.N, 1, prob = mortality)]
-                data[cell_id == pick_id, `:=`(
-                    mortality = mortality - 1,
-                    n = n - 1
-                )]
+                pick_idx <- sample.int(nrow(data), 1L, prob = data$mortality)
+                y_pick <- data$y[pick_idx]
+                set(data, pick_idx, "mortality", data$mortality[pick_idx] - 1)
+                set(data, pick_idx, "n", data$n[pick_idx] - 1)
+                sum_yn <- sum_yn - y_pick
+                sum_n <- sum_n - 1
             } else if (event == "coming_of_age") {
-                pick_id <- data[, sample(.N, 1, prob = coming_of_age)]
-                data[cell_id == pick_id, `:=`(
-                    coming_of_age = coming_of_age - 1,
-                    n = n + 1
-                )]
+                pick_idx <- sample.int(nrow(data), 1L, prob = data$coming_of_age)
+                y_pick <- data$y[pick_idx]
+                set(data, pick_idx, "coming_of_age", data$coming_of_age[pick_idx] - 1)
+                set(data, pick_idx, "n", data$n[pick_idx] + 1)
+                sum_yn <- sum_yn + y_pick
+                sum_n <- sum_n + 1
             }
             event_counts[event] <- event_counts[event] - 1
-            post_event_mean <- data[, weighted.mean(y, n)]
+            post_event_mean <- sum_yn / sum_n
             change_record[change_record_index, `:=`(component = event, time = time, delta = post_event_mean - post_ic_mean)]
             change_record_index <- change_record_index + 1
         }
@@ -113,7 +124,8 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
         data[, age := age + 1 - tick]
         data[, period := period + 1 - tick]
         data[, y := fun_y(data)]
-        post_ic_mean <- data[, weighted.mean(y, n)]
+        sum_yn <- sum(data$y * data$n)
+        post_ic_mean <- sum_yn / sum_n
         change_record[change_record_index, `:=`(component = "intraindividual", time = i_period, delta = post_ic_mean - post_event_mean)]
 
         # summarize period change

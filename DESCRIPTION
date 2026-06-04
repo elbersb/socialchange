@@ -14,6 +14,8 @@ LazyData: true
 URL: https://elbersb.github.io/socialchange/
 Suggests: 
     knitr,
-    quarto
+    quarto,
+    testthat (>= 3.0.0)
 VignetteBuilder: quarto
 Config/roxygen2/version: 8.0.0
+Config/testthat/edition: 3
