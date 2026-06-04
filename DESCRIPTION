@@ -1,11 +1,16 @@
 Package: socialchange
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Decompose Social Change into Intraindividual Change and Population Turnover
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Authors@R: person("Benjamin", "Elbers", email = "elbersb@gmail.com",
+    role = c("aut", "cre"))
+Description: Provides methods for decomposing aggregate-level social change
+    into components of intraindividual change and population turnover. Population
+    turnover includes replacement of individuals (mortality and coming-of-age) and migration.
+    Implements event-based, aggregated-data, and simulation-based decomposition
+    approaches, as well as classical cohort replacement vs. intraindividual change
+    (CR-IC) decompositions and Age-Period-Cohort (APC) models.
+Depends: R (>= 4.0.0)
 License: MIT + file LICENSE
 Imports: data.table, ggplot2, checkmate, weightedcontrasts
 Remotes: elbersb/weightedcontrasts

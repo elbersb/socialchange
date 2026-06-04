@@ -121,7 +121,7 @@ sim_social_change <- function(periods, data, fun_y,
         cr_delta <- numeric(n_records)
         change_record_index <- 1L
 
-        events_tick <- sort(runif(n_events))
+        events_tick <- sort(stats::runif(n_events))
         tick <- 0
 
         # Running weighted-sum scalars; updated O(1) after each demographic event
@@ -136,7 +136,7 @@ sim_social_change <- function(periods, data, fun_y,
             tick <- event_tick
             time <- i_period - 1 + tick
 
-            pre_mean <- post_event_mean  # reuses last iteration's post_event_mean
+            pre_mean <- post_event_mean # reuses last iteration's post_event_mean
             set(data, NULL, "age", data$age + delta)
             set(data, NULL, "y", fun_y(data, time))
             sum_yn <- sum(data$y * data$n) # recompute after all y values change

@@ -119,7 +119,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
         cr_delta <- numeric(n_records)
         cr_idx <- 1L
 
-        events_tick <- sort(runif(n_ev))
+        events_tick <- sort(stats::runif(n_ev))
         tick <- 0
 
         # Local copies keep R vector semantics inside the loop (no data.table overhead)
@@ -135,10 +135,14 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
         if (n_ev > 0L) {
             idx_rep <- rep.int(seq_len(n_c), n_ev)
             data_stack <- data[idx_rep]
-            set(data_stack, NULL, "age",
-                rep.int(data$age, n_ev) + rep(events_tick, each = n_c))
-            set(data_stack, NULL, "period",
-                rep.int(data$period, n_ev) + rep(events_tick, each = n_c))
+            set(
+                data_stack, NULL, "age",
+                rep.int(data$age, n_ev) + rep(events_tick, each = n_c)
+            )
+            set(
+                data_stack, NULL, "period",
+                rep.int(data$period, n_ev) + rep(events_tick, each = n_c)
+            )
             y_mat <- matrix(fun_y(data_stack), nrow = n_c, ncol = n_ev)
         }
 
@@ -152,7 +156,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
             tick <- event_tick
             time <- i_period - 1 + tick
 
-            pre_mean <- post_event_mean  # reuses last iteration's post_event_mean
+            pre_mean <- post_event_mean # reuses last iteration's post_event_mean
             y_cur <- y_mat[, i_ev]
             sum_yn <- sum(y_cur * n_vec)
             post_ic_mean <- sum_yn / sum_n
@@ -191,8 +195,10 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
         # Write local vectors back and advance to next period.
         # age was not updated inside the loop (y was pre-computed instead), so add
         # the full period (1) here rather than just the remaining fraction (1 - tick).
-        data[, `:=`(n = n_vec, mortality = mortality_vec, coming_of_age = coming_of_age_vec,
-                    age = age + 1, period = period + 1)]
+        data[, `:=`(
+            n = n_vec, mortality = mortality_vec, coming_of_age = coming_of_age_vec,
+            age = age + 1, period = period + 1
+        )]
         data[, y := fun_y(data)]
         sum_yn <- sum(data$y * n_vec)
         post_ic_mean <- sum_yn / sum_n

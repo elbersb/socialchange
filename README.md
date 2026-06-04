@@ -4,14 +4,27 @@
 # socialchange
 
 <!-- badges: start -->
+
+[![R-CMD-check](https://github.com/elbersb/socialchange/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/elbersb/socialchange/actions/workflows/R-CMD-check.yaml)
+[![Codecov](https://codecov.io/gh/elbersb/socialchange/branch/main/graph/badge.svg)](https://app.codecov.io/gh/elbersb/socialchange)
+[![pkgdown](https://github.com/elbersb/socialchange/actions/workflows/pkgdown.yaml/badge.svg)](https://elbersb.github.io/socialchange/)
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-The goal of socialchange is to …
+The `socialchange` package provides methods for decomposing
+aggregate-level social change into components of intraindividual change
+and population turnover. Population turnover includes replacement of
+individuals (mortality and coming-of-age) and migration. The package
+implements event-based, aggregated-data, and simulation-based
+decomposition approaches, as well as classical cohort replacement
+vs. intraindividual change (CR-IC) decompositions and Age-Period-Cohort
+(APC) models.
 
 ## Installation
 
 You can install the development version of socialchange from
-[GitHub](https://github.com/) with:
+[GitHub](https://github.com/elbersb/socialchange) with:
 
 ``` r
 # install.packages("pak")
@@ -75,11 +88,6 @@ world from 1950 onwards, so it also includes the required data:
 
 ``` r
 library(data.table)
-#> 
-#> Attaching package: 'data.table'
-#> The following object is masked from 'package:base':
-#> 
-#>     %notin%
 wpp_data <- as.data.table(socialchange::wpp_data)
 # population data is in 1,000
 wpp_data[Location == "Belgium" & Time %in% c(1952, 1973, 1981, 1986, 1995, 2004, 2007, 2013, 2020)]
@@ -137,4 +145,4 @@ It is also possible to produce a figure that shows the decomposition:
 plot(ev)
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" alt="" width="100%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />

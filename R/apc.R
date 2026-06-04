@@ -39,11 +39,11 @@ apc <- function(data, formula) {
         period = weightedcontrasts::contr.poly.weighted(data[["p"]], width = 1),
         cohort = weightedcontrasts::contr.poly.weighted(data[["c"]], width = 1)
     )
-    contrasts(data[["a"]]) <- contrasts[["age"]]
-    contrasts(data[["p"]]) <- contrasts[["period"]]
-    contrasts(data[["c"]]) <- contrasts[["cohort"]]
+    stats::contrasts(data[["a"]]) <- contrasts[["age"]]
+    stats::contrasts(data[["p"]]) <- contrasts[["period"]]
+    stats::contrasts(data[["c"]]) <- contrasts[["cohort"]]
     # zero out the period linear effect
-    contrasts(data[["p"]])[, 1] <- 0
+    stats::contrasts(data[["p"]])[, 1] <- 0
 
     # estimate model
     mod <- stats::lm(y ~ a + p + c, data = data)
