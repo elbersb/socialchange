@@ -1,3 +1,34 @@
+#' Decompose social change from discrete events
+#'
+#' Event-based decomposition for populations where units enter and exit at specific time points.
+#' Separates aggregate change into within-unit change and population replacement components.
+#'
+#' @param events data.frame with unit entry/exit events, must contain unit ID, time index, and event type columns
+#' @param outcomes data.frame with outcome values by unit and time period
+#' @param formula Formula specifying \code{Outcome ~ Unit + Time} structure
+#' @param end_period Optional numeric end period; defaults to maximum event time
+#' @param event_type Character name of column indicating event type (entry/exit)
+#' @param fun Aggregation function to compute period-level outcomes (default: mean)
+#'
+#' @return S3 object of class \code{decompose_events} containing decomposition results
+#'
+#' @examples
+#' \dontrun{
+#' library(data.table)
+#' events <- data.table(
+#'   country = c("A", "B", "A"),
+#'   year = c(1995, 2000, 2010),
+#'   event_type = c("entry", "entry", "exit")
+#' )
+#' outcomes <- data.table(
+#'   gdp = runif(50),
+#'   country = rep(c("A", "B"), each = 25),
+#'   year = rep(1995:2019, 2)
+#' )
+#' result <- decompose_events(events, outcomes, gdp ~ country + year)
+#' print(result)
+#' }
+#'
 #' @import data.table
 #' @export
 decompose_events <- function(

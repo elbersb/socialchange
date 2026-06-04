@@ -1,5 +1,22 @@
-#' @import data.table
+#' Age-Period-Cohort model estimation
+#'
+#' Fits an Age-Period-Cohort (APC) model using orthogonal polynomial contrasts to handle
+#' the linear identification problem. The period linear effect is constrained to zero,
+#' allowing estimation of age and cohort linear trends.
+#'
+#' @param data data.frame or data.table with APC variables
+#' @param formula Formula specifying \code{outcome ~ age + period + cohort} structure
+#'
+#' @return S3 object of class \code{apc_model} with components:
+#'   \itemize{
+#'     \item \code{model_period_zero}: fitted lm object with period linear effect set to zero
+#'     \item \code{thetas}: named vector of theta parameters (age and cohort linear slopes)
+#'     \item \code{contrasts}: list of orthogonal polynomial contrast matrices
+#'     \item \code{values}: unique values for age, period, and cohort
+#'   }
+#'
 #' @export
+#' @import data.table
 apc <- function(data, formula) {
     data <- data.table::as.data.table(data)
     vars <- all.vars(formula)
@@ -29,9 +46,9 @@ apc <- function(data, formula) {
     contrasts(data[["p"]])[, 1] <- 0
 
     # estimate model
-    mod <- lm(y ~ a + p + c, data = data)
-    theta1 <- unname(coef(mod)["a.L"]) # theta1 <- ageL + periodL
-    theta2 <- unname(coef(mod)["c.L"]) # theta2 <- cohortL + periodL
+    mod <- stats::lm(y ~ a + p + c, data = data)
+    theta1 <- unname(stats::coef(mod)["a.L"]) # theta1 <- ageL + periodL
+    theta2 <- unname(stats::coef(mod)["c.L"]) # theta2 <- cohortL + periodL
 
     ret <- list(
         model_period_zero = mod,
@@ -49,8 +66,12 @@ print.apc_model <- function(x, ...) {
     print(x$thetas)
 }
 
-#' @import ggplot2
+#' Plot APC two-dimensional visualization
+#'
+#' @param apc APC model object from \code{apc()}
+#' @return ggplot2 object
 #' @export
+#' @import ggplot2
 apc_plot_two2d <- function(apc) {
     theta1 <- apc$thetas[1]
     theta2 <- apc$thetas[2]
@@ -95,13 +116,13 @@ list_to_df <- function(list) {
 }
 
 extract_nl <- function(model, set, contrasts, values, intercept) {
-    extract_coefs <- coef(model)[grepl(set, names(coef(model)))]
+    extract_coefs <- stats::coef(model)[grepl(set, names(stats::coef(model)))]
     # remove linear effect
     extract_coefs <- extract_coefs[2:length(extract_coefs)]
     extract_coefs[is.na(extract_coefs)] <- 0 # why is this line here?
     deviations <- contrasts[, 2:(1 + length(extract_coefs))] %*% extract_coefs
     if (intercept == TRUE) {
-        coefs <- coef(model)["(Intercept)"] + deviations[, 1]
+        coefs <- stats::coef(model)["(Intercept)"] + deviations[, 1]
     } else {
         coefs <- deviations[, 1]
     }
@@ -109,6 +130,11 @@ extract_nl <- function(model, set, contrasts, values, intercept) {
     coefs
 }
 
+#' Extract non-linear APC effects
+#'
+#' @param apc APC model object from \code{apc()}
+#' @param intercept Logical; include intercept in output
+#' @return List of non-linear effect estimates
 #' @export
 apc_nonlinearities <- function(apc, intercept = FALSE) {
     m <- apc[["model_period_zero"]]
@@ -119,6 +145,10 @@ apc_nonlinearities <- function(apc, intercept = FALSE) {
     )
 }
 
+#' Plot non-linear APC effects
+#'
+#' @param model APC model object from \code{apc()}
+#' @return ggplot2 object showing non-linear effects
 #' @export
 apc_plot_nonlinearities <- function(model) {
     df <- list_to_df(apc_nonlinearities(model))
@@ -131,6 +161,11 @@ apc_plot_nonlinearities <- function(model) {
         theme(legend.position = "bottom", axis.title.x = element_blank())
 }
 
+#' Compute total APC effects under assumption
+#'
+#' @param model APC model object from \code{apc()}
+#' @param assumption Character specifying linear trend assumption
+#' @return List of total effect estimates
 #' @export
 apc_total <- function(model, assumption) {
     age_l <- NULL
@@ -160,6 +195,11 @@ apc_total <- function(model, assumption) {
     list(age = age_total, period = period_total, cohort = cohort_total)
 }
 
+#' Plot total APC effects under assumption
+#'
+#' @param model APC model object from \code{apc()}
+#' @param assumption Character specifying linear trend assumption
+#' @return ggplot2 object showing total effects
 #' @export
 apc_plot_total <- function(model, assumption) {
     df <- list_to_df(apc_total(model, assumption))

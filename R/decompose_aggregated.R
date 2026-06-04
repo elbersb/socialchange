@@ -1,3 +1,46 @@
+#' Decompose social change from aggregated data
+#'
+#' Decomposes aggregate-level change into intraindividual change and population turnover
+#' components using microsimulation on stacked cross-sectional data. Requires a prediction
+#' function that models the outcome as a function of age, period, and covariates.
+#'
+#' @param stacked_data Stacked data.table with columns \code{age}, \code{period}, \code{n}, \code{y}, and optional cell identifiers
+#' @param fun_y Prediction function taking \code{(newdata)} and returning predicted outcome values
+#' @param cells Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")
+#' @param migration Logical; if TRUE, decompose migration components (not yet implemented)
+#'
+#' @return S3 object of class \code{social_change_decomp} with components:
+#'   \itemize{
+#'     \item \code{summary}: data.table with decomposition components by period
+#'     \item \code{record}: list of detailed event records for each period transition
+#'     \item \code{migration}: logical indicating whether migration was decomposed
+#'   }
+#'
+#' @details
+#' The function estimates mortality and coming-of-age from period-to-period population
+#' differences within cells, then uses microsimulation to randomly order demographic
+#' events and track their contribution to aggregate change.
+#'
+#' \strong{Limitation}: Does not properly handle within-cell state transitions. Transition
+#' effects are absorbed into the intraindividual change component. See CLAUDE.md for details.
+#'
+#' @examples
+#' \dontrun{
+#' library(data.table)
+#' # Simulate data first
+#' data <- data.table(age = 20:39, n = rep(100, 20))
+#' simresult <- sim_social_change(periods = 5, data = data, ...)
+#'
+#' # Stack snapshots and fit model
+#' stacked <- rbindlist(simresult$snapshot)
+#' model <- lm(y ~ age, data = stacked)
+#' predict_y <- function(newdata) predict(model, newdata = newdata)
+#'
+#' # Decompose
+#' result <- decompose_aggregated(stacked, predict_y)
+#' print(result)
+#' }
+#'
 #' @import data.table
 #' @export
 decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = FALSE) {
@@ -27,7 +70,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
         summary[, inmigration := NA_real_]
         summary[, outmigration := NA_real_]
     }
-    means <- stacked_data[, .(observed = weighted.mean(y, n), modeled = weighted.mean(y_pred, n)), by = .(period)]
+    means <- stacked_data[, .(observed = stats::weighted.mean(y, n), modeled = stats::weighted.mean(y_pred, n)), by = .(period)]
     if (means[, max(observed / modeled)] > 1.05) {
         print(means)
         stop("Modeled means deviate strongly from observed mean, reconsider model.")

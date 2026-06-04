@@ -1,3 +1,43 @@
+#' Simulate social change with demographic processes
+#'
+#' Forward simulation of social change dynamics, decomposing aggregate change into
+#' components driven by intraindividual change and population turnover (mortality,
+#' coming-of-age, migration, and state transitions).
+#'
+#' @param periods Integer number of time periods to simulate
+#' @param data Initial population data.table with columns \code{age}, \code{n}, and optional covariates
+#' @param fun_y Outcome function taking \code{(data, time)} and returning outcome values
+#' @param fun_coming_of_age Optional function taking \code{(data, period)} returning new entrants data.table
+#' @param fun_mortality Optional function taking \code{(data, period)} returning mortality counts per cell
+#' @param fun_inmigration Optional function taking \code{(data, period)} returning immigrants data.table
+#' @param fun_outmigration Optional function taking \code{(data, period)} returning out-migration counts per cell
+#' @param fun_transitions Optional function taking \code{(data, period)} returning state transitions data.table
+#'
+#' @return S3 object of class \code{social_change_sim} with components:
+#'   \itemize{
+#'     \item \code{summary}: data.table summarizing change components by period
+#'     \item \code{snapshot}: list of population snapshots at each period
+#'     \item \code{record}: list of event-by-event change records
+#'   }
+#'
+#' @examples
+#' \dontrun{
+#' library(data.table)
+#' data <- data.table(age = 20:39, n = rep(100, 20))
+#' fun_y <- function(data, time) data[, age / 40]
+#' fun_mortality <- function(data, period) data[, ifelse(age >= 30, 10, 0)]
+#' fun_coming_of_age <- function(data, period) data.table(age = 20, n = 100)
+#'
+#' result <- sim_social_change(
+#'     periods = 5,
+#'     data = data,
+#'     fun_y = fun_y,
+#'     fun_mortality = fun_mortality,
+#'     fun_coming_of_age = fun_coming_of_age
+#' )
+#' print(result)
+#' }
+#'
 #' @import data.table
 #' @export
 sim_social_change <- function(periods, data, fun_y,
@@ -83,7 +123,7 @@ sim_social_change <- function(periods, data, fun_y,
         )
         change_record_index <- 1L
 
-        events_tick <- sort(runif(n_events))
+        events_tick <- sort(stats::runif(n_events))
         tick <- 0
 
         # running sums allow O(1) weighted mean updates after each demographic event
