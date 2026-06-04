@@ -78,7 +78,7 @@
 <ol style="list-style-type: decimal"><li>
 <strong>Event-based decomposition</strong> (<code>R/decompose_events.R</code>)
 <ul><li>
-<code>decompose_events()</code>: Decomposes change when units enter/exit a population at discrete time points</li>
+<code><a href="reference/decompose_events.html">decompose_events()</a></code>: Decomposes change when units enter/exit a population at discrete time points</li>
 <li>Works with two datasets: events data (entry/exit dates) and outcomes data (values at each time point)</li>
 <li>Formula interface: <code>Outcome ~ Unit + Time</code>
 </li>
@@ -88,7 +88,7 @@
 <li>
 <strong>Aggregated data decomposition</strong> (<code>R/decompose_aggregated.R</code>)
 <ul><li>
-<code>decompose_aggregated()</code>: For data aggregated by age and other covariates</li>
+<code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code>: For data aggregated by age and other covariates</li>
 <li>Uses microsimulation approach to randomly order demographic events</li>
 <li>Requires: stacked panel data with age, period, and cell counts</li>
 <li>Requires: <code>fun_y</code> function that computes the outcome from data</li>
@@ -97,7 +97,7 @@
 <li>
 <strong>Simulation-based</strong> (<code>R/simulate.R</code>)
 <ul><li>
-<code>sim_social_change()</code>: Forward simulation of social change dynamics</li>
+<code><a href="reference/sim_social_change.html">sim_social_change()</a></code>: Forward simulation of social change dynamics</li>
 <li>User provides functions for: outcome (<code>fun_y</code>), mortality, coming-of-age, migration, and state transitions</li>
 <li>Returns detailed event-by-event records showing exact contribution of each component</li>
 </ul></li>
@@ -145,15 +145,15 @@
 </div>
 <div class="section level3">
 <h3 id="aggregated-decomposition-with-transitions">Aggregated Decomposition with Transitions<a class="anchor" aria-label="anchor" href="#aggregated-decomposition-with-transitions"></a></h3>
-<p><strong><code>decompose_aggregated()</code> does not properly handle within-cell transitions</strong> (e.g., smokers becoming non-smokers). The function only decomposes change into: - Intraindividual change - Mortality - Coming-of-age - Migration (optional)</p>
+<p><strong><code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code> does not properly handle within-cell transitions</strong> (e.g., smokers becoming non-smokers). The function only decomposes change into: - Intraindividual change - Mortality - Coming-of-age - Migration (optional)</p>
 <p>When the input data includes transitions between cells, these transition effects are <strong>not separately identified</strong> and instead get absorbed into the intraindividual change component. Additionally:</p>
 <ul><li>Mortality and coming-of-age are estimated from simple population differences between periods: <code>mortality = n1 - n2</code> and <code>coming_of_age = n2 - n1</code>
 </li>
 <li>When transitions occur, these differences no longer accurately reflect demographic events</li>
 <li>The code uses <code>pmax(0, ...)</code> to prevent negative mortality/coming-of-age counts, but this masks the underlying problem</li>
 <li>Cells with net inflow from transitions will show 0 mortality even if deaths occurred</li>
-</ul><p><strong>Workaround</strong>: This is a fundamental limitation of the aggregated decomposition approach. The simulation function <code>sim_social_change()</code> properly tracks transitions as a separate component, but <code>decompose_aggregated()</code> cannot recover this from already-aggregated data.</p>
-<p><strong>In practice</strong>: Use <code>decompose_aggregated()</code> only for data without significant within-cell transitions, or be aware that transition effects will be misattributed to intraindividual change.</p>
+</ul><p><strong>Workaround</strong>: This is a fundamental limitation of the aggregated decomposition approach. The simulation function <code><a href="reference/sim_social_change.html">sim_social_change()</a></code> properly tracks transitions as a separate component, but <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code> cannot recover this from already-aggregated data.</p>
+<p><strong>In practice</strong>: Use <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code> only for data without significant within-cell transitions, or be aware that transition effects will be misattributed to intraindividual change.</p>
 </div>
 </div>
 </div>

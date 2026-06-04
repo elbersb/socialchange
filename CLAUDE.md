@@ -54,8 +54,9 @@ data - `vignettes/simulate.qmd` - Simulation examples
 The package implements three main decomposition approaches:
 
 1.  **Event-based decomposition** (`R/decompose_events.R`)
-    - `decompose_events()`: Decomposes change when units enter/exit a
-      population at discrete time points
+    - [`decompose_events()`](https://elbersb.github.io/socialchange/reference/decompose_events.md):
+      Decomposes change when units enter/exit a population at discrete
+      time points
     - Works with two datasets: events data (entry/exit dates) and
       outcomes data (values at each time point)
     - Formula interface: `Outcome ~ Unit + Time`
@@ -64,16 +65,16 @@ The package implements three main decomposition approaches:
     - Computes counterfactuals showing what would happen with only
       change or only replacement
 2.  **Aggregated data decomposition** (`R/decompose_aggregated.R`)
-    - `decompose_aggregated()`: For data aggregated by age and other
-      covariates
+    - [`decompose_aggregated()`](https://elbersb.github.io/socialchange/reference/decompose_aggregated.md):
+      For data aggregated by age and other covariates
     - Uses microsimulation approach to randomly order demographic events
     - Requires: stacked panel data with age, period, and cell counts
     - Requires: `fun_y` function that computes the outcome from data
     - Decomposes into: intraindividual change, coming-of-age, mortality,
       and (optionally) migration
 3.  **Simulation-based** (`R/simulate.R`)
-    - `sim_social_change()`: Forward simulation of social change
-      dynamics
+    - [`sim_social_change()`](https://elbersb.github.io/socialchange/reference/sim_social_change.md):
+      Forward simulation of social change dynamics
     - User provides functions for: outcome (`fun_y`), mortality,
       coming-of-age, migration, and state transitions
     - Returns detailed event-by-event records showing exact contribution
@@ -142,10 +143,11 @@ Funcationality not implemented yet.
 
 ### Aggregated Decomposition with Transitions
 
-**`decompose_aggregated()` does not properly handle within-cell
-transitions** (e.g., smokers becoming non-smokers). The function only
-decomposes change into: - Intraindividual change - Mortality -
-Coming-of-age - Migration (optional)
+**[`decompose_aggregated()`](https://elbersb.github.io/socialchange/reference/decompose_aggregated.md)
+does not properly handle within-cell transitions** (e.g., smokers
+becoming non-smokers). The function only decomposes change into: -
+Intraindividual change - Mortality - Coming-of-age - Migration
+(optional)
 
 When the input data includes transitions between cells, these transition
 effects are **not separately identified** and instead get absorbed into
@@ -162,11 +164,13 @@ the intraindividual change component. Additionally:
   deaths occurred
 
 **Workaround**: This is a fundamental limitation of the aggregated
-decomposition approach. The simulation function `sim_social_change()`
+decomposition approach. The simulation function
+[`sim_social_change()`](https://elbersb.github.io/socialchange/reference/sim_social_change.md)
 properly tracks transitions as a separate component, but
-`decompose_aggregated()` cannot recover this from already-aggregated
-data.
+[`decompose_aggregated()`](https://elbersb.github.io/socialchange/reference/decompose_aggregated.md)
+cannot recover this from already-aggregated data.
 
-**In practice**: Use `decompose_aggregated()` only for data without
-significant within-cell transitions, or be aware that transition effects
-will be misattributed to intraindividual change.
+**In practice**: Use
+[`decompose_aggregated()`](https://elbersb.github.io/socialchange/reference/decompose_aggregated.md)
+only for data without significant within-cell transitions, or be aware
+that transition effects will be misattributed to intraindividual change.
