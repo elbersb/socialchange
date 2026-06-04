@@ -109,67 +109,105 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
             "mortality" = data[, sum(mortality)]
         )
 
-        change_record <- data.table(
-            i = 1:(2 * sum(event_counts) + 1),
-            component = NA_character_,
-            time = NA_real_,
-            delta = NA_real_
-        )
-        change_record_index <- 1
+        n_ev <- sum(event_counts)
+        n_c <- nrow(data)
+        n_records <- 2L * n_ev + 1L
 
-        events_tick <- sort(runif(sum(event_counts)))
+        # Plain vectors for the change record; assembled into a data.table after the loop
+        cr_component <- character(n_records)
+        cr_time <- numeric(n_records)
+        cr_delta <- numeric(n_records)
+        cr_idx <- 1L
+
+        events_tick <- sort(runif(n_ev))
         tick <- 0
 
-        # running sums allow O(1) weighted mean updates after each demographic event
-        sum_n <- sum(data$n)
-        sum_yn <- sum(data$y * data$n)
+        # Local copies keep R vector semantics inside the loop (no data.table overhead)
+        n_vec <- data$n
+        mortality_vec <- data$mortality
+        coming_of_age_vec <- data$coming_of_age
+
+        # Evaluate fun_y once on a stacked copy of data at every event time, yielding a
+        # n_c × n_ev matrix. Only age and period are updated per event-time slice; all
+        # other covariates (e.g. gender, smoking) are carried through from data as-is.
+        # This requires fun_y to not depend on n, which holds for any externally-fitted
+        # statistical model.
+        if (n_ev > 0L) {
+            idx_rep <- rep.int(seq_len(n_c), n_ev)
+            data_stack <- data[idx_rep]
+            set(data_stack, NULL, "age",
+                rep.int(data$age, n_ev) + rep(events_tick, each = n_c))
+            set(data_stack, NULL, "period",
+                rep.int(data$period, n_ev) + rep(events_tick, each = n_c))
+            y_mat <- matrix(fun_y(data_stack), nrow = n_c, ncol = n_ev)
+        }
+
+        # Maintain running weighted-sum scalars; updated in O(1) after each demographic event
+        sum_n <- sum(n_vec)
+        sum_yn <- sum(data$y * n_vec)
         post_event_mean <- sum_yn / sum_n
 
-        for (event_tick in events_tick) {
-            data[, age := age + event_tick - tick]
-            data[, period := period + event_tick - tick]
+        for (i_ev in seq_len(n_ev)) {
+            event_tick <- events_tick[i_ev]
             tick <- event_tick
             time <- i_period - 1 + tick
 
-            # pre_mean is free: it equals the previous iteration's post_event_mean
-            pre_mean <- post_event_mean
-            data[, y := fun_y(data)]
-            sum_yn <- sum(data$y * data$n)  # recompute after all y values change
+            pre_mean <- post_event_mean  # reuses last iteration's post_event_mean
+            y_cur <- y_mat[, i_ev]
+            sum_yn <- sum(y_cur * n_vec)
             post_ic_mean <- sum_yn / sum_n
 
-            change_record[change_record_index, `:=`(component = "intraindividual", time = time, delta = post_ic_mean - pre_mean)]
-            change_record_index <- change_record_index + 1
+            cr_component[cr_idx] <- "intraindividual"
+            cr_time[cr_idx] <- time
+            cr_delta[cr_idx] <- post_ic_mean - pre_mean
+            cr_idx <- cr_idx + 1L
 
-            # process single event
-            event <- sample(names(event_counts), 1, prob = event_counts)
+            event <- sample(names(event_counts), 1L, prob = event_counts)
 
             if (event == "mortality") {
-                pick_idx <- sample.int(nrow(data), 1L, prob = data$mortality)
-                y_pick <- data$y[pick_idx]
-                set(data, pick_idx, "mortality", data$mortality[pick_idx] - 1)
-                set(data, pick_idx, "n", data$n[pick_idx] - 1)
+                pick_idx <- sample.int(n_c, 1L, prob = mortality_vec)
+                y_pick <- y_cur[pick_idx]
+                mortality_vec[pick_idx] <- mortality_vec[pick_idx] - 1
+                n_vec[pick_idx] <- n_vec[pick_idx] - 1
                 sum_yn <- sum_yn - y_pick
                 sum_n <- sum_n - 1
             } else if (event == "coming_of_age") {
-                pick_idx <- sample.int(nrow(data), 1L, prob = data$coming_of_age)
-                y_pick <- data$y[pick_idx]
-                set(data, pick_idx, "coming_of_age", data$coming_of_age[pick_idx] - 1)
-                set(data, pick_idx, "n", data$n[pick_idx] + 1)
+                pick_idx <- sample.int(n_c, 1L, prob = coming_of_age_vec)
+                y_pick <- y_cur[pick_idx]
+                coming_of_age_vec[pick_idx] <- coming_of_age_vec[pick_idx] - 1
+                n_vec[pick_idx] <- n_vec[pick_idx] + 1
                 sum_yn <- sum_yn + y_pick
                 sum_n <- sum_n + 1
             }
             event_counts[event] <- event_counts[event] - 1
             post_event_mean <- sum_yn / sum_n
-            change_record[change_record_index, `:=`(component = event, time = time, delta = post_event_mean - post_ic_mean)]
-            change_record_index <- change_record_index + 1
+
+            cr_component[cr_idx] <- event
+            cr_time[cr_idx] <- time
+            cr_delta[cr_idx] <- post_event_mean - post_ic_mean
+            cr_idx <- cr_idx + 1L
         }
-        # bring up to next period
-        data[, age := age + 1 - tick]
-        data[, period := period + 1 - tick]
+
+        # Write local vectors back and advance to next period.
+        # age was not updated inside the loop (y was pre-computed instead), so add
+        # the full period (1) here rather than just the remaining fraction (1 - tick).
+        data[, `:=`(n = n_vec, mortality = mortality_vec, coming_of_age = coming_of_age_vec,
+                    age = age + 1, period = period + 1)]
         data[, y := fun_y(data)]
-        sum_yn <- sum(data$y * data$n)
+        sum_yn <- sum(data$y * n_vec)
         post_ic_mean <- sum_yn / sum_n
-        change_record[change_record_index, `:=`(component = "intraindividual", time = i_period, delta = post_ic_mean - post_event_mean)]
+
+        cr_component[cr_idx] <- "intraindividual"
+        cr_time[cr_idx] <- i_period
+        cr_delta[cr_idx] <- post_ic_mean - post_event_mean
+
+        # Build change_record data.table once after the loop
+        change_record <- data.table(
+            i = seq_len(n_records),
+            component = cr_component,
+            time = cr_time,
+            delta = cr_delta
+        )
 
         # summarize period change
         by_component <- change_record[, .(delta = sum(delta)), by = .(component)]

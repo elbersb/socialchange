@@ -1,4 +1,4 @@
-globalVariables(c(
+utils::globalVariables(c(
     "cclass", "group", "method", "p",
     "period", "period2",
     "prop", "prop1", "prop2",

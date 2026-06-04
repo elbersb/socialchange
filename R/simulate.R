@@ -114,39 +114,37 @@ sim_social_change <- function(periods, data, fun_y,
             "transitions" = transitions[, sum(n)]
         )
 
-        # pre-allocate change_record as data.table with index counter (avoids growing-list O(n²))
         n_events <- sum(event_counts)
-        change_record <- data.table(
-            component = character(2L * n_events + 1L),
-            time = numeric(2L * n_events + 1L),
-            delta = numeric(2L * n_events + 1L)
-        )
+        n_records <- 2L * n_events + 1L
+        cr_component <- character(n_records)
+        cr_time <- numeric(n_records)
+        cr_delta <- numeric(n_records)
         change_record_index <- 1L
 
-        events_tick <- sort(stats::runif(n_events))
+        events_tick <- sort(runif(n_events))
         tick <- 0
 
-        # running sums allow O(1) weighted mean updates after each demographic event
+        # Running weighted-sum scalars; updated O(1) after each demographic event
         sum_n <- sum(data$n)
         sum_yn <- sum(data$y * data$n)
         post_event_mean <- sum_yn / sum_n
 
-        # next_cell_id counter avoids O(n) max(cell_id) scan on every new cell
         next_cell_id <- data[, max(cell_id)] + 1L
 
         for (event_tick in events_tick) {
-            data[, age := age + event_tick - tick]
+            delta <- event_tick - tick
             tick <- event_tick
             time <- i_period - 1 + tick
 
-            # pre_mean is free: it equals the previous iteration's post_event_mean
-            pre_mean <- post_event_mean
-            data[, y := fun_y(data, time)]
-            sum_yn <- sum(data$y * data$n)  # recompute after all y values change
+            pre_mean <- post_event_mean  # reuses last iteration's post_event_mean
+            set(data, NULL, "age", data$age + delta)
+            set(data, NULL, "y", fun_y(data, time))
+            sum_yn <- sum(data$y * data$n) # recompute after all y values change
             post_ic_mean <- sum_yn / sum_n
 
-            set(change_record, change_record_index, c("component", "time", "delta"),
-                list("intraindividual", time, post_ic_mean - pre_mean))
+            cr_component[change_record_index] <- "intraindividual"
+            cr_time[change_record_index] <- time
+            cr_delta[change_record_index] <- post_ic_mean - pre_mean
             change_record_index <- change_record_index + 1L
 
             # process single event
@@ -195,12 +193,12 @@ sim_social_change <- function(periods, data, fun_y,
                 # sum_n unchanged: one person leaves a cell, one enters a new cell
             } else {
                 if (event == "coming_of_age") {
-                    pick_id <- coming_of_age[, sample(.N, 1, prob = n)]
-                    coming_of_age[pick_id, n := n - 1]
+                    pick_id <- sample.int(nrow(coming_of_age), 1L, prob = coming_of_age$n)
+                    set(coming_of_age, pick_id, "n", coming_of_age$n[pick_id] - 1)
                     pick <- coming_of_age[pick_id, -"n"]
                 } else if (event == "inmigration") {
-                    pick_id <- inmigration[, sample(.N, 1, prob = n)]
-                    inmigration[pick_id, n := n - 1]
+                    pick_id <- sample.int(nrow(inmigration), 1L, prob = inmigration$n)
+                    set(inmigration, pick_id, "n", inmigration$n[pick_id] - 1)
                     pick <- inmigration[pick_id, -"n"]
                 }
                 # TODO: check that pick has the correct columns, including covariates
@@ -225,17 +223,21 @@ sim_social_change <- function(periods, data, fun_y,
             post_event_mean <- sum_yn / sum_n
             # if transitions introduce a change in mean, that is subsumed under "intraindividual" change
             recorded_event <- if (event == "transitions") "intraindividual" else event
-            set(change_record, change_record_index, c("component", "time", "delta"),
-                list(recorded_event, time, post_event_mean - post_ic_mean))
+            cr_component[change_record_index] <- recorded_event
+            cr_time[change_record_index] <- time
+            cr_delta[change_record_index] <- post_event_mean - post_ic_mean
             change_record_index <- change_record_index + 1L
         }
         # bring up to next period
-        data[, age := age + 1 - tick]
+        data[, age := age + (1 - tick)]
         data[, y := fun_y(data, i_period)]
         sum_yn <- sum(data$y * data$n)
         post_ic_mean <- sum_yn / sum_n
-        set(change_record, change_record_index, c("component", "time", "delta"),
-            list("intraindividual", i_period, post_ic_mean - post_event_mean))
+        cr_component[change_record_index] <- "intraindividual"
+        cr_time[change_record_index] <- i_period
+        cr_delta[change_record_index] <- post_ic_mean - post_event_mean
+
+        change_record <- data.table(component = cr_component, time = cr_time, delta = cr_delta)
 
         # summarize period change
         by_component <- change_record[, .(delta = sum(delta)), by = .(component)]
