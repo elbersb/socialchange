@@ -113,11 +113,11 @@ coming-of-age, migration, and state transitions).</p>
 <span class="r-in"><span><span class="va">fun_coming_of_age</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">period</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>age <span class="op">=</span> <span class="fl">20</span>, n <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">sim_social_change</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  periods <span class="op">=</span> <span class="fl">5</span>,</span></span>
-<span class="r-in"><span>  data <span class="op">=</span> <span class="va">data</span>,</span></span>
-<span class="r-in"><span>  fun_y <span class="op">=</span> <span class="va">fun_y</span>,</span></span>
-<span class="r-in"><span>  fun_mortality <span class="op">=</span> <span class="va">fun_mortality</span>,</span></span>
-<span class="r-in"><span>  fun_coming_of_age <span class="op">=</span> <span class="va">fun_coming_of_age</span></span></span>
+<span class="r-in"><span>    periods <span class="op">=</span> <span class="fl">5</span>,</span></span>
+<span class="r-in"><span>    data <span class="op">=</span> <span class="va">data</span>,</span></span>
+<span class="r-in"><span>    fun_y <span class="op">=</span> <span class="va">fun_y</span>,</span></span>
+<span class="r-in"><span>    fun_mortality <span class="op">=</span> <span class="va">fun_mortality</span>,</span></span>
+<span class="r-in"><span>    fun_coming_of_age <span class="op">=</span> <span class="va">fun_coming_of_age</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
@@ -129,7 +129,7 @@ coming-of-age, migration, and state transitions).</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by The package maintainer.</p>
+  <p>Developed by Benjamin Elbers.</p>
 </div>
 
 <div class="pkgdown-footer-right">

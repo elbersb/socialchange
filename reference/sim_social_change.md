@@ -80,11 +80,11 @@ fun_mortality <- function(data, period) data[, ifelse(age >= 30, 10, 0)]
 fun_coming_of_age <- function(data, period) data.table(age = 20, n = 100)
 
 result <- sim_social_change(
-  periods = 5,
-  data = data,
-  fun_y = fun_y,
-  fun_mortality = fun_mortality,
-  fun_coming_of_age = fun_coming_of_age
+    periods = 5,
+    data = data,
+    fun_y = fun_y,
+    fun_mortality = fun_mortality,
+    fun_coming_of_age = fun_coming_of_age
 )
 print(result)
 } # }

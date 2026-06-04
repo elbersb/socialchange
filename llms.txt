@@ -1,11 +1,18 @@
 # socialchange
 
-The goal of socialchange is to …
+The `socialchange` package provides methods for decomposing
+aggregate-level social change into components of intraindividual change
+and population turnover. Population turnover includes replacement of
+individuals (mortality and coming-of-age) and migration. The package
+implements event-based, aggregated-data, and simulation-based
+decomposition approaches, as well as classical cohort replacement
+vs. intraindividual change (CR-IC) decompositions and Age-Period-Cohort
+(APC) models.
 
 ## Installation
 
 You can install the development version of socialchange from
-[GitHub](https://github.com/) with:
+[GitHub](https://github.com/elbersb/socialchange) with:
 
 ``` r
 
@@ -72,11 +79,6 @@ world from 1950 onwards, so it also includes the required data:
 ``` r
 
 library(data.table)
-#> 
-#> Attaching package: 'data.table'
-#> The following object is masked from 'package:base':
-#> 
-#>     %notin%
 wpp_data <- as.data.table(socialchange::wpp_data)
 # population data is in 1,000
 wpp_data[Location == "Belgium" & Time %in% c(1952, 1973, 1981, 1986, 1995, 2004, 2007, 2013, 2020)]

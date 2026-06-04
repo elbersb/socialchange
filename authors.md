@@ -2,16 +2,17 @@
 
 ## Authors
 
-- **The package maintainer**. Maintainer.
+- **Benjamin Elbers**. Author, maintainer.
 
 ## Citation
 
-it Ww (2026). *socialchange: What the Package Does (Title Case)*. R
-package version 0.1.0, <https://elbersb.github.io/socialchange/>.
+Elbers B (2026). *socialchange: Decompose Social Change into
+Intraindividual Change and Population Turnover*. R package version
+0.1.0, <https://elbersb.github.io/socialchange/>.
 
     @Manual{,
-      title = {socialchange: What the Package Does (Title Case)},
-      author = {Who wrote it},
+      title = {socialchange: Decompose Social Change into Intraindividual Change and Population Turnover},
+      author = {Benjamin Elbers},
       year = {2026},
       note = {R package version 0.1.0},
       url = {https://elbersb.github.io/socialchange/},

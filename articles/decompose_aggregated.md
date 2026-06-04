@@ -93,8 +93,8 @@ print(decompresult, detailed = FALSE)
 #>  Total change              0.0000
 #>  - Intraindividual change  0.2500
 #>  - Population turnover    -0.2500
-#>    - Mortality            -0.1207
-#>    - Coming-of-age        -0.1293
+#>    - Mortality            -0.1208
+#>    - Coming-of-age        -0.1292
 #> Assumes no in- or out-migration.
 ```
 
@@ -135,11 +135,11 @@ print(simresult, detailed = FALSE)
 #>  At initial                0.37580
 #>  At end                    0.37580
 #>  Total change              0.00000
-#>  - Intraindividual change  0.12487
-#>  - Population turnover    -0.12487
-#>    - Mortality            -0.06027
+#>  - Intraindividual change  0.12485
+#>  - Population turnover    -0.12485
+#>    - Mortality            -0.06031
 #>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.06460
+#>    - Coming-of-age        -0.06454
 #>    - In-migration          0.00000
 ```
 
@@ -163,8 +163,8 @@ print(decomp, detailed = FALSE)
 #>  Total change              0.00000
 #>  - Intraindividual change  0.12500
 #>  - Population turnover    -0.12500
-#>    - Mortality            -0.06039
-#>    - Coming-of-age        -0.06461
+#>    - Mortality            -0.06036
+#>    - Coming-of-age        -0.06464
 #> Assumes no in- or out-migration.
 ```
 
@@ -183,10 +183,10 @@ print(decomp, detailed = FALSE)
 #>  At initial (modeled)      0.37580
 #>  At end (modeled)          0.37580
 #>  Total change              0.00000
-#>  - Intraindividual change  0.12499
-#>  - Population turnover    -0.12499
-#>    - Mortality            -0.06034
-#>    - Coming-of-age        -0.06465
+#>  - Intraindividual change  0.12501
+#>  - Population turnover    -0.12501
+#>    - Mortality            -0.06037
+#>    - Coming-of-age        -0.06464
 #> Assumes no in- or out-migration.
 ```
 
@@ -212,9 +212,9 @@ print(simresult, detailed = FALSE)
 #>  Total change              0.500000
 #>  - Intraindividual change  0.500000
 #>  - Population turnover     0.000000
-#>    - Mortality             0.000014
+#>    - Mortality            -0.000055
 #>    - Out-migration         0.000000
-#>    - Coming-of-age        -0.000014
+#>    - Coming-of-age         0.000055
 #>    - In-migration          0.000000
 ```
 
@@ -254,14 +254,14 @@ predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
 decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
 print(decomp, detailed = FALSE)
-#>                 Component    Value
-#>  At initial (modeled)      0.30000
-#>  At end (modeled)          0.80000
-#>  Total change              0.50000
-#>  - Intraindividual change  0.50000
-#>  - Population turnover     0.00000
-#>    - Mortality            -0.00002
-#>    - Coming-of-age         0.00002
+#>                 Component     Value
+#>  At initial (modeled)      0.300000
+#>  At end (modeled)          0.800000
+#>  Total change              0.500000
+#>  - Intraindividual change  0.500000
+#>  - Population turnover     0.000000
+#>    - Mortality            -0.000023
+#>    - Coming-of-age         0.000023
 #> Assumes no in- or out-migration.
 ```
 
@@ -287,9 +287,9 @@ print(simresult, detailed = FALSE)
 #>  Total change             0.5000
 #>  - Intraindividual change 0.0000
 #>  - Population turnover    0.5000
-#>    - Mortality            0.2415
+#>    - Mortality            0.2414
 #>    - Out-migration        0.0000
-#>    - Coming-of-age        0.2585
+#>    - Coming-of-age        0.2586
 #>    - In-migration         0.0000
 ```
 
@@ -382,9 +382,9 @@ print(smoking1, detailed = FALSE)
 #>  Total change              0.000000
 #>  - Intraindividual change  0.000000
 #>  - Population turnover     0.000000
-#>    - Mortality            -0.000832
+#>    - Mortality            -0.000789
 #>    - Out-migration         0.000000
-#>    - Coming-of-age         0.000832
+#>    - Coming-of-age         0.000789
 #>    - In-migration          0.000000
 ```
 
@@ -406,8 +406,8 @@ print(decomp, detailed = FALSE)
 #>  Total change              0.000000
 #>  - Intraindividual change  0.000000
 #>  - Population turnover     0.000000
-#>    - Mortality            -0.000836
-#>    - Coming-of-age         0.000836
+#>    - Mortality            -0.000711
+#>    - Coming-of-age         0.000711
 #> Assumes no in- or out-migration.
 ```
 
@@ -431,11 +431,11 @@ print(smoking2, detailed = FALSE)
 #>  At initial                0.867686
 #>  At end                    0.590757
 #>  Total change             -0.276929
-#>  - Intraindividual change -0.276866
-#>  - Population turnover    -0.000062
-#>    - Mortality            -0.001131
+#>  - Intraindividual change -0.276864
+#>  - Population turnover    -0.000065
+#>    - Mortality            -0.001099
 #>    - Out-migration         0.000000
-#>    - Coming-of-age         0.001069
+#>    - Coming-of-age         0.001034
 #>    - In-migration          0.000000
 ```
 
@@ -455,10 +455,10 @@ print(decomp, detailed = FALSE)
 #>  At initial (modeled)      0.867686
 #>  At end (modeled)          0.590757
 #>  Total change             -0.276929
-#>  - Intraindividual change -0.276802
-#>  - Population turnover    -0.000126
-#>    - Mortality            -0.001144
-#>    - Coming-of-age         0.001018
+#>  - Intraindividual change -0.276799
+#>  - Population turnover    -0.000129
+#>    - Mortality            -0.001214
+#>    - Coming-of-age         0.001085
 #> Assumes no in- or out-migration.
 ```
 
@@ -482,11 +482,11 @@ print(smoking3, detailed = FALSE)
 #>  At initial                0.86769
 #>  At end                    0.50476
 #>  Total change             -0.36293
-#>  - Intraindividual change -0.29143
-#>  - Population turnover    -0.07150
-#>    - Mortality            -0.01098
+#>  - Intraindividual change -0.29150
+#>  - Population turnover    -0.07142
+#>    - Mortality            -0.01076
 #>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.06052
+#>    - Coming-of-age        -0.06066
 #>    - In-migration          0.00000
 ```
 
@@ -506,9 +506,9 @@ print(decomp, detailed = FALSE)
 #>  At initial (modeled)      0.86769
 #>  At end (modeled)          0.50476
 #>  Total change             -0.36293
-#>  - Intraindividual change -0.29137
+#>  - Intraindividual change -0.29138
 #>  - Population turnover    -0.07155
-#>    - Mortality            -0.01066
-#>    - Coming-of-age        -0.06089
+#>    - Mortality            -0.01061
+#>    - Coming-of-age        -0.06094
 #> Assumes no in- or out-migration.
 ```
