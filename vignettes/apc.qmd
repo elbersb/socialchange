@@ -1,0 +1,46 @@
+---
+title: "Decomposing General Social Survey data: Attitudes on Homosexuality"
+vignette: >
+  %\VignetteIndexEntry{Decomposing General Social Survey data: Attitudes on Homosexuality}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+execute:
+  warning: false
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: '#>'
+---
+
+For research purposes, this package also implements some methods on APC analysis. We use the `gss_homosex` dataset for these examples.
+
+## Fosse & Winship 2D-APC graph
+
+```{r fig.height = 4}
+library("socialchange")
+library("ggplot2")
+
+apc_model <- apc(gss_homosex[cohort < 1990 & cohort > 1900], homosex ~ age + year + cohort)
+apc_plot_two2d(apc_model)
+```
+
+## Identifying the non-linearities
+
+Formal analysis of the non-linearities:
+
+```{r}
+apc_plot_nonlinearities(apc_model)
+```
+
+## APC effects under different assumptions
+
+```{r}
+apc_plot_total(apc_model, list("age_linear" = 0)) +
+    ggtitle("Total effects assuming age linear trend is zero")
+
+apc_plot_total(apc_model, list("period_linear" = 0)) +
+    ggtitle("Total effects assuming period linear trend is zero")
+
+apc_plot_total(apc_model, list("cohort_linear" = 0)) +
+    ggtitle("Total effects assuming cohort linear trend is zero")
+```

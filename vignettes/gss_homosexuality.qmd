@@ -1,0 +1,56 @@
+---
+title: "Decomposing General Social Survey data: Attitudes on Homosexuality"
+vignette: >
+  %\VignetteIndexEntry{Decomposing General Social Survey data: Attitudes on Homosexuality}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+execute:
+  warning: false
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: '#>'
+---
+
+The package includes a dataset `gss_homosex`, covering General Social Survey data on attitudes
+towards homosexuality in the U.S. This data was also analyzed in Ekstam (2021).
+
+## Packages
+
+```{r}
+library("socialchange")
+library("modelsummary")
+library("ggplot2")
+
+data(gss_homosex)
+```
+
+## Descriptives
+
+```{r fig.height = 4}
+# compare to Table 1 in Ekstam -- roughly similar
+modelsummary::datasummary(
+  homosex + year + cohort + age + educ + sex + race ~ mean + SD + min + max,
+  data = gss_homosex, output = "markdown", fmt = 3)
+
+by_year <- gss_homosex[, list(y = weighted.mean(homosex, wtssall)), by = c("year")]
+ggplot(by_year, aes(x = year, y = y)) + geom_line() + ylim(0, 1) + theme_light()
+```
+
+## IC-CR decomposition
+
+```{r}
+# complete period
+form <- homosex ~ as.factor(year) + as.factor(cohort)
+(res <- cr_ic(gss_homosex, homosex ~ year + cohort, weight = "wtssall", model = form))
+```
+
+```{r}
+plot(res)
+```
+
+```{r}
+# only beginning and end year (also compare to Baunach 2011)
+form <- homosex ~ as.factor(year) + splines::bs(cohort, 10)
+(res <- cr_ic(gss_homosex[year %in% c(min(year), max(year))], homosex ~ year + cohort, weight = "wtssall", model = form))
+```
