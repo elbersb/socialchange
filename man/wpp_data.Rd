@@ -3,19 +3,27 @@
 \docType{data}
 \name{wpp_data}
 \alias{wpp_data}
-\title{WPP World Population data}
+\title{UN World Population Prospects population data}
 \format{
 A data frame with 43,186 rows and 3 variables:
 \describe{
-  \item{Location}{X}
-  \item{Time}{X}
-  \item{PopTotal}{X}
+  \item{Location}{Name of the country or region (character).}
+  \item{Time}{Year (numeric), ranging from 1950 to 2100.}
+  \item{PopTotal}{Total population in thousands (numeric).}
 }
+}
+\source{
+United Nations, Department of Economic and Social Affairs,
+  Population Division. World Population Prospects 2022.
+  \url{https://population.un.org/wpp/}
 }
 \usage{
 wpp_data
 }
 \description{
-WPP
+Total population estimates and projections by location and year from the
+UN World Population Prospects (WPP), covering 1950--2100. Includes world
+regions and individual countries. Prepared via the
+\href{https://github.com/PPgp/tidywpp}{tidywpp} package.
 }
 \keyword{datasets}

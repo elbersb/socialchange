@@ -1,39 +1,82 @@
-#' GSS
+#' GSS attitudes toward homosexual sex relations
 #'
-#' GSS
+#' A subset of the General Social Survey (GSS) containing respondents with
+#' valid responses to the \code{homosex} question, covering survey years
+#' 1973--2018 and birth cohorts 1892--1995. Oversample designs (samples 4, 5,
+#' and 7) are excluded. The outcome variable has been rescaled from its
+#' original 1--4 coding to a 0--1 scale. Prepared from the
+#' \href{https://cran.r-project.org/package=gssr}{gssr} package.
 #'
-#' @format A data frame with 5,234 rows and 5 variables:
+#' @format A data.table with 36,494 rows and 19 variables:
 #' \describe{
-#'   \item{rac}{X}
-#'   \item{year}{X}
-#'   \item{age}{X}
-#'   \item{cohort}{X}
-#'   \item{region}{X}
-#'   \item{sex}{X}
-#'   \item{wtssall}{X}
+#'   \item{id}{Respondent ID number.}
+#'   \item{year}{GSS survey year.}
+#'   \item{wtssall}{Survey weight.}
+#'   \item{sample}{Sampling frame and method code.}
+#'   \item{vstrat}{Variance stratum (NA for many years).}
+#'   \item{vpsu}{Variance primary sampling unit (NA for many years).}
+#'   \item{homosex}{Attitude toward sexual relations between two adults of the
+#'     same sex, rescaled to 0--1 (0 = always wrong, 1 = not wrong at all).
+#'     Original 4-point scale: 1 = Always Wrong, 2 = Almost Always Wrong,
+#'     3 = Sometimes Wrong, 4 = Not Wrong at All.}
+#'   \item{age}{Age of respondent at time of interview.}
+#'   \item{cohort}{Birth year, computed as \code{year - age}.}
+#'   \item{sex}{Sex of respondent (1 = Male, 2 = Female).}
+#'   \item{educ}{Highest year of school completed.}
+#'   \item{marital}{Marital status (1 = Married, 2 = Widowed, 3 = Divorced,
+#'     4 = Separated, 5 = Never Married).}
+#'   \item{race}{Race of respondent (1 = White, 2 = Black, 3 = Other).}
+#'   \item{region}{Region of interview (1--9, Census divisions).}
+#'   \item{born}{Whether respondent was born in the United States
+#'     (1 = Yes, 2 = No; NA for many years).}
+#'   \item{physhlth}{Days of poor physical health in past 30 days
+#'     (NA for many years).}
+#'   \item{compuse}{Whether respondent uses a computer
+#'     (1 = Yes, 2 = No; NA for many years).}
+#'   \item{relig16}{Religion in which respondent was raised
+#'     (1 = Protestant, 2 = Catholic, 3 = Jewish, 4 = None, etc.).}
+#'   \item{pray}{Frequency of prayer (NA for many years).}
 #' }
-"gssrac"
+#' @source Smith, Tom W., Davern, Michael, Freese, Jeremy, and Morgan,
+#'   Stephen L. General Social Surveys, 1972--2018. NORC, Chicago.
+#'   Accessed via the \href{https://cran.r-project.org/package=gssr}{gssr}
+#'   R package.
+"gss_homosex"
 
-#' WPP World Population data
+#' UN World Population Prospects population data
 #'
-#' WPP
+#' Total population estimates and projections by location and year from the
+#' UN World Population Prospects (WPP), covering 1950--2100. Includes world
+#' regions and individual countries. Prepared via the
+#' \href{https://github.com/PPgp/tidywpp}{tidywpp} package.
 #'
 #' @format A data frame with 43,186 rows and 3 variables:
 #' \describe{
-#'   \item{Location}{X}
-#'   \item{Time}{X}
-#'   \item{PopTotal}{X}
+#'   \item{Location}{Name of the country or region (character).}
+#'   \item{Time}{Year (numeric), ranging from 1950 to 2100.}
+#'   \item{PopTotal}{Total population in thousands (numeric).}
 #' }
+#' @source United Nations, Department of Economic and Social Affairs,
+#'   Population Division. World Population Prospects 2022.
+#'   \url{https://population.un.org/wpp/}
 "wpp_data"
 
-#' EU Membership data
+#' EU membership events
 #'
-#' EU Membership data
+#' Dates of entry into and exit from the European Union (and its predecessor,
+#' the European Coal and Steel Community / European Economic Community) for
+#' all 28 member states as of 2020. Used in examples for
+#' \code{\link{decompose_events}}.
 #'
 #' @format A data frame with 29 rows and 3 variables:
 #' \describe{
-#'   \item{country}{X}
-#'   \item{date}{X}
-#'   \item{event_type}{X}
+#'   \item{country}{Country name (character).}
+#'   \item{date}{Date of the membership event in \code{"YYYY-MM-DD"} format
+#'     (character).}
+#'   \item{event_type}{Type of event: \code{"initial"} for the six founding
+#'     members of the ECSC in 1952, \code{"entry"} for subsequent accessions,
+#'     or \code{"exit"} for departures (United Kingdom, 2020-01-31).}
 #' }
+#' @source Wikipedia contributors. "Member state of the European Union."
+#'   Wikipedia, The Free Encyclopedia.
 "eu_membership"

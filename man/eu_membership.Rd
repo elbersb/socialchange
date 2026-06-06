@@ -3,19 +3,29 @@
 \docType{data}
 \name{eu_membership}
 \alias{eu_membership}
-\title{EU Membership data}
+\title{EU membership events}
 \format{
 A data frame with 29 rows and 3 variables:
 \describe{
-  \item{country}{X}
-  \item{date}{X}
-  \item{event_type}{X}
+  \item{country}{Country name (character).}
+  \item{date}{Date of the membership event in \code{"YYYY-MM-DD"} format
+    (character).}
+  \item{event_type}{Type of event: \code{"initial"} for the six founding
+    members of the ECSC in 1952, \code{"entry"} for subsequent accessions,
+    or \code{"exit"} for departures (United Kingdom, 2020-01-31).}
 }
+}
+\source{
+Wikipedia contributors. "Member state of the European Union."
+  Wikipedia, The Free Encyclopedia.
 }
 \usage{
 eu_membership
 }
 \description{
-EU Membership data
+Dates of entry into and exit from the European Union (and its predecessor,
+the European Coal and Steel Community / European Economic Community) for
+all 28 member states as of 2020. Used in examples for
+\code{\link{decompose_events}}.
 }
 \keyword{datasets}
