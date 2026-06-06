@@ -28,7 +28,11 @@
 #' @details
 #' The function estimates mortality and coming-of-age from period-to-period population
 #' differences within cells, then uses microsimulation to randomly order demographic
-#' events and track their contribution to aggregate change.
+#' events and track their contribution to aggregate change. Unequal and multi-year gaps
+#' between periods are supported: when the gap exceeds one year, each entering cohort is
+#' assigned to the specific calendar year within the gap when it crosses the minimum age,
+#' so that post-entry aging is correctly attributed to intraindividual change rather than
+#' coming-of-age.
 #'
 #' \strong{Limitation}: Does not properly handle within-cell state transitions. Transition
 #' effects are absorbed into the intraindividual change component.
@@ -69,7 +73,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
             checkmate::assert_subset(weight, names(stacked_data))
             setnames(stacked_data, weight, ".wt")
             stacked_data[, .wt := .wt / sum(.wt) * .N, by = period]
-            stacked_data <- stacked_data[, .(n = round(sum(.wt)), y = weighted.mean(y, .wt)), by = group_cols]
+            stacked_data <- stacked_data[, .(n = round(sum(.wt)), y = stats::weighted.mean(y, .wt)), by = group_cols]
         } else {
             stacked_data <- stacked_data[, .(n = .N, y = mean(y)), by = group_cols]
         }
@@ -105,11 +109,13 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
     summary[means, `:=`(observed_mean = observed, modeled_mean = modeled), on = "period"]
 
     for (i_period in 1:(length(periods) - 1)) {
+        gap <- as.numeric(periods[i_period + 1] - periods[i_period])
         vars <- c("n", cells)
         # aggregate so that join doesn't fan out
         data1 <- stacked_data[period == periods[i_period], .(n = sum(n)), by = cells]
         data2 <- stacked_data[period == periods[i_period + 1], .(n = sum(n)), by = cells]
-        data2[, age := age - 1]
+        min_age_data1 <- data1[, min(age)]
+        data2[, age := age - gap]
         for (var in vars) {
             if (!(var %in% cells)) {
                 setnames(data1, var, paste0(var, "1"))
@@ -124,19 +130,15 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
         data[, y := fun_y(data)]
         data[, cell_id := seq_len(.N)]
 
-        min_age <- data[, min(age)]
+        # Ages below min_age_data1 are cohorts that entered during the gap; all others
+        # are survivors from the prior period.
         # LIMITATION: pmax() prevents negative probabilities but doesn't account for
         # transitions between cells (e.g., smoker -> non-smoker). This is a known limitation
         # of the aggregated decomposition approach for data with within-cell transitions.
-        data[, coming_of_age := ifelse(age == min_age, pmax(0, n2 - n1), 0)]
-        data[, mortality := ifelse(age == min_age, 0, pmax(0, n1 - n2))]
+        data[, coming_of_age := ifelse(age < min_age_data1, pmax(0, n2 - n1), 0)]
+        data[, mortality := ifelse(age < min_age_data1, 0, pmax(0, n1 - n2))]
 
-        event_counts <- c(
-            "coming_of_age" = data[, sum(coming_of_age)],
-            "mortality" = data[, sum(mortality)]
-        )
-
-        n_ev <- sum(event_counts)
+        n_ev <- data[, sum(coming_of_age) + sum(mortality)]
         n_c <- nrow(data)
         n_records <- 2L * n_ev + 1L
 
@@ -146,13 +148,58 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
         cr_delta <- numeric(n_records)
         cr_idx <- 1L
 
-        events_tick <- sort(stats::runif(n_ev))
-        tick <- 0
+        # Pre-assign every event to a (time, type, cell) triple and sort by time.
+        #
+        # Coming-of-age timing:
+        #   data2 ages are shifted back by `gap`, so a row with aligned age `a` represents
+        #   people who were `a` years old at period 1 and will be `a + gap` at period 2.
+        #   For coming-of-age cells (a < min_age_data1), these people crossed the minimum
+        #   age threshold during the gap.  A person with aligned age `a` reaches
+        #   min_age_data1 exactly (min_age_data1 - a) years into the gap.  Because birth
+        #   dates are spread across a calendar year, entries are uniform over the year
+        #   ending at that point:
+        #
+        #     lo = (min_age_data1 - a - 1) / gap     hi = (min_age_data1 - a) / gap
+        #
+        #   Example — gap = 2, min_age_data1 = 20:
+        #     aligned age 19 (age 21 in period 2): lo = 0,   hi = 0.5  (enter in year 1)
+        #     aligned age 18 (age 20 in period 2): lo = 0.5, hi = 1.0  (enter in year 2)
+        #
+        # Mortality is uniformly distributed across the full gap.
+        ev_type <- character(n_ev)
+        ev_cell <- integer(n_ev)
+        ev_time <- numeric(n_ev)
+        ev_idx <- 1L
+        coa_vec <- data$coming_of_age
+        mort_vec <- data$mortality
+        for (cidx in seq_len(n_c)) {
+            n_coa <- coa_vec[cidx]
+            if (n_coa > 0L) {
+                a <- data$age[cidx]
+                lo <- max(0, (min_age_data1 - a - 1) / gap)
+                hi <- (min_age_data1 - a) / gap
+                end_idx <- ev_idx + n_coa - 1L
+                ev_type[ev_idx:end_idx] <- "coming_of_age"
+                ev_cell[ev_idx:end_idx] <- cidx
+                ev_time[ev_idx:end_idx] <- stats::runif(n_coa, lo, hi)
+                ev_idx <- end_idx + 1L
+            }
+            n_mort <- mort_vec[cidx]
+            if (n_mort > 0L) {
+                end_idx <- ev_idx + n_mort - 1L
+                ev_type[ev_idx:end_idx] <- "mortality"
+                ev_cell[ev_idx:end_idx] <- cidx
+                ev_time[ev_idx:end_idx] <- stats::runif(n_mort)
+                ev_idx <- end_idx + 1L
+            }
+        }
+        ord <- order(ev_time)
+        events_tick <- ev_time[ord]
+        ev_type <- ev_type[ord]
+        ev_cell <- ev_cell[ord]
 
-        # Local copies keep R vector semantics inside the loop (no data.table overhead)
+        # n_vec tracks the current population; updated as events fire
         n_vec <- data$n
-        mortality_vec <- data$mortality
-        coming_of_age_vec <- data$coming_of_age
 
         # Evaluate fun_y once on a stacked copy of data at every event time, yielding a
         # n_c × n_ev matrix. Only age and period are updated per event-time slice; all
@@ -164,11 +211,11 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
             data_stack <- data[idx_rep]
             set(
                 data_stack, NULL, "age",
-                rep.int(data$age, n_ev) + rep(events_tick, each = n_c)
+                rep.int(data$age, n_ev) + rep(events_tick * gap, each = n_c)
             )
             set(
                 data_stack, NULL, "period",
-                rep.int(data$period, n_ev) + rep(events_tick, each = n_c)
+                rep.int(data$period, n_ev) + rep(events_tick * gap, each = n_c)
             )
             y_mat <- matrix(fun_y(data_stack), nrow = n_c, ncol = n_ev)
         }
@@ -180,8 +227,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
 
         for (i_ev in seq_len(n_ev)) {
             event_tick <- events_tick[i_ev]
-            tick <- event_tick
-            time <- i_period - 1 + tick
+            time <- i_period - 1 + event_tick
 
             pre_mean <- post_event_mean # reuses last iteration's post_event_mean
             y_cur <- y_mat[, i_ev]
@@ -193,24 +239,19 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
             cr_delta[cr_idx] <- post_ic_mean - pre_mean
             cr_idx <- cr_idx + 1L
 
-            event <- sample(names(event_counts), 1L, prob = event_counts)
+            event <- ev_type[i_ev]
+            pick_idx <- ev_cell[i_ev]
+            y_pick <- y_cur[pick_idx]
 
             if (event == "mortality") {
-                pick_idx <- sample.int(n_c, 1L, prob = mortality_vec)
-                y_pick <- y_cur[pick_idx]
-                mortality_vec[pick_idx] <- mortality_vec[pick_idx] - 1
                 n_vec[pick_idx] <- n_vec[pick_idx] - 1
                 sum_yn <- sum_yn - y_pick
                 sum_n <- sum_n - 1
             } else if (event == "coming_of_age") {
-                pick_idx <- sample.int(n_c, 1L, prob = coming_of_age_vec)
-                y_pick <- y_cur[pick_idx]
-                coming_of_age_vec[pick_idx] <- coming_of_age_vec[pick_idx] - 1
                 n_vec[pick_idx] <- n_vec[pick_idx] + 1
                 sum_yn <- sum_yn + y_pick
                 sum_n <- sum_n + 1
             }
-            event_counts[event] <- event_counts[event] - 1
             post_event_mean <- sum_yn / sum_n
 
             cr_component[cr_idx] <- event
@@ -221,10 +262,10 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
 
         # Write local vectors back and advance to next period.
         # age was not updated inside the loop (y was pre-computed instead), so add
-        # the full period (1) here rather than just the remaining fraction (1 - tick).
+        # the full gap here rather than just the remaining fraction.
         data[, `:=`(
-            n = n_vec, mortality = mortality_vec, coming_of_age = coming_of_age_vec,
-            age = age + 1, period = period + 1
+            n = n_vec,
+            age = age + gap, period = period + gap
         )]
         data[, y := fun_y(data)]
         sum_yn <- sum(data$y * n_vec)

@@ -432,3 +432,124 @@ test_that("decompose_aggregated validates input", {
     "subset"
   )
 })
+
+test_that("decompose_aggregated handles non-annual data (gap = 2)", {
+  # ARRANGE - Simulate 4 annual periods, then use only every other snapshot (gap = 2)
+  set.seed(42)
+  simresult <- sim_social_change(
+    periods = 4, data = build_simple_population(),
+    fun_y = make_age_only_outcome(),
+    fun_mortality = make_stable_mortality_simple(),
+    fun_coming_of_age = make_stable_coming_of_age_simple()
+  )
+
+  stacked_gap2 <- rbindlist(simresult$snapshot[c(1, 3, 5)])  # periods 0, 2, 4
+  model <- lm(y ~ age, data = stacked_gap2)
+  predict_y <- function(newdata) predict(model, newdata = newdata)
+
+  # ACT
+  decomp <- decompose_aggregated(stacked_gap2, predict_y)
+
+  # ASSERT - Total IC and PT should match the full 4-year simulation
+  expect_equal(
+    decomp$summary[period > 0, sum(intraindividual)],
+    simresult$summary[period > 0, sum(intraindividual)],
+    tolerance = 1e-3
+  )
+  expect_equal(
+    decomp$summary[period > 0, sum(mortality + coming_of_age)],
+    simresult$summary[period > 0, sum(mortality + coming_of_age)],
+    tolerance = 1e-3
+  )
+
+  # Internal consistency: components sum to total modeled change
+  total_change <- decomp$summary[.N, modeled_mean] - decomp$summary[1, modeled_mean]
+  expect_equal(
+    decomp$summary[period > 0, sum(intraindividual + mortality + coming_of_age)],
+    total_change, tolerance = 1e-4
+  )
+})
+
+test_that("coming-of-age events respect their entry-year window (gap > 1)", {
+  # With gap = 2 and min_age = 20, aligned age 19 (actual age 21 in period 2)
+  # crossed the threshold in year 1 of the gap → tick in [0, 0.5]; aligned age 18
+  # (actual age 20 in period 2) crossed in year 2 → tick in [0.5, 1.0].
+  # runif(n, lo, hi) is a hard constraint, so these assertions are deterministic.
+
+  # Only year-1 entrants: period 2 has ages 21–26, no age-20.
+  # Aligned age 19 is the sole CoA cell; all CoA event times must be in [0, 0.5].
+  stacked_yr1 <- rbind(
+    data.table(age = 20:24, period = 0, y = 20:24, n = 100),
+    data.table(age = 21:26, period = 2, y = 21:26, n = 100)
+  )
+  model_yr1 <- lm(y ~ age, data = stacked_yr1)
+  decomp_yr1 <- decompose_aggregated(stacked_yr1, function(nd) predict(model_yr1, newdata = nd))
+  coa_yr1 <- decomp_yr1$record[[1]][component == "coming_of_age"]
+  expect_true(all(coa_yr1$time <= 0.5))
+
+  # Only year-2 entrants: period 2 has ages 20 and 22–27, no age-21.
+  # Aligned age 18 is the sole CoA cell; all CoA event times must be in [0.5, 1.0].
+  stacked_yr2 <- rbind(
+    data.table(age = 20:24,        period = 0, y = 20:24,        n = 100),
+    data.table(age = c(20, 22:27), period = 2, y = c(20, 22:27), n = 100)
+  )
+  model_yr2 <- lm(y ~ age, data = stacked_yr2)
+  decomp_yr2 <- decompose_aggregated(stacked_yr2, function(nd) predict(model_yr2, newdata = nd))
+  coa_yr2 <- decomp_yr2$record[[1]][component == "coming_of_age"]
+  expect_true(all(coa_yr2$time >= 0.5))
+})
+
+test_that("decompose_aggregated captures all entering cohorts for gap > 1", {
+  # ARRANGE - 100 entrants/yr; gap=2 must count 2 cohorts, not 1
+  set.seed(42)
+  simresult <- sim_social_change(
+    periods = 2, data = build_simple_population(),
+    fun_y = make_age_only_outcome(),
+    fun_mortality = make_stable_mortality_simple(),
+    fun_coming_of_age = make_stable_coming_of_age_simple()
+  )
+
+  stacked <- rbindlist(simresult$snapshot)
+  model <- lm(y ~ age, data = stacked)
+  predict_y <- function(newdata) predict(model, newdata = newdata)
+
+  # ACT
+  decomp_gap1 <- decompose_aggregated(rbindlist(simresult$snapshot[1:2]), predict_y)
+  decomp_gap2 <- decompose_aggregated(rbindlist(simresult$snapshot[c(1, 3)]), predict_y)
+
+  coa_gap1 <- decomp_gap1$summary[period > 0, sum(coming_of_age)]
+  coa_gap2 <- decomp_gap2$summary[period > 0, sum(coming_of_age)]
+
+  # ASSERT - gap=2 picks up two cohorts, so effect is ~double gap=1
+  expect_equal(coa_gap2, 2 * coa_gap1, tolerance = 0.05)
+})
+
+test_that("decompose_aggregated handles unequal gaps between periods", {
+  # ARRANGE - Periods 0, 1, 3: first gap=1, second gap=2
+  set.seed(42)
+  simresult <- sim_social_change(
+    periods = 3, data = build_simple_population(),
+    fun_y = make_age_only_outcome(),
+    fun_mortality = make_stable_mortality_simple(),
+    fun_coming_of_age = make_stable_coming_of_age_simple()
+  )
+
+  stacked_mixed <- rbindlist(simresult$snapshot[c(1, 2, 4)])  # periods 0, 1, 3
+  model <- lm(y ~ age, data = stacked_mixed)
+  predict_y <- function(newdata) predict(model, newdata = newdata)
+
+  # ACT
+  decomp <- decompose_aggregated(stacked_mixed, predict_y)
+
+  # ASSERT - Total IC and PT should match the full 3-year simulation
+  expect_equal(
+    decomp$summary[period > 0, sum(intraindividual)],
+    simresult$summary[period > 0, sum(intraindividual)],
+    tolerance = 1e-3
+  )
+  expect_equal(
+    decomp$summary[period > 0, sum(mortality + coming_of_age)],
+    simresult$summary[period > 0, sum(mortality + coming_of_age)],
+    tolerance = 1e-3
+  )
+})

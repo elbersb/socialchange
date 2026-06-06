@@ -49,7 +49,11 @@ function that models the outcome as a function of age, period, and covariates.
 \details{
 The function estimates mortality and coming-of-age from period-to-period population
 differences within cells, then uses microsimulation to randomly order demographic
-events and track their contribution to aggregate change.
+events and track their contribution to aggregate change. Unequal and multi-year gaps
+between periods are supported: when the gap exceeds one year, each entering cohort is
+assigned to the specific calendar year within the gap when it crosses the minimum age,
+so that post-entry aging is correctly attributed to intraindividual change rather than
+coming-of-age.
 
 \strong{Limitation}: Does not properly handle within-cell state transitions. Transition
 effects are absorbed into the intraindividual change component.

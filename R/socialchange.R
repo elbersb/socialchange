@@ -7,7 +7,7 @@ utils::globalVariables(c(
     "w", "y", "y_diff", "y_pred", "pct_explained",
     "n", "n1", "n2", "N", "a", "age", "cell_id", "component",
     "effect", "index", "index_post", "index_pre",
-    ".", "pct", "term", "total",
+    ".", "pct", "term", "total", ".wt",
     "inmigration", "outmigration", "coming_of_age", "mortality",
     "n_mortality", "n_outmigration",
     "observed", "modeled", "counterf", "Component",
