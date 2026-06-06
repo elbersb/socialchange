@@ -1,16 +1,16 @@
 ---
 title: "Replications: Firebaugh"
-format:
-  html:
-    toc: true
+vignette: >
+  %\VignetteIndexEntry{Replications: Firebaugh}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+execute:
+  warning: false
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: '#>'
 ---
-
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
 
 ```{r}
 library("socialchange")
@@ -23,7 +23,8 @@ options(digits = 3)
 # Overview of methods
 
 The goal is to decompose total change into two components: intracohort change (IC) and
-cohort replacement (CR), ideally without a residual.
+cohort replacement (CR), ideally without a residual. The same methods are applied to GSS
+attitudes on homosexuality in the [GSS homosexuality vignette](gss_homosexuality.html).
 
 This document contains analyses based on four methods:
 
@@ -100,3 +101,5 @@ Now using all available data:
 ```
 
 The IC component is larger for these methods than for AD and LD, but the overall conclusion does not change substantially.
+
+The CR-IC decompositions here work from aggregated cohort-level data. For a more granular approach that directly tracks demographic events (mortality, coming-of-age) and allows state transitions, see the [simulation](simulate.html) and [aggregated decomposition](decompose_aggregated.html) vignettes.

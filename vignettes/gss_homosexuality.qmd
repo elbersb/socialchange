@@ -39,6 +39,8 @@ ggplot(by_year, aes(x = year, y = y)) + geom_line() + ylim(0, 1) + theme_light()
 
 ## IC-CR decomposition
 
+The `cr_ic()` function implements four methods for separating intracohort change (IC) from cohort replacement (CR): algebraic decomposition (AD), linear decomposition (LD), and two model-based improvements (AD+ and Model). For a detailed explanation of each method, including a replication of Firebaugh (1989), see the [Replications: Firebaugh](replicating_firebaugh.html) vignette.
+
 ```{r}
 # complete period
 form <- homosex ~ as.factor(year) + as.factor(cohort)
@@ -54,3 +56,5 @@ plot(res)
 form <- homosex ~ as.factor(year) + splines::bs(cohort, 10)
 (res <- cr_ic(gss_homosex[year %in% c(min(year), max(year))], homosex ~ year + cohort, weight = "wtssall", model = form))
 ```
+
+For APC analysis of the same `gss_homosex` dataset, see the [APC vignette](apc.html).

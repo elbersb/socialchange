@@ -12,7 +12,7 @@ knitr:
     comment: '#>'
 ---
 
-The package contains a function `sim_social_change` that allows the user to explore different scenarios of how social change can happen. The complexity of the simulation is up to the user to define. We'll start simple and build up a more complicated simulation over time.
+The package contains a function `sim_social_change` that allows the user to explore different scenarios of how social change can happen. The complexity of the simulation is up to the user to define. We'll start simple and build up a more complicated simulation over time. The scenarios in this vignette are also used to validate `decompose_aggregated()` — see the [aggregated decomposition vignette](decompose_aggregated.html), which uses the simulation output as ground truth.
 
 ## Starting with a simple simulation (Scenario 1)
 

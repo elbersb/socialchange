@@ -1,7 +1,7 @@
 ---
-title: "Decomposing General Social Survey data: Attitudes on Homosexuality"
+title: "APC Models"
 vignette: >
-  %\VignetteIndexEntry{Decomposing General Social Survey data: Attitudes on Homosexuality}
+  %\VignetteIndexEntry{APC Models}
   %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 execute:
@@ -12,7 +12,7 @@ knitr:
     comment: '#>'
 ---
 
-For research purposes, this package also implements some methods on APC analysis. We use the `gss_homosex` dataset for these examples.
+For research purposes, this package also implements some methods on APC analysis. We use the `gss_homosex` dataset for these examples. For a CR-IC decomposition of the same dataset comparing intracohort change and cohort replacement, see the [GSS homosexuality vignette](gss_homosexuality.html).
 
 ## Fosse & Winship 2D-APC graph
 

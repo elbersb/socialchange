@@ -9,6 +9,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Population turnover (cohort replacement, mortality, migration, coming-of-age)
 - Event-driven changes (e.g., countries joining/leaving the EU)
 
+## Intellectual Positioning
+
+The package has two main intellectual motivations:
+
+1. **Skepticism of APC models**: The package is partly a critique of Age-Period-Cohort (APC) methods. APC models suffer from the identification problem (age = period − cohort) and require untestable assumptions to resolve it. The package offers decomposition-based alternatives that are more directly interpretable. (This critique will be developed further in future vignettes/papers.)
+
+2. **Improving on Firebaugh's CR-IC decomposition**: Firebaugh's algebraic and linear CR-IC decompositions are the classical approach to separating cohort replacement from intracohort change, but they have known limitations (treatment of entering/exiting cohorts, inability to handle non-linearities, residuals in the linear method). This package improves on those methods via model-based counterfactuals (AD+, Model methods in `cr_ic()`) and, more fundamentally, via the simulation-based individual-level decomposition (`sim_social_change()`, `decompose_aggregated()`), which tracks demographic events directly rather than inferring them algebraically.
+
 ## Key Commands
 
 ### Package Development
