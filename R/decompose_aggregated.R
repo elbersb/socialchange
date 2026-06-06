@@ -4,12 +4,19 @@
 #' components using microsimulation on stacked cross-sectional data. Requires a prediction
 #' function that models the outcome as a function of age, period, and covariates.
 #'
-#' @param stacked_data Stacked data.table with columns \code{age}, \code{period}, \code{n}, \code{y}, and optional cell identifiers
+#' @param stacked_data Data frame with columns \code{age}, \code{period}, and \code{y}, plus optional cell identifiers.
+#'   If a column \code{n} is present the data is treated as already aggregated to cells; otherwise individual-level
+#'   rows are aggregated internally using \code{weight}.
 #' @param fun_y Prediction function taking \code{(newdata)} and returning predicted outcome values
 #' @param cells Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")
 #' @param migration Logical; if TRUE, decompose migration components (not yet implemented)
 #' @param tol Maximum tolerated relative deviation between observed and modeled period means (default 0.05 = 5\%).
-#'      Emits a warning rather than stopping when exceeded.
+#'   Emits a warning rather than stopping when exceeded.
+#' @param weight Name of the weight column used when aggregating individual-level data (ignored if \code{n} is present).
+#'   Weights are normalized within each period to sum to the period sample size before aggregation, so that cell
+#'   counts \code{n} (rounded sums of normalized weights) reflect the relative population structure rather than
+#'   raw sample sizes. This preserves simulation tractability but is an approximation: the ideal approach would
+#'   use true population counts, which are generally unavailable from survey data alone.
 #'
 #' @return S3 object of class \code{social_change_decomp} with components:
 #'   \itemize{
@@ -24,7 +31,7 @@
 #' events and track their contribution to aggregate change.
 #'
 #' \strong{Limitation}: Does not properly handle within-cell state transitions. Transition
-#' effects are absorbed into the intraindividual change component. See CLAUDE.md for details.
+#' effects are absorbed into the intraindividual change component.
 #'
 #' @examples
 #' \dontrun{
@@ -45,15 +52,28 @@
 #'
 #' @import data.table
 #' @export
-decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = FALSE, tol = 0.05) {
+decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = FALSE, tol = 0.05, weight = NULL) {
     checkmate::assert_data_frame(stacked_data)
-    checkmate::assert_subset(c("age", "n", cells), names(stacked_data))
+    checkmate::assert_subset(c("age", "period", "y", cells), names(stacked_data))
     checkmate::assert_function(fun_y, nargs = 1)
     checkmate::assert_vector(cells, any.missing = FALSE, null.ok = TRUE)
     checkmate::assert_logical(migration)
     checkmate::assert_number(tol, lower = 0)
+    checkmate::assert_string(weight, null.ok = TRUE)
 
-    stacked_data <- copy(stacked_data)
+    stacked_data <- copy(as.data.table(stacked_data))
+
+    if (!"n" %in% names(stacked_data)) {
+        group_cols <- c("age", "period", cells)
+        if (!is.null(weight)) {
+            checkmate::assert_subset(weight, names(stacked_data))
+            setnames(stacked_data, weight, ".wt")
+            stacked_data[, .wt := .wt / sum(.wt) * .N, by = period]
+            stacked_data <- stacked_data[, .(n = round(sum(.wt)), y = weighted.mean(y, .wt)), by = group_cols]
+        } else {
+            stacked_data <- stacked_data[, .(n = .N, y = mean(y)), by = group_cols]
+        }
+    }
     periods <- stacked_data[, unique(period)]
     stacked_data[, y_pred := fun_y(.SD)]
     cells <- c(cells, "age")

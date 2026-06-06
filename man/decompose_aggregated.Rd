@@ -4,16 +4,34 @@
 \alias{decompose_aggregated}
 \title{Decompose social change from aggregated data}
 \usage{
-decompose_aggregated(stacked_data, fun_y, cells = c(), migration = FALSE)
+decompose_aggregated(
+  stacked_data,
+  fun_y,
+  cells = c(),
+  migration = FALSE,
+  tol = 0.05,
+  weight = NULL
+)
 }
 \arguments{
-\item{stacked_data}{Stacked data.table with columns \code{age}, \code{period}, \code{n}, \code{y}, and optional cell identifiers}
+\item{stacked_data}{Data frame with columns \code{age}, \code{period}, and \code{y}, plus optional cell identifiers.
+If a column \code{n} is present the data is treated as already aggregated to cells; otherwise individual-level
+rows are aggregated internally using \code{weight}.}
 
 \item{fun_y}{Prediction function taking \code{(newdata)} and returning predicted outcome values}
 
 \item{cells}{Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")}
 
 \item{migration}{Logical; if TRUE, decompose migration components (not yet implemented)}
+
+\item{tol}{Maximum tolerated relative deviation between observed and modeled period means (default 0.05 = 5\%).
+Emits a warning rather than stopping when exceeded.}
+
+\item{weight}{Name of the weight column used when aggregating individual-level data (ignored if \code{n} is present).
+Weights are normalized within each period to sum to the period sample size before aggregation, so that cell
+counts \code{n} (rounded sums of normalized weights) reflect the relative population structure rather than
+raw sample sizes. This preserves simulation tractability but is an approximation: the ideal approach would
+use true population counts, which are generally unavailable from survey data alone.}
 }
 \value{
 S3 object of class \code{social_change_decomp} with components:
@@ -34,7 +52,7 @@ differences within cells, then uses microsimulation to randomly order demographi
 events and track their contribution to aggregate change.
 
 \strong{Limitation}: Does not properly handle within-cell state transitions. Transition
-effects are absorbed into the intraindividual change component. See CLAUDE.md for details.
+effects are absorbed into the intraindividual change component.
 }
 \examples{
 \dontrun{
