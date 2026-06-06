@@ -60,6 +60,11 @@ apc <- function(data, formula) {
     ret
 }
 
+#' Print an APC model
+#'
+#' @param x An `apc_model` object returned by [apc()].
+#' @param ... Not used.
+#' @return `x`, invisibly.
 #' @export
 print.apc_model <- function(x, ...) {
     cat("APC Model", sep = "\n")

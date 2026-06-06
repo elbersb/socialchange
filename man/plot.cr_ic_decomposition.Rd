@@ -2,28 +2,26 @@
 % Please edit documentation in R/cr_ic.R
 \name{plot.cr_ic_decomposition}
 \alias{plot.cr_ic_decomposition}
-\title{Desc}
+\title{Plot a CR/IC decomposition}
 \usage{
 \method{plot}{cr_ic_decomposition}(x, total = TRUE, methods = NULL, ...)
 }
 \arguments{
-\item{x}{X}
+\item{x}{A `cr_ic_decomposition` object returned by [cr_ic()].}
 
-\item{total}{X}
+\item{total}{Logical. If `TRUE` (default), adds a facet showing the total
+change in the outcome alongside the decomposition methods.}
 
-\item{methods}{X}
+\item{methods}{Character vector of method names to include
+(`"LD"`, `"AD"`, `"AD+"`, `"Model"`). If `NULL` (default), all available
+methods are shown.}
 
 \item{...}{Not used.}
 }
 \value{
-Returns ...
+A `ggplot` object.
 }
 \description{
-Desc
-}
-\examples{
-# todo
-}
-\references{
-X
+Plots cumulative IC, CR, and (where applicable) residual contributions over
+time for each decomposition method, with one facet per method.
 }
