@@ -1,6 +1,7 @@
-# Desc
+# Plot a CR/IC decomposition
 
-Desc
+Plots cumulative IC, CR, and (where applicable) residual contributions
+over time for each decomposition method, with one facet per method.
 
 ## Usage
 
@@ -13,15 +14,18 @@ plot(x, total = TRUE, methods = NULL, ...)
 
 - x:
 
-  X
+  A \`cr_ic_decomposition\` object returned by \[cr_ic()\].
 
 - total:
 
-  X
+  Logical. If \`TRUE\` (default), adds a facet showing the total change
+  in the outcome alongside the decomposition methods.
 
 - methods:
 
-  X
+  Character vector of method names to include (\`"LD"\`, \`"AD"\`,
+  \`"AD+"\`, \`"Model"\`). If \`NULL\` (default), all available methods
+  are shown.
 
 - ...:
 
@@ -29,14 +33,4 @@ plot(x, total = TRUE, methods = NULL, ...)
 
 ## Value
 
-Returns ...
-
-## References
-
-X
-
-## Examples
-
-``` r
-# todo
-```
+A \`ggplot\` object.

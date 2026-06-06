@@ -14,6 +14,33 @@ attitudes) - Population turnover (cohort replacement, mortality,
 migration, coming-of-age) - Event-driven changes (e.g., countries
 joining/leaving the EU)
 
+## Intellectual Positioning
+
+The package has two main intellectual motivations:
+
+1.  **Skepticism of APC models**: The package is partly a critique of
+    Age-Period-Cohort (APC) methods. APC models suffer from the
+    identification problem (age = period − cohort) and require
+    untestable assumptions to resolve it. The package offers
+    decomposition-based alternatives that are more directly
+    interpretable. (This critique will be developed further in future
+    vignettes/papers.)
+
+2.  **Improving on Firebaugh’s CR-IC decomposition**: Firebaugh’s
+    algebraic and linear CR-IC decompositions are the classical approach
+    to separating cohort replacement from intracohort change, but they
+    have known limitations (treatment of entering/exiting cohorts,
+    inability to handle non-linearities, residuals in the linear
+    method). This package improves on those methods via model-based
+    counterfactuals (AD+, Model methods in
+    [`cr_ic()`](https://elbersb.github.io/socialchange/reference/cr_ic.md))
+    and, more fundamentally, via the simulation-based individual-level
+    decomposition
+    ([`sim_social_change()`](https://elbersb.github.io/socialchange/reference/sim_social_change.md),
+    [`decompose_aggregated()`](https://elbersb.github.io/socialchange/reference/decompose_aggregated.md)),
+    which tracks demographic events directly rather than inferring them
+    algebraically.
+
 ## Key Commands
 
 ### Package Development
@@ -128,9 +155,11 @@ elbersb/weightedcontrasts)
 
 ## Included Datasets
 
-Located in `data/`: - `gssrac.rda`: General Social Survey data on racial
-attitudes - `eu_membership.rda`: EU country entry/exit dates -
-`wpp_data.rda`: UN World Population Prospects data (1950+)
+Located in `data/`: - `gss_rac.rda`: General Social Survey data on
+racial attitudes of white Americans (1972, 1976, 1980, 1984) -
+`gss_homosex.rda`: General Social Survey data on attitudes toward
+homosexual sex (1973–2018) - `eu_membership.rda`: EU country entry/exit
+dates - `wpp_data.rda`: UN World Population Prospects data (1950+)
 
 Dataset documentation is in `R/data.R` and `man/*.Rd` files. Data
 preparation scripts are in `data-raw/`.

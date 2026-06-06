@@ -3,8 +3,11 @@
 <url><loc>https://elbersb.github.io/socialchange/CLAUDE.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/LICENSE-text.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/LICENSE.html</loc></url>
+<url><loc>https://elbersb.github.io/socialchange/articles/apc.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/articles/decompose_aggregated.html</loc></url>
+<url><loc>https://elbersb.github.io/socialchange/articles/gss_homosexuality.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/articles/index.html</loc></url>
+<url><loc>https://elbersb.github.io/socialchange/articles/replicating_firebaugh.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/articles/simulate.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/authors.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/index.html</loc></url>
@@ -18,9 +21,11 @@
 <url><loc>https://elbersb.github.io/socialchange/reference/decompose_aggregated.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/decompose_events.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/eu_membership.html</loc></url>
-<url><loc>https://elbersb.github.io/socialchange/reference/gssrac.html</loc></url>
+<url><loc>https://elbersb.github.io/socialchange/reference/gss_homosex.html</loc></url>
+<url><loc>https://elbersb.github.io/socialchange/reference/gss_rac.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/index.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/plot.cr_ic_decomposition.html</loc></url>
+<url><loc>https://elbersb.github.io/socialchange/reference/print.apc_model.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/sim_social_change.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/wpp_data.html</loc></url>
 </urlset>

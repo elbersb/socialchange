@@ -18,7 +18,10 @@
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/decompose_aggregated.html">Decomposing social change on aggregated data</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/apc.html">APC Models</a></li>
+    <li><a class="dropdown-item" href="articles/decompose_aggregated.html">Decomposing social change on aggregated data</a></li>
+    <li><a class="dropdown-item" href="articles/gss_homosexuality.html">Decomposing General Social Survey data: Attitudes on Homosexuality</a></li>
+    <li><a class="dropdown-item" href="articles/replicating_firebaugh.html">Replications: Firebaugh</a></li>
     <li><a class="dropdown-item" href="articles/simulate.html">Simulating social change</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -42,6 +45,12 @@
 <h2 id="package-overview">Package Overview<a class="anchor" aria-label="anchor" href="#package-overview"></a></h2>
 <p><code>socialchange</code> is an R package for decomposing social change into components of intraindividual change and population turnover. The package implements multiple decomposition methods for analyzing how aggregate-level outcomes change over time due to: - Intraindividual/within-unit changes (e.g., people changing their attitudes) - Population turnover (cohort replacement, mortality, migration, coming-of-age) - Event-driven changes (e.g., countries joining/leaving the EU)</p>
 </div>
+<div class="section level2">
+<h2 id="intellectual-positioning">Intellectual Positioning<a class="anchor" aria-label="anchor" href="#intellectual-positioning"></a></h2>
+<p>The package has two main intellectual motivations:</p>
+<ol style="list-style-type: decimal"><li><p><strong>Skepticism of APC models</strong>: The package is partly a critique of Age-Period-Cohort (APC) methods. APC models suffer from the identification problem (age = period − cohort) and require untestable assumptions to resolve it. The package offers decomposition-based alternatives that are more directly interpretable. (This critique will be developed further in future vignettes/papers.)</p></li>
+<li><p><strong>Improving on Firebaugh’s CR-IC decomposition</strong>: Firebaugh’s algebraic and linear CR-IC decompositions are the classical approach to separating cohort replacement from intracohort change, but they have known limitations (treatment of entering/exiting cohorts, inability to handle non-linearities, residuals in the linear method). This package improves on those methods via model-based counterfactuals (AD+, Model methods in <code><a href="reference/cr_ic.html">cr_ic()</a></code>) and, more fundamentally, via the simulation-based individual-level decomposition (<code><a href="reference/sim_social_change.html">sim_social_change()</a></code>, <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code>), which tracks demographic events directly rather than inferring them algebraically.</p></li>
+</ol></div>
 <div class="section level2">
 <h2 id="key-commands">Key Commands<a class="anchor" aria-label="anchor" href="#key-commands"></a></h2>
 <div class="section level3">
@@ -134,7 +143,7 @@
 </ul></div>
 <div class="section level2">
 <h2 id="included-datasets">Included Datasets<a class="anchor" aria-label="anchor" href="#included-datasets"></a></h2>
-<p>Located in <code>data/</code>: - <code>gssrac.rda</code>: General Social Survey data on racial attitudes - <code>eu_membership.rda</code>: EU country entry/exit dates - <code>wpp_data.rda</code>: UN World Population Prospects data (1950+)</p>
+<p>Located in <code>data/</code>: - <code>gss_rac.rda</code>: General Social Survey data on racial attitudes of white Americans (1972, 1976, 1980, 1984) - <code>gss_homosex.rda</code>: General Social Survey data on attitudes toward homosexual sex (1973–2018) - <code>eu_membership.rda</code>: EU country entry/exit dates - <code>wpp_data.rda</code>: UN World Population Prospects data (1950+)</p>
 <p>Dataset documentation is in <code>R/data.R</code> and <code>man/*.Rd</code> files. Data preparation scripts are in <code>data-raw/</code>.</p>
 </div>
 <div class="section level2">

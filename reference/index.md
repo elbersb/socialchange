@@ -15,18 +15,22 @@
 - [`apc_total()`](https://elbersb.github.io/socialchange/reference/apc_total.md)
   : Compute total APC effects under assumption
 - [`cr_ic()`](https://elbersb.github.io/socialchange/reference/cr_ic.md)
-  : Desc
+  : Cohort replacement vs. intracohort change decomposition
 - [`decompose_aggregated()`](https://elbersb.github.io/socialchange/reference/decompose_aggregated.md)
   : Decompose social change from aggregated data
 - [`decompose_events()`](https://elbersb.github.io/socialchange/reference/decompose_events.md)
   : Decompose social change from discrete events
 - [`eu_membership`](https://elbersb.github.io/socialchange/reference/eu_membership.md)
-  : EU Membership data
-- [`gssrac`](https://elbersb.github.io/socialchange/reference/gssrac.md)
-  : GSS
+  : EU membership events
+- [`gss_homosex`](https://elbersb.github.io/socialchange/reference/gss_homosex.md)
+  : GSS attitudes toward homosexual sex relations
+- [`gss_rac`](https://elbersb.github.io/socialchange/reference/gss_rac.md)
+  : GSS racial attitudes of white Americans
 - [`plot(`*`<cr_ic_decomposition>`*`)`](https://elbersb.github.io/socialchange/reference/plot.cr_ic_decomposition.md)
-  : Desc
+  : Plot a CR/IC decomposition
+- [`print(`*`<apc_model>`*`)`](https://elbersb.github.io/socialchange/reference/print.apc_model.md)
+  : Print an APC model
 - [`sim_social_change()`](https://elbersb.github.io/socialchange/reference/sim_social_change.md)
   : Simulate social change with demographic processes
 - [`wpp_data`](https://elbersb.github.io/socialchange/reference/wpp_data.md)
-  : WPP World Population data
+  : UN World Population Prospects population data

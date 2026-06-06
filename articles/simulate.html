@@ -35,7 +35,10 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/decompose_aggregated.html">Decomposing social change on aggregated data</a></li>
+<li><a class="dropdown-item" href="../articles/apc.html">APC Models</a></li>
+    <li><a class="dropdown-item" href="../articles/decompose_aggregated.html">Decomposing social change on aggregated data</a></li>
+    <li><a class="dropdown-item" href="../articles/gss_homosexuality.html">Decomposing General Social Survey data: Attitudes on Homosexuality</a></li>
+    <li><a class="dropdown-item" href="../articles/replicating_firebaugh.html">Replications: Firebaugh</a></li>
     <li><a class="dropdown-item" href="../articles/simulate.html">Simulating social change</a></li>
   </ul>
 </li>
@@ -67,7 +70,7 @@
 
 
 
-    <p>The package contains a function <code>sim_social_change</code> that allows the user to explore different scenarios of how social change can happen. The complexity of the simulation is up to the user to define. We’ll start simple and build up a more complicated simulation over time.</p>
+    <p>The package contains a function <code>sim_social_change</code> that allows the user to explore different scenarios of how social change can happen. The complexity of the simulation is up to the user to define. We’ll start simple and build up a more complicated simulation over time. The scenarios in this vignette are also used to validate <code><a href="../reference/decompose_aggregated.html">decompose_aggregated()</a></code> — see the <a href="decompose_aggregated.html">aggregated decomposition vignette</a>, which uses the simulation output as ground truth.</p>
 <section class="level2"><h2 id="starting-with-a-simple-simulation-scenario-1">Starting with a simple simulation (Scenario 1)<a class="anchor" aria-label="anchor" href="#starting-with-a-simple-simulation-scenario-1"></a>
 </h2>
 <p>Building up a simulation requires three steps:</p>
@@ -164,11 +167,11 @@
 <span><span class="co">#&gt; Overview by period:</span></span>
 <span><span class="co">#&gt;  period   mean    N intraindividual coming_of_age mortality inmigration</span></span>
 <span><span class="co">#&gt;       0 0.3758 1550              NA            NA        NA          NA</span></span>
-<span><span class="co">#&gt;       1 0.3758 1550            0.05      -0.02585  -0.02415           0</span></span>
-<span><span class="co">#&gt;       2 0.3758 1550            0.05      -0.02587  -0.02413           0</span></span>
-<span><span class="co">#&gt;       3 0.3758 1550            0.05      -0.02585  -0.02415           0</span></span>
-<span><span class="co">#&gt;       4 0.3758 1550            0.05      -0.02586  -0.02414           0</span></span>
-<span><span class="co">#&gt;       5 0.3758 1550            0.05      -0.02583  -0.02417           0</span></span>
+<span><span class="co">#&gt;       1 0.3758 1550            0.05      -0.02584  -0.02416           0</span></span>
+<span><span class="co">#&gt;       2 0.3758 1550            0.05      -0.02586  -0.02414           0</span></span>
+<span><span class="co">#&gt;       3 0.3758 1550            0.05      -0.02589  -0.02411           0</span></span>
+<span><span class="co">#&gt;       4 0.3758 1550            0.05      -0.02588  -0.02412           0</span></span>
+<span><span class="co">#&gt;       5 0.3758 1550            0.05      -0.02585  -0.02415           0</span></span>
 <span><span class="co">#&gt;  outmigration</span></span>
 <span><span class="co">#&gt;            NA</span></span>
 <span><span class="co">#&gt;             0</span></span>
@@ -234,11 +237,11 @@
 <span><span class="co">#&gt; Overview by period:</span></span>
 <span><span class="co">#&gt;  period   mean    N intraindividual coming_of_age mortality inmigration</span></span>
 <span><span class="co">#&gt;       0 0.3758 1550              NA            NA        NA          NA</span></span>
-<span><span class="co">#&gt;       1 0.3758 1550         0.02515      -0.01301  -0.01213           0</span></span>
-<span><span class="co">#&gt;       2 0.3758 1550         0.02502      -0.01293  -0.01209           0</span></span>
-<span><span class="co">#&gt;       3 0.3758 1550         0.02498      -0.01293  -0.01205           0</span></span>
-<span><span class="co">#&gt;       4 0.3758 1550         0.02499      -0.01294  -0.01206           0</span></span>
-<span><span class="co">#&gt;       5 0.3758 1550         0.02492      -0.01289  -0.01202           0</span></span>
+<span><span class="co">#&gt;       1 0.3758 1550         0.02504      -0.01293  -0.01211           0</span></span>
+<span><span class="co">#&gt;       2 0.3758 1550         0.02496      -0.01291  -0.01205           0</span></span>
+<span><span class="co">#&gt;       3 0.3758 1550         0.02515      -0.01300  -0.01214           0</span></span>
+<span><span class="co">#&gt;       4 0.3758 1550         0.02512      -0.01298  -0.01214           0</span></span>
+<span><span class="co">#&gt;       5 0.3758 1550         0.02493      -0.01290  -0.01203           0</span></span>
 <span><span class="co">#&gt;  outmigration</span></span>
 <span><span class="co">#&gt;            NA</span></span>
 <span><span class="co">#&gt;             0</span></span>
@@ -252,11 +255,11 @@
 <span><span class="co">#&gt;  At initial                0.37580</span></span>
 <span><span class="co">#&gt;  At end                    0.37580</span></span>
 <span><span class="co">#&gt;  Total change              0.00000</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.12505</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.12505</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.06035</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.12520</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.12520</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.06048</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.00000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06470</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06473</span></span>
 <span><span class="co">#&gt;    - In-migration          0.00000</span></span></code></pre></div>
 </div>
 <p>Although the overall mean doesn’t change over time, the decomposition results have changed. Because only men now contribute to both population turnover and intraindividual change (and women do not), the components are half of what they were before.</p>
@@ -283,11 +286,11 @@
 <span><span class="co">#&gt; Overview by period:</span></span>
 <span><span class="co">#&gt;  period mean    N intraindividual coming_of_age    mortality inmigration</span></span>
 <span><span class="co">#&gt;       0  0.3 1550              NA            NA           NA          NA</span></span>
-<span><span class="co">#&gt;       1  0.4 1550             0.1   0.000007826 -0.000007826           0</span></span>
-<span><span class="co">#&gt;       2  0.5 1550             0.1   0.000007787 -0.000007787           0</span></span>
-<span><span class="co">#&gt;       3  0.6 1550             0.1  -0.000012009  0.000012009           0</span></span>
-<span><span class="co">#&gt;       4  0.7 1550             0.1  -0.000006147  0.000006147           0</span></span>
-<span><span class="co">#&gt;       5  0.8 1550             0.1  -0.000017402  0.000017402           0</span></span>
+<span><span class="co">#&gt;       1  0.4 1550             0.1   0.000010620 -0.000010620           0</span></span>
+<span><span class="co">#&gt;       2  0.5 1550             0.1   0.000002853 -0.000002853           0</span></span>
+<span><span class="co">#&gt;       3  0.6 1550             0.1   0.000015080 -0.000015080           0</span></span>
+<span><span class="co">#&gt;       4  0.7 1550             0.1   0.000022988 -0.000022988           0</span></span>
+<span><span class="co">#&gt;       5  0.8 1550             0.1  -0.000013260  0.000013260           0</span></span>
 <span><span class="co">#&gt;  outmigration</span></span>
 <span><span class="co">#&gt;            NA</span></span>
 <span><span class="co">#&gt;             0</span></span>
@@ -297,16 +300,16 @@
 <span><span class="co">#&gt;             0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Decomposition of total change:</span></span>
-<span><span class="co">#&gt;                 Component    Value</span></span>
-<span><span class="co">#&gt;  At initial                0.30000</span></span>
-<span><span class="co">#&gt;  At end                    0.80000</span></span>
-<span><span class="co">#&gt;  Total change              0.50000</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.50000</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.00000</span></span>
-<span><span class="co">#&gt;    - Mortality             0.00002</span></span>
-<span><span class="co">#&gt;    - Out-migration         0.00000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.00002</span></span>
-<span><span class="co">#&gt;    - In-migration          0.00000</span></span></code></pre></div>
+<span><span class="co">#&gt;                 Component     Value</span></span>
+<span><span class="co">#&gt;  At initial                0.300000</span></span>
+<span><span class="co">#&gt;  At end                    0.800000</span></span>
+<span><span class="co">#&gt;  Total change              0.500000</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.500000</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.000000</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.000038</span></span>
+<span><span class="co">#&gt;    - Out-migration         0.000000</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.000038</span></span>
+<span><span class="co">#&gt;    - In-migration          0.000000</span></span></code></pre></div>
 </div>
 </section><section class="level3"><h3 id="only-population-turnover-scenario-4">Only population turnover (Scenario 4)<a class="anchor" aria-label="anchor" href="#only-population-turnover-scenario-4"></a>
 </h3>
@@ -332,11 +335,11 @@
 <span><span class="co">#&gt; Overview by period:</span></span>
 <span><span class="co">#&gt;  period mean    N        intraindividual coming_of_age mortality inmigration</span></span>
 <span><span class="co">#&gt;       0  0.3 1550                     NA            NA        NA          NA</span></span>
-<span><span class="co">#&gt;       1  0.4 1550 -0.0000000000000011102       0.05181   0.04819           0</span></span>
-<span><span class="co">#&gt;       2  0.5 1550  0.0000000000000007772       0.05176   0.04824           0</span></span>
-<span><span class="co">#&gt;       3  0.6 1550 -0.0000000000000011102       0.05171   0.04829           0</span></span>
-<span><span class="co">#&gt;       4  0.7 1550  0.0000000000000015543       0.05168   0.04832           0</span></span>
-<span><span class="co">#&gt;       5  0.8 1550 -0.0000000000000002220       0.05176   0.04824           0</span></span>
+<span><span class="co">#&gt;       1  0.4 1550 -0.0000000000000008882       0.05170   0.04830           0</span></span>
+<span><span class="co">#&gt;       2  0.5 1550  0.0000000000000006661       0.05171   0.04829           0</span></span>
+<span><span class="co">#&gt;       3  0.6 1550 -0.0000000000000008882       0.05169   0.04831           0</span></span>
+<span><span class="co">#&gt;       4  0.7 1550  0.0000000000000004441       0.05176   0.04824           0</span></span>
+<span><span class="co">#&gt;       5  0.8 1550  0.0000000000000001110       0.05166   0.04834           0</span></span>
 <span><span class="co">#&gt;  outmigration</span></span>
 <span><span class="co">#&gt;            NA</span></span>
 <span><span class="co">#&gt;             0</span></span>
@@ -352,9 +355,9 @@
 <span><span class="co">#&gt;  Total change             0.5000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change 0.0000</span></span>
 <span><span class="co">#&gt;  - Population turnover    0.5000</span></span>
-<span><span class="co">#&gt;    - Mortality            0.2413</span></span>
+<span><span class="co">#&gt;    - Mortality            0.2415</span></span>
 <span><span class="co">#&gt;    - Out-migration        0.0000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        0.2587</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        0.2585</span></span>
 <span><span class="co">#&gt;    - In-migration         0.0000</span></span></code></pre></div>
 </div>
 </section></section><section class="level2"><h2 id="adding-state-changes-smoking-and-differential-mortality">Adding state changes: Smoking and differential mortality<a class="anchor" aria-label="anchor" href="#adding-state-changes-smoking-and-differential-mortality"></a>
@@ -437,11 +440,11 @@
 <span><span class="co">#&gt; Overview by period:</span></span>
 <span><span class="co">#&gt;  period   mean    N        intraindividual coming_of_age  mortality inmigration</span></span>
 <span><span class="co">#&gt;       0 0.8677 1439                     NA            NA         NA          NA</span></span>
-<span><span class="co">#&gt;       1 0.8677 1439 -0.0000000000000001110     0.0001804 -0.0001804           0</span></span>
-<span><span class="co">#&gt;       2 0.8677 1439 -0.0000000000000032196     0.0001501 -0.0001501           0</span></span>
-<span><span class="co">#&gt;       3 0.8677 1439  0.0000000000000004441     0.0001680 -0.0001680           0</span></span>
-<span><span class="co">#&gt;       4 0.8677 1439 -0.0000000000000012212     0.0001567 -0.0001567           0</span></span>
-<span><span class="co">#&gt;       5 0.8677 1439  0.0000000000000000000     0.0001789 -0.0001789           0</span></span>
+<span><span class="co">#&gt;       1 0.8677 1439  0.0000000000000001110     0.0001689 -0.0001689           0</span></span>
+<span><span class="co">#&gt;       2 0.8677 1439 -0.0000000000000014433     0.0001820 -0.0001820           0</span></span>
+<span><span class="co">#&gt;       3 0.8677 1439 -0.0000000000000005551     0.0001641 -0.0001641           0</span></span>
+<span><span class="co">#&gt;       4 0.8677 1439 -0.0000000000000007772     0.0001334 -0.0001334           0</span></span>
+<span><span class="co">#&gt;       5 0.8677 1439 -0.0000000000000001110     0.0001829 -0.0001829           0</span></span>
 <span><span class="co">#&gt;  outmigration</span></span>
 <span><span class="co">#&gt;            NA</span></span>
 <span><span class="co">#&gt;             0</span></span>
@@ -457,9 +460,9 @@
 <span><span class="co">#&gt;  Total change              0.000000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.000000</span></span>
 <span><span class="co">#&gt;  - Population turnover     0.000000</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.000834</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.000831</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.000000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.000834</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.000831</span></span>
 <span><span class="co">#&gt;    - In-migration          0.000000</span></span></code></pre></div>
 </div>
 <p>There is neither intra-individual change nor any net effect of population turnover, although mortality decreases the mean (as smokers die earlier, drawing down the mean), while coming-of-age brings it back up. These two forces therefore perfectly cancel each other out.</p>
@@ -481,11 +484,11 @@
 <span><span class="co">#&gt; Overview by period:</span></span>
 <span><span class="co">#&gt;  period   mean    N intraindividual coming_of_age  mortality inmigration</span></span>
 <span><span class="co">#&gt;       0 0.8677 1439              NA            NA         NA          NA</span></span>
-<span><span class="co">#&gt;       1 0.8123 1439        -0.05540     0.0002387 -0.0002260           0</span></span>
-<span><span class="co">#&gt;       2 0.7569 1439        -0.05543     0.0002203 -0.0001795           0</span></span>
-<span><span class="co">#&gt;       3 0.7015 1439        -0.05540     0.0002073 -0.0001955           0</span></span>
-<span><span class="co">#&gt;       4 0.6461 1439        -0.05547     0.0003781 -0.0002973           0</span></span>
-<span><span class="co">#&gt;       5 0.5908 1439        -0.05542     0.0003370 -0.0003066           0</span></span>
+<span><span class="co">#&gt;       1 0.8123 1439        -0.05539     0.0001608 -0.0001545           0</span></span>
+<span><span class="co">#&gt;       2 0.7569 1439        -0.05542     0.0002484 -0.0002187           0</span></span>
+<span><span class="co">#&gt;       3 0.7015 1439        -0.05543     0.0003012 -0.0002523           0</span></span>
+<span><span class="co">#&gt;       4 0.6461 1439        -0.05538     0.0002503 -0.0002584           0</span></span>
+<span><span class="co">#&gt;       5 0.5908 1439        -0.05537     0.0002425 -0.0002583           0</span></span>
 <span><span class="co">#&gt;  outmigration</span></span>
 <span><span class="co">#&gt;            NA</span></span>
 <span><span class="co">#&gt;             0</span></span>
@@ -499,11 +502,11 @@
 <span><span class="co">#&gt;  At initial                0.867686</span></span>
 <span><span class="co">#&gt;  At end                    0.590757</span></span>
 <span><span class="co">#&gt;  Total change             -0.276929</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.277105</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.000176</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.001205</span></span>
+<span><span class="co">#&gt;  - Intraindividual change -0.276989</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.000061</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.001142</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.000000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.001381</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.001203</span></span>
 <span><span class="co">#&gt;    - In-migration          0.000000</span></span></code></pre></div>
 </div>
 <p>As expected, the population turnover component is still effectively zero, showing the same dynamics as before. However, we now have substantial intraindividual change, which means that the outcome decreases from 87% to 59% - all of which is due to intraindividual change.</p>
@@ -528,11 +531,11 @@
 <span><span class="co">#&gt; Overview by period:</span></span>
 <span><span class="co">#&gt;  period   mean    N intraindividual coming_of_age  mortality inmigration</span></span>
 <span><span class="co">#&gt;       0 0.8677 1439              NA            NA         NA          NA</span></span>
-<span><span class="co">#&gt;       1 0.8087 1439        -0.05558     -0.003172 -0.0002773           0</span></span>
-<span><span class="co">#&gt;       2 0.7444 1439        -0.05645     -0.007089 -0.0007073           0</span></span>
-<span><span class="co">#&gt;       3 0.6734 1439        -0.05771     -0.011703 -0.0016101           0</span></span>
-<span><span class="co">#&gt;       4 0.5940 1439        -0.05963     -0.016680 -0.0030527           0</span></span>
-<span><span class="co">#&gt;       5 0.5048 1439        -0.06186     -0.022316 -0.0050897           0</span></span>
+<span><span class="co">#&gt;       1 0.8087 1439        -0.05563     -0.003183 -0.0002238           0</span></span>
+<span><span class="co">#&gt;       2 0.7444 1439        -0.05639     -0.007147 -0.0007072           0</span></span>
+<span><span class="co">#&gt;       3 0.6734 1439        -0.05764     -0.011738 -0.0016398           0</span></span>
+<span><span class="co">#&gt;       4 0.5940 1439        -0.05951     -0.016893 -0.0029568           0</span></span>
+<span><span class="co">#&gt;       5 0.5048 1439        -0.06188     -0.022397 -0.0049895           0</span></span>
 <span><span class="co">#&gt;  outmigration</span></span>
 <span><span class="co">#&gt;            NA</span></span>
 <span><span class="co">#&gt;             0</span></span>
@@ -546,11 +549,11 @@
 <span><span class="co">#&gt;  At initial                0.86769</span></span>
 <span><span class="co">#&gt;  At end                    0.50476</span></span>
 <span><span class="co">#&gt;  Total change             -0.36293</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.29123</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.07170</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.01074</span></span>
+<span><span class="co">#&gt;  - Intraindividual change -0.29105</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.07188</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.01052</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.00000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06096</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06136</span></span>
 <span><span class="co">#&gt;    - In-migration          0.00000</span></span></code></pre></div>
 </div>
 <p>Given that we now more and more non-smokers are coming of age, we see now a bigger contribution of the population turnover component, driven by coming-of-age.</p>
@@ -578,11 +581,11 @@
 <span><span class="co">#&gt; Overview by period:</span></span>
 <span><span class="co">#&gt;  period   mean    N intraindividual coming_of_age mortality inmigration</span></span>
 <span><span class="co">#&gt;       0 0.8677 1439              NA            NA        NA          NA</span></span>
-<span><span class="co">#&gt;       1 0.7617 1439         -0.1025     -0.001663 -0.001815           0</span></span>
-<span><span class="co">#&gt;       2 0.6460 1442         -0.1081     -0.002090 -0.005536           0</span></span>
-<span><span class="co">#&gt;       3 0.5230 1455         -0.1119     -0.002916 -0.008557           0</span></span>
-<span><span class="co">#&gt;       4 0.3933 1469         -0.1131     -0.004633 -0.012087           0</span></span>
-<span><span class="co">#&gt;       5 0.2608 1498         -0.1131     -0.006797 -0.012617           0</span></span>
+<span><span class="co">#&gt;       1 0.7617 1439         -0.1026     -0.001669 -0.001743           0</span></span>
+<span><span class="co">#&gt;       2 0.6461 1440         -0.1080     -0.001904 -0.005666           0</span></span>
+<span><span class="co">#&gt;       3 0.5219 1444         -0.1114     -0.003088 -0.009750           0</span></span>
+<span><span class="co">#&gt;       4 0.3915 1457         -0.1131     -0.004507 -0.012770           0</span></span>
+<span><span class="co">#&gt;       5 0.2590 1487         -0.1130     -0.006567 -0.013481           0</span></span>
 <span><span class="co">#&gt;  outmigration</span></span>
 <span><span class="co">#&gt;            NA</span></span>
 <span><span class="co">#&gt;             0</span></span>
@@ -594,13 +597,13 @@
 <span><span class="co">#&gt; Decomposition of total change:</span></span>
 <span><span class="co">#&gt;                 Component    Value</span></span>
 <span><span class="co">#&gt;  At initial                0.86769</span></span>
-<span><span class="co">#&gt;  At end                    0.26081</span></span>
-<span><span class="co">#&gt;  Total change             -0.60687</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.54870</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.05871</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.04061</span></span>
+<span><span class="co">#&gt;  At end                    0.25905</span></span>
+<span><span class="co">#&gt;  Total change             -0.60864</span></span>
+<span><span class="co">#&gt;  - Intraindividual change -0.54813</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.06115</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.04341</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.00000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.01810</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.01774</span></span>
 <span><span class="co">#&gt;    - In-migration          0.00000</span></span></code></pre></div>
 </div>
 <p>We now see a bigger contribution of intraindividual change as people become nonsmokers and start to share that group’s opinion on smoking in public. A side effect of this new logic is that the population is no longer stable: The number of people in the population is increasing, as is the mean age. We now also have people that grow to be older than 39, as the mortality function that we setup before didn’t account for more people attaining older ages:</p>
@@ -611,11 +614,11 @@
 <span><span class="co">#&gt;    period mean_age max_age</span></span>
 <span><span class="co">#&gt;     &lt;num&gt;    &lt;num&gt;   &lt;num&gt;</span></span>
 <span><span class="co">#&gt; 1:      0 26.87630      39</span></span>
-<span><span class="co">#&gt; 2:      1 26.88403      39</span></span>
-<span><span class="co">#&gt; 3:      2 26.92111      39</span></span>
-<span><span class="co">#&gt; 4:      3 27.00549      40</span></span>
-<span><span class="co">#&gt; 5:      4 27.10551      40</span></span>
-<span><span class="co">#&gt; 6:      5 27.31041      41</span></span></code></pre></div>
+<span><span class="co">#&gt; 2:      1 26.87630      39</span></span>
+<span><span class="co">#&gt; 3:      2 26.88403      39</span></span>
+<span><span class="co">#&gt; 4:      3 26.91551      39</span></span>
+<span><span class="co">#&gt; 5:      4 27.03288      40</span></span>
+<span><span class="co">#&gt; 6:      5 27.22715      40</span></span></code></pre></div>
 </div>
 <p>This is a side effect of fewer people smoking, which decreases their chance of mortality. A more complicated simulation might introduce a “former smoker” group that retains some of the mortality disadvantage of smokers into old age.</p>
 <p>Graphically, we can show the proportion of smokers by age group as follows:</p>
