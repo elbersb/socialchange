@@ -216,3 +216,31 @@ apc_plot_total <- function(model, assumption) {
         theme_bw() +
         theme(legend.position = "bottom", axis.title.x = element_blank())
 }
+
+#' Contour plot of a 2D GAM smooth surface
+#'
+#' Visualizes the predicted surface of a GAM with a 2D smooth term as a filled
+#' contour plot, overlaid with observed data density.
+#'
+#' @param model A fitted \code{mgcv::gam} object with at least one 2D smooth term.
+#' @param smooth Integer selecting which smooth term to visualize (default: 1).
+#' @param resolution Numeric step size for the prediction grid (default: 1).
+#'
+#' @return A ggplot object.
+#' @export
+#' @import ggplot2
+plot_gam_surface <- function(model, smooth = 1, resolution = 1) {
+    vars <- model$smooth[[smooth]]$term
+    var1_range <- seq(min(model$model[[vars[1]]]), max(model$model[[vars[1]]]), by = resolution)
+    var2_range <- seq(min(model$model[[vars[2]]]), max(model$model[[vars[2]]]), by = resolution)
+    pred_grid <- expand.grid(var1_range, var2_range)
+    names(pred_grid) <- vars
+    pred_grid$z <- stats::predict(model, newdata = pred_grid)
+    f <- stats::as.formula(paste0(". ~ ", vars[1], " + ", vars[2]))
+    obs_counts <- stats::aggregate(f, model$model, FUN = "length")
+    names(obs_counts)[3] <- "n"
+    ggplot(pred_grid, aes(x = .data[[vars[1]]], y = .data[[vars[2]]], z = .data[["z"]])) +
+        geom_contour_filled() +
+        coord_cartesian(expand = FALSE) +
+        geom_point(data = obs_counts, aes(z = NULL, size = .data[["n"]]), alpha = 0.1)
+}

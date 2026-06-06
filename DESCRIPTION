@@ -19,6 +19,7 @@ LazyData: true
 URL: https://elbersb.github.io/socialchange/
 Suggests:
     knitr,
+    mgcv,
     quarto,
     testthat (>= 3.0.0),
     modelsummary
