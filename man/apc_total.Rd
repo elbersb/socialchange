@@ -17,3 +17,7 @@ List of total effect estimates
 \description{
 Compute total APC effects under assumption
 }
+\seealso{
+[apc()] for model estimation, [apc_nonlinearities()] for the non-linear effects
+  that are combined with the linear trend assumption here.
+}

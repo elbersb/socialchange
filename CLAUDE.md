@@ -44,6 +44,9 @@ pkgdown::build_site()
 See vignettes in `vignettes/` for detailed examples:
 - `vignettes/decompose_aggregated.qmd` - Decomposition of aggregated data
 - `vignettes/simulate.qmd` - Simulation examples
+- `vignettes/apc.qmd` - APC model examples
+- `vignettes/replicating_firebaugh.qmd` - Replicating and improving on Firebaugh's CR-IC decomposition
+- `vignettes/gss_homosexuality.qmd` - Applied example using GSS attitudes toward homosexuality
 
 ## Architecture
 
@@ -73,7 +76,7 @@ The package implements three main decomposition approaches:
 ### Additional Methods
 
 - **CR-IC decomposition** (`R/cr_ic.R`): Classical cohort replacement vs. intraindividual change decomposition using algebraic, linear, and model-based approaches
-- **APC models** (`R/apc.R`): Age-Period-Cohort models using orthogonal polynomial contrasts to handle identification issues
+- **APC models** (`R/apc.R`): Age-Period-Cohort models using orthogonal polynomial contrasts to handle identification issues. Also includes `plot_gam_surface()` for visualizing GAM smooths as 2D surfaces.
 
 ### Data Structure Conventions
 
@@ -93,7 +96,7 @@ All main functions return list objects with custom S3 classes:
 - `cr_ic` → class `cr_ic_decomposition`
 - `apc` → class `apc_model`
 
-Each has custom `print()` and often `plot()` methods defined.
+Each has custom `print()` and `plot()` methods defined (all five classes have both).
 
 ## Dependencies
 

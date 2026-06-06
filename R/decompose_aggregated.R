@@ -38,22 +38,18 @@
 #' effects are absorbed into the intraindividual change component.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(data.table)
-#' # Simulate data first
-#' data <- data.table(age = 20:39, n = rep(100, 20))
-#' simresult <- sim_social_change(periods = 5, data = data, ...)
-#'
-#' # Stack snapshots and fit model
-#' stacked <- rbindlist(simresult$snapshot)
-#' model <- lm(y ~ age, data = stacked)
-#' predict_y <- function(newdata) predict(model, newdata = newdata)
-#'
-#' # Decompose
-#' result <- decompose_aggregated(stacked, predict_y)
+#' data("gss_homosex", package = "socialchange")
+#' stacked <- as.data.table(gss_homosex)[, .(age, period = year, y = homosex)]
+#' model <- stats::lm(y ~ age + period, data = stacked)
+#' result <- decompose_aggregated(stacked, function(d) predict(model, newdata = d))
 #' print(result)
 #' }
 #'
+#' @seealso [decompose_events()] for event-driven decomposition,
+#'   [sim_social_change()] for forward simulation with fully specified demographic functions.
+#'   Vignette: \code{vignette("decompose_aggregated", package = "socialchange")}.
 #' @import data.table
 #' @export
 decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = FALSE, tol = 0.05, weight = NULL) {
@@ -297,10 +293,16 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
     } # i_period loop
 
     ret <- list(summary = summary, record = record, migration = migration)
-    class(ret) <- c("list", "social_change_decomp")
+    class(ret) <- c("social_change_decomp", "list")
     ret
 }
 
+#' Print a social_change_decomp object
+#'
+#' @param x A `social_change_decomp` object returned by [decompose_aggregated()].
+#' @param detailed Logical; if `TRUE` (default) prints period-by-period overview before the summary.
+#' @param ... Not used.
+#' @return `x`, invisibly.
 #' @import data.table
 #' @export
 print.social_change_decomp <- function(x, detailed = TRUE, ...) {
@@ -356,4 +358,72 @@ print.social_change_decomp <- function(x, detailed = TRUE, ...) {
         cat("Assumes no in- or out-migration.\n")
     }
     options(digits = 7, scipen = 0) # reset to default
+    invisible(x)
+}
+
+#' @rdname decompose_aggregated
+#' @param x A `social_change_decomp` object returned by [decompose_aggregated()].
+#' @param ... Not used.
+#' @import data.table
+#' @import ggplot2
+#' @export
+plot.social_change_decomp <- function(x, ...) {
+    summary <- data.table::copy(x$summary)
+
+    means_long <- data.table::melt(summary,
+        id.vars = "period",
+        measure.vars = c("observed_mean", "modeled_mean"),
+        variable.name = "type", value.name = "value")
+    means_long[, type := factor(type,
+        c("observed_mean", "modeled_mean"),
+        c("Observed", "Modeled"))]
+    means_long[, panel := "Mean outcome"]
+
+    components <- c("intraindividual", "mortality", "coming_of_age")
+    if (x$migration) components <- c(components, "outmigration", "inmigration")
+    comp_labels <- c(
+        "intraindividual" = "Intraindividual change",
+        "mortality"       = "Mortality",
+        "coming_of_age"   = "Coming-of-age",
+        "outmigration"    = "Out-migration",
+        "inmigration"     = "In-migration"
+    )
+
+    decomp_long <- data.table::melt(summary,
+        id.vars = "period",
+        measure.vars = components,
+        variable.name = "type", value.name = "value")
+    decomp_long[is.na(value), value := 0]
+    decomp_long[, value := cumsum(value), by = "type"]
+    decomp_long[, type := factor(type, components, comp_labels[components])]
+    decomp_long[, panel := "Cumulative change"]
+
+    combine <- rbindlist(list(
+        means_long[, .(period, type, value, panel)],
+        decomp_long[, .(period, type, value, panel)]
+    ), use.names = TRUE)
+    combine[, panel := factor(panel, c("Mean outcome", "Cumulative change"))]
+
+    color_map <- c(
+        "Observed"              = "black",
+        "Modeled"               = "#888888",
+        "Intraindividual change" = "#450C54",
+        "Mortality"             = "#22908C",
+        "Coming-of-age"         = "#FDE724",
+        "Out-migration"         = "#3B518B",
+        "In-migration"          = "#5DC963"
+    )
+
+    ggplot(combine, aes(x = period, y = value, color = type)) +
+        facet_wrap("panel", nrow = 2, scales = "free_y") +
+        geom_hline(yintercept = 0, color = "gray") +
+        geom_line() +
+        scale_color_manual(values = color_map) +
+        labs(color = NULL, y = NULL, x = "Period") +
+        theme_light() +
+        theme(
+            legend.position = "bottom",
+            panel.grid.minor.x = element_blank(),
+            panel.grid.major.x = element_blank()
+        )
 }

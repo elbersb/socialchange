@@ -2,6 +2,7 @@
 
 S3method(plot,cr_ic_decomposition)
 S3method(plot,decompose_events)
+S3method(plot,social_change_decomp)
 S3method(print,apc_model)
 S3method(print,cr_ic_decomposition)
 S3method(print,decompose_events)

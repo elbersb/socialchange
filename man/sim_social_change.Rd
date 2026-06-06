@@ -46,7 +46,7 @@ components driven by intraindividual change and population turnover (mortality,
 coming-of-age, migration, and state transitions).
 }
 \examples{
-\dontrun{
+\donttest{
 library(data.table)
 data <- data.table(age = 20:39, n = rep(100, 20))
 fun_y <- function(data, time) data[, age / 40]
@@ -63,4 +63,9 @@ result <- sim_social_change(
 print(result)
 }
 
+}
+\seealso{
+[decompose_aggregated()] for decomposing change in stacked cross-sectional data,
+  [decompose_events()] for event-driven decomposition.
+  Vignette: \code{vignette("simulate", package = "socialchange")}.
 }

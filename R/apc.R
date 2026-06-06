@@ -171,6 +171,8 @@ apc_plot_nonlinearities <- function(model) {
 #' @param model APC model object from \code{apc()}
 #' @param assumption Character specifying linear trend assumption
 #' @return List of total effect estimates
+#' @seealso [apc()] for model estimation, [apc_nonlinearities()] for the non-linear effects
+#'   that are combined with the linear trend assumption here.
 #' @export
 apc_total <- function(model, assumption) {
     age_l <- NULL

@@ -11,5 +11,6 @@ utils::globalVariables(c(
     "inmigration", "outmigration", "coming_of_age", "mortality",
     "n_mortality", "n_outmigration",
     "observed", "modeled", "counterf", "Component",
-    "outcome", "outcome_post", "outcome_pre", "type", "event_type"
+    "outcome", "outcome_post", "outcome_pre", "type", "event_type",
+    "panel"
 ))

@@ -2,6 +2,7 @@
 % Please edit documentation in R/decompose_aggregated.R
 \name{decompose_aggregated}
 \alias{decompose_aggregated}
+\alias{plot.social_change_decomp}
 \title{Decompose social change from aggregated data}
 \usage{
 decompose_aggregated(
@@ -12,6 +13,8 @@ decompose_aggregated(
   tol = 0.05,
   weight = NULL
 )
+
+\method{plot}{social_change_decomp}(x, ...)
 }
 \arguments{
 \item{stacked_data}{Data frame with columns \code{age}, \code{period}, and \code{y}, plus optional cell identifiers.
@@ -32,6 +35,10 @@ Weights are normalized within each period to sum to the period sample size befor
 counts \code{n} (rounded sums of normalized weights) reflect the relative population structure rather than
 raw sample sizes. This preserves simulation tractability but is an approximation: the ideal approach would
 use true population counts, which are generally unavailable from survey data alone.}
+
+\item{x}{A `social_change_decomp` object returned by [decompose_aggregated()].}
+
+\item{...}{Not used.}
 }
 \value{
 S3 object of class \code{social_change_decomp} with components:
@@ -59,20 +66,18 @@ coming-of-age.
 effects are absorbed into the intraindividual change component.
 }
 \examples{
-\dontrun{
+\donttest{
 library(data.table)
-# Simulate data first
-data <- data.table(age = 20:39, n = rep(100, 20))
-simresult <- sim_social_change(periods = 5, data = data, ...)
-
-# Stack snapshots and fit model
-stacked <- rbindlist(simresult$snapshot)
-model <- lm(y ~ age, data = stacked)
-predict_y <- function(newdata) predict(model, newdata = newdata)
-
-# Decompose
-result <- decompose_aggregated(stacked, predict_y)
+data("gss_homosex", package = "socialchange")
+stacked <- as.data.table(gss_homosex)[, .(age, period = year, y = homosex)]
+model <- stats::lm(y ~ age + period, data = stacked)
+result <- decompose_aggregated(stacked, function(d) predict(model, newdata = d))
 print(result)
 }
 
+}
+\seealso{
+[decompose_events()] for event-driven decomposition,
+  [sim_social_change()] for forward simulation with fully specified demographic functions.
+  Vignette: \code{vignette("decompose_aggregated", package = "socialchange")}.
 }

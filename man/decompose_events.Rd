@@ -34,7 +34,7 @@ Event-based decomposition for populations where units enter and exit at specific
 Separates aggregate change into within-unit change and population replacement components.
 }
 \examples{
-\dontrun{
+\donttest{
 library(data.table)
 events <- data.table(
   country = c("A", "B", "A"),
@@ -50,4 +50,9 @@ result <- decompose_events(events, outcomes, gdp ~ country + year)
 print(result)
 }
 
+}
+\seealso{
+[decompose_aggregated()] for decomposing change in stacked cross-sectional data,
+  [sim_social_change()] for forward simulation with fully specified demographic functions.
+  Vignette: \code{vignette("gss_homosexuality", package = "socialchange")}.
 }

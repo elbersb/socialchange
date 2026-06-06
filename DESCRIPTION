@@ -17,6 +17,7 @@ Remotes: elbersb/weightedcontrasts
 Encoding: UTF-8
 LazyData: true
 URL: https://elbersb.github.io/socialchange/
+BugReports: https://github.com/elbersb/socialchange/issues
 Suggests:
     knitr,
     mgcv,

@@ -13,7 +13,7 @@
 #' @return S3 object of class \code{decompose_events} containing decomposition results
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(data.table)
 #' events <- data.table(
 #'   country = c("A", "B", "A"),
@@ -29,6 +29,9 @@
 #' print(result)
 #' }
 #'
+#' @seealso [decompose_aggregated()] for decomposing change in stacked cross-sectional data,
+#'   [sim_social_change()] for forward simulation with fully specified demographic functions.
+#'   Vignette: \code{vignette("gss_homosexuality", package = "socialchange")}.
 #' @import data.table
 #' @export
 decompose_events <- function(
@@ -155,12 +158,26 @@ decompose_events <- function(
   ret
 }
 
+#' Print a decompose_events object
+#'
+#' @param x A `decompose_events` object returned by [decompose_events()].
+#' @param ... Not used.
+#' @return `x`, invisibly.
 #' @import data.table
 #' @export
 print.decompose_events <- function(x, ...) {
   print(x$decomp)
+  invisible(x)
 }
 
+#' Plot a decompose_events object
+#'
+#' Plots observed pairwise outcome changes (as line segments by event type)
+#' alongside implied counterfactual trajectories.
+#'
+#' @param x A `decompose_events` object returned by [decompose_events()].
+#' @param ... Not used.
+#' @return A `ggplot` object.
 #' @import data.table
 #' @import ggplot2
 #' @export
