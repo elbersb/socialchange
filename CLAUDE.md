@@ -107,7 +107,8 @@ Key dependencies:
 ## Included Datasets
 
 Located in `data/`:
-- `gssrac.rda`: General Social Survey data on racial attitudes
+- `gss_rac.rda`: General Social Survey data on racial attitudes of white Americans (1972, 1976, 1980, 1984)
+- `gss_homosex.rda`: General Social Survey data on attitudes toward homosexual sex (1973–2018)
 - `eu_membership.rda`: EU country entry/exit dates
 - `wpp_data.rda`: UN World Population Prospects data (1950+)
 

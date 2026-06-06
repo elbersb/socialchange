@@ -43,6 +43,44 @@
 #'   R package.
 "gss_homosex"
 
+#' GSS racial attitudes of white Americans
+#'
+#' A subset of the General Social Survey (GSS) containing white respondents
+#' with valid responses to racial attitude questions, covering survey years
+#' 1972, 1976, 1980, and 1984. The outcome variable \code{rac} is a composite
+#' scale built from four items (RACDIN, RACSEG, RACPUSH, RACMAR), each
+#' negated and z-scored so that higher values indicate more tolerant attitudes.
+#' Up to two missing items per respondent are imputed by rescaling the
+#' available items. Prepared from the
+#' \href{https://cran.r-project.org/package=gssr}{gssr} package.
+#'
+#' @format A data.table with 7 variables:
+#' \describe{
+#'   \item{rac}{Composite racial tolerance scale (higher = more tolerant).
+#'     Built from four z-scored items (each negated), then shifted by +6 to
+#'     give positive values.}
+#'   \item{year}{GSS survey year (1972, 1976, 1980, or 1984).}
+#'   \item{age}{Age of respondent at time of interview.}
+#'   \item{cohort}{Birth year, computed as \code{year - age}.}
+#'   \item{region}{Region of interview (1--9, Census divisions).}
+#'   \item{sex}{Sex of respondent (1 = Male, 2 = Female).}
+#'   \item{wtssall}{Survey weight.}
+#' }
+#' @details The four items comprising the scale are:
+#' \describe{
+#'   \item{RACDIN}{Whether Black Americans are welcome for dinner.}
+#'   \item{RACSEG}{Whether whites have the right to keep Black Americans out
+#'     of their neighborhoods.}
+#'   \item{RACPUSH}{Whether Black Americans should not push themselves where
+#'     they are not wanted.}
+#'   \item{RACMAR}{Whether there should be laws against Black-white marriage.}
+#' }
+#' @source Smith, Tom W., Davern, Michael, Freese, Jeremy, and Morgan,
+#'   Stephen L. General Social Surveys, 1972--2018. NORC, Chicago.
+#'   Accessed via the \href{https://cran.r-project.org/package=gssr}{gssr}
+#'   R package.
+"gss_rac"
+
 #' UN World Population Prospects population data
 #'
 #' Total population estimates and projections by location and year from the
