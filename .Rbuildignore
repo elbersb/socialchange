@@ -11,3 +11,4 @@
 ^vignettes/*_files$
 ^CLAUDE\.md$
 ^\.claude$
+^old_scripts

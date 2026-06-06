@@ -8,6 +8,8 @@
 #' @param fun_y Prediction function taking \code{(newdata)} and returning predicted outcome values
 #' @param cells Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")
 #' @param migration Logical; if TRUE, decompose migration components (not yet implemented)
+#' @param tol Maximum tolerated relative deviation between observed and modeled period means (default 0.05 = 5\%).
+#'      Emits a warning rather than stopping when exceeded.
 #'
 #' @return S3 object of class \code{social_change_decomp} with components:
 #'   \itemize{
@@ -43,12 +45,13 @@
 #'
 #' @import data.table
 #' @export
-decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = FALSE) {
+decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = FALSE, tol = 0.05) {
     checkmate::assert_data_frame(stacked_data)
     checkmate::assert_subset(c("age", "n", cells), names(stacked_data))
     checkmate::assert_function(fun_y, nargs = 1)
     checkmate::assert_vector(cells, any.missing = FALSE, null.ok = TRUE)
     checkmate::assert_logical(migration)
+    checkmate::assert_number(tol, lower = 0)
 
     stacked_data <- copy(stacked_data)
     periods <- stacked_data[, unique(period)]
@@ -71,9 +74,13 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
         summary[, outmigration := NA_real_]
     }
     means <- stacked_data[, .(observed = stats::weighted.mean(y, n), modeled = stats::weighted.mean(y_pred, n)), by = .(period)]
-    if (means[, max(observed / modeled)] > 1.05) {
+    max_dev <- means[, max(abs(observed / modeled - 1))]
+    if (max_dev > tol) {
         print(means)
-        stop("Modeled means deviate strongly from observed mean, reconsider model.")
+        warning(sprintf(
+            "Modeled means deviate from observed by up to %.1f%% (tol = %.1f%%). Consider a more flexible model or increase tol.",
+            max_dev * 100, tol * 100
+        ))
     }
     summary[means, `:=`(observed_mean = observed, modeled_mean = modeled), on = "period"]
 
