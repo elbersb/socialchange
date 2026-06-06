@@ -28,8 +28,10 @@ coming-of-age, migration, and state transitions)."></head><body>
     <li><a class="dropdown-item" href="../articles/replicating_firebaugh.html">Replications: Firebaugh</a></li>
     <li><a class="dropdown-item" href="../articles/simulate.html">Simulating social change</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/elbersb/socialchange/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -39,7 +41,7 @@ coming-of-age, migration, and state transitions)."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Simulate social change with demographic processes</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/elbersb/socialchange/blob/main/R/simulate.R" class="external-link"><code>R/simulate.R</code></a></small>
       <div class="d-none name"><code>sim_social_change.Rd</code></div>
     </div>
 
@@ -105,10 +107,16 @@ coming-of-age, migration, and state transitions).</p>
 <li><p><code>snapshot</code>: list of population snapshots at each period</p></li>
 <li><p><code>record</code>: list of event-by-event change records</p></li>
 </ul></div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p>[decompose_aggregated()] for decomposing change in stacked cross-sectional data,
+  [decompose_events()] for event-driven decomposition.
+  Vignette: <code><a href="../articles/simulate.html">vignette("simulate", package = "socialchange")</a></code>.</p></div>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>age <span class="op">=</span> <span class="fl">20</span><span class="op">:</span><span class="fl">39</span>, n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">20</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">fun_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span>, <span class="va">time</span><span class="op">)</span> <span class="va">data</span><span class="op">[</span>, <span class="va">age</span> <span class="op">/</span> <span class="fl">40</span><span class="op">]</span></span></span>
@@ -123,7 +131,34 @@ coming-of-age, migration, and state transitions).</p>
 <span class="r-in"><span>    fun_coming_of_age <span class="op">=</span> <span class="va">fun_coming_of_age</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Overview by period:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  period   mean    N intraindividual coming_of_age mortality inmigration</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       0 0.7375 2000              NA            NA        NA          NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       1 0.7431 2000           0.025      -0.01263 -0.006740           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       2 0.7474 1990           0.025      -0.01292 -0.007845           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       3 0.7500 1970           0.025      -0.01318 -0.009183           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       4 0.7508 1940           0.025      -0.01345 -0.010778           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       5 0.7493 1900           0.025      -0.01366 -0.012771           0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  outmigration</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Decomposition of total change:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 Component    Value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  At initial                0.73750</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  At end                    0.74934</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Total change              0.01184</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  - Intraindividual change  0.12500</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  - Population turnover    -0.11316</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    - Mortality            -0.04732</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    - Out-migration         0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    - Coming-of-age        -0.06584</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    - In-migration          0.00000</span>
+<span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

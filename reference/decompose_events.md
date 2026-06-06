@@ -48,10 +48,17 @@ decompose_events(
 
 S3 object of class `decompose_events` containing decomposition results
 
+## See also
+
+\[decompose_aggregated()\] for decomposing change in stacked
+cross-sectional data, \[sim_social_change()\] for forward simulation
+with fully specified demographic functions. Vignette:
+[`vignette("gss_homosexuality", package = "socialchange")`](https://elbersb.github.io/socialchange/articles/gss_homosexuality.md).
+
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 library(data.table)
 events <- data.table(
   country = c("A", "B", "A"),
@@ -65,5 +72,9 @@ outcomes <- data.table(
 )
 result <- decompose_events(events, outcomes, gdp ~ country + year)
 print(result)
-} # }
+#>     event_type      term     total      pct
+#>         <char>     <num>     <num>    <num>
+#> 1:      change 0.2301298 0.3908518 58.87903
+#> 2: replacement 0.1607221 0.3908518 41.12097
+# }
 ```

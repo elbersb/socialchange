@@ -24,8 +24,10 @@
     <li><a class="dropdown-item" href="articles/replicating_firebaugh.html">Replications: Firebaugh</a></li>
     <li><a class="dropdown-item" href="articles/simulate.html">Simulating social change</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/elbersb/socialchange/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -35,7 +37,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>CLAUDE.md</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/elbersb/socialchange/blob/main/CLAUDE.md" class="external-link"><code>CLAUDE.md</code></a></small>
     </div>
 
 <div id="claudemd" class="section level1">
@@ -76,7 +78,7 @@
 </div>
 <div class="section level3">
 <h3 id="running-examples">Running Examples<a class="anchor" aria-label="anchor" href="#running-examples"></a></h3>
-<p>See vignettes in <code>vignettes/</code> for detailed examples: - <code>vignettes/decompose_aggregated.qmd</code> - Decomposition of aggregated data - <code>vignettes/simulate.qmd</code> - Simulation examples</p>
+<p>See vignettes in <code>vignettes/</code> for detailed examples: - <code>vignettes/decompose_aggregated.qmd</code> - Decomposition of aggregated data - <code>vignettes/simulate.qmd</code> - Simulation examples - <code>vignettes/apc.qmd</code> - APC model examples - <code>vignettes/replicating_firebaugh.qmd</code> - Replicating and improving on Firebaugh’s CR-IC decomposition - <code>vignettes/gss_homosexuality.qmd</code> - Applied example using GSS attitudes toward homosexuality</p>
 </div>
 </div>
 <div class="section level2">
@@ -116,7 +118,7 @@
 <ul><li>
 <strong>CR-IC decomposition</strong> (<code>R/cr_ic.R</code>): Classical cohort replacement vs. intraindividual change decomposition using algebraic, linear, and model-based approaches</li>
 <li>
-<strong>APC models</strong> (<code>R/apc.R</code>): Age-Period-Cohort models using orthogonal polynomial contrasts to handle identification issues</li>
+<strong>APC models</strong> (<code>R/apc.R</code>): Age-Period-Cohort models using orthogonal polynomial contrasts to handle identification issues. Also includes <code><a href="reference/plot_gam_surface.html">plot_gam_surface()</a></code> for visualizing GAM smooths as 2D surfaces.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="data-structure-conventions">Data Structure Conventions<a class="anchor" aria-label="anchor" href="#data-structure-conventions"></a></h3>
@@ -125,7 +127,7 @@
 <div class="section level3">
 <h3 id="return-objects">Return Objects<a class="anchor" aria-label="anchor" href="#return-objects"></a></h3>
 <p>All main functions return list objects with custom S3 classes: - <code>decompose_events</code> → class <code>decompose_events</code> - <code>decompose_aggregated</code> → class <code>social_change_decomp</code> - <code>sim_social_change</code> → class <code>social_change_sim</code> - <code>cr_ic</code> → class <code>cr_ic_decomposition</code> - <code>apc</code> → class <code>apc_model</code></p>
-<p>Each has custom <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> and often <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> methods defined.</p>
+<p>Each has custom <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> and <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> methods defined (all five classes have both).</p>
 </div>
 </div>
 <div class="section level2">
@@ -163,6 +165,17 @@
 <li>Cells with net inflow from transitions will show 0 mortality even if deaths occurred</li>
 </ul><p><strong>Workaround</strong>: This is a fundamental limitation of the aggregated decomposition approach. The simulation function <code><a href="reference/sim_social_change.html">sim_social_change()</a></code> properly tracks transitions as a separate component, but <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code> cannot recover this from already-aggregated data.</p>
 <p><strong>In practice</strong>: Use <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code> only for data without significant within-cell transitions, or be aware that transition effects will be misattributed to intraindividual change.</p>
+</div>
+<div class="section level3">
+<h3 id="survey-weights-in-decompose_aggregated">Survey Weights in <code>decompose_aggregated()</code>
+<a class="anchor" aria-label="anchor" href="#survey-weights-in-decompose_aggregated"></a></h3>
+<p><strong>The current weight normalization is an approximation that should be revisited.</strong></p>
+<p>When <code>weight</code> is provided with individual-level data, weights are normalized within each period to sum to the period sample size (<code>.N</code>), then cells get <code>n = round(sum(normalized_weight))</code>. This approach:</p>
+<ul><li>Correctly adjusts <strong>relative</strong> population structure across cells (e.g., oversampled subgroups get their proper share)</li>
+<li>Keeps event counts (mortality, coming-of-age) tractable for the simulation loop</li>
+<li>Avoids the problem of population-scaled weights (e.g., inverse probability weights summing to millions) making the simulation intractable</li>
+</ul><p><strong>What it gets wrong</strong>: The ideal would use true population counts per cell per period to estimate demographic event magnitudes. Normalized survey weights approximate relative structure but don’t recover absolute population sizes. Additionally, rounding introduces small errors, especially for cells with few respondents.</p>
+<p><strong>Ideal future approach</strong>: If true population counts (e.g., from census or official statistics) are available alongside survey data, they should be used directly as <code>n</code> in pre-aggregated input, bypassing the <code>weight</code> argument entirely. The normalization approach is a practical stopgap for the common case where only survey weights are available.</p>
 </div>
 </div>
 </div>

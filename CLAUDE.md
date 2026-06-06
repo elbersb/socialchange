@@ -72,7 +72,11 @@ pkgdown::build_site()
 
 See vignettes in `vignettes/` for detailed examples: -
 `vignettes/decompose_aggregated.qmd` - Decomposition of aggregated
-data - `vignettes/simulate.qmd` - Simulation examples
+data - `vignettes/simulate.qmd` - Simulation examples -
+`vignettes/apc.qmd` - APC model examples -
+`vignettes/replicating_firebaugh.qmd` - Replicating and improving on
+Firebaugh’s CR-IC decomposition - `vignettes/gss_homosexuality.qmd` -
+Applied example using GSS attitudes toward homosexuality
 
 ## Architecture
 
@@ -113,7 +117,9 @@ The package implements three main decomposition approaches:
   vs. intraindividual change decomposition using algebraic, linear, and
   model-based approaches
 - **APC models** (`R/apc.R`): Age-Period-Cohort models using orthogonal
-  polynomial contrasts to handle identification issues
+  polynomial contrasts to handle identification issues. Also includes
+  [`plot_gam_surface()`](https://elbersb.github.io/socialchange/reference/plot_gam_surface.md)
+  for visualizing GAM smooths as 2D surfaces.
 
 ### Data Structure Conventions
 
@@ -132,9 +138,9 @@ class `social_change_decomp` - `sim_social_change` → class
 `social_change_sim` - `cr_ic` → class `cr_ic_decomposition` - `apc` →
 class `apc_model`
 
-Each has custom [`print()`](https://rdrr.io/r/base/print.html) and often
-[`plot()`](https://rdrr.io/r/graphics/plot.default.html) methods
-defined.
+Each has custom [`print()`](https://rdrr.io/r/base/print.html) and
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) methods defined
+(all five classes have both).
 
 ## Dependencies
 
@@ -203,3 +209,32 @@ cannot recover this from already-aggregated data.
 [`decompose_aggregated()`](https://elbersb.github.io/socialchange/reference/decompose_aggregated.md)
 only for data without significant within-cell transitions, or be aware
 that transition effects will be misattributed to intraindividual change.
+
+### Survey Weights in `decompose_aggregated()`
+
+**The current weight normalization is an approximation that should be
+revisited.**
+
+When `weight` is provided with individual-level data, weights are
+normalized within each period to sum to the period sample size (`.N`),
+then cells get `n = round(sum(normalized_weight))`. This approach:
+
+- Correctly adjusts **relative** population structure across cells
+  (e.g., oversampled subgroups get their proper share)
+- Keeps event counts (mortality, coming-of-age) tractable for the
+  simulation loop
+- Avoids the problem of population-scaled weights (e.g., inverse
+  probability weights summing to millions) making the simulation
+  intractable
+
+**What it gets wrong**: The ideal would use true population counts per
+cell per period to estimate demographic event magnitudes. Normalized
+survey weights approximate relative structure but don’t recover absolute
+population sizes. Additionally, rounding introduces small errors,
+especially for cells with few respondents.
+
+**Ideal future approach**: If true population counts (e.g., from census
+or official statistics) are available alongside survey data, they should
+be used directly as `n` in pre-aggregated input, bypassing the `weight`
+argument entirely. The normalization approach is a practical stopgap for
+the common case where only survey weights are available.

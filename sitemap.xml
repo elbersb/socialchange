@@ -11,6 +11,7 @@
 <url><loc>https://elbersb.github.io/socialchange/articles/simulate.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/authors.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/index.html</loc></url>
+<url><loc>https://elbersb.github.io/socialchange/news/index.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/apc.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/apc_nonlinearities.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/apc_plot_nonlinearities.html</loc></url>
@@ -25,7 +26,11 @@
 <url><loc>https://elbersb.github.io/socialchange/reference/gss_rac.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/index.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/plot.cr_ic_decomposition.html</loc></url>
+<url><loc>https://elbersb.github.io/socialchange/reference/plot.decompose_events.html</loc></url>
+<url><loc>https://elbersb.github.io/socialchange/reference/plot_gam_surface.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/print.apc_model.html</loc></url>
+<url><loc>https://elbersb.github.io/socialchange/reference/print.decompose_events.html</loc></url>
+<url><loc>https://elbersb.github.io/socialchange/reference/print.social_change_decomp.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/sim_social_change.html</loc></url>
 <url><loc>https://elbersb.github.io/socialchange/reference/wpp_data.html</loc></url>
 </urlset>

@@ -42,11 +42,13 @@
     <li><a class="dropdown-item" href="../articles/simulate.html">Simulating social change</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/elbersb/socialchange/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -61,7 +63,7 @@
 
 
 
-
+      <small class="dont-index">Source: <a href="https://github.com/elbersb/socialchange/blob/main/vignettes/gss_homosexuality.qmd" class="external-link"><code>vignettes/gss_homosexuality.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
     </div>
 
@@ -78,11 +80,13 @@
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://elbersb.github.io/socialchange/">"socialchange"</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://modelsummary.com" class="external-link">"modelsummary"</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://ggplot2.tidyverse.org" class="external-link">"ggplot2"</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st">"mgcv"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">gss_homosex</span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="descriptives">Descriptives<a class="anchor" aria-label="anchor" href="#descriptives"></a>
 </h2>
+<p>The <code>homosex</code> outcome is rescaled to [0, 1], where 0 means “always wrong” and 1 means “not wrong at all”. The table below gives summary statistics; the line plot shows a clear upward trend in acceptance over the survey period.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># compare to Table 1 in Ekstam -- roughly similar</span></span>
@@ -169,11 +173,32 @@
 </div>
 </div>
 </div>
-</section><section class="level2"><h2 id="ic-cr-decomposition">IC-CR decomposition<a class="anchor" aria-label="anchor" href="#ic-cr-decomposition"></a>
-</h2>
-<p>The <code><a href="../reference/cr_ic.html">cr_ic()</a></code> function implements four methods for separating intracohort change (IC) from cohort replacement (CR): algebraic decomposition (AD), linear decomposition (LD), and two model-based improvements (AD+ and Model). For a detailed explanation of each method, including a replication of Firebaugh (1989), see the <a href="replicating_firebaugh.html">Replications: Firebaugh</a> vignette.</p>
+<p>To separate period and cohort effects, we fit a GAM with a two-dimensional smooth over survey year and birth cohort. The 3D surface and the contour plot below both shows that acceptance increased more strongly among younger cohorts and in later periods.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">splinemodel</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span><span class="va">homosex</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">year</span>, <span class="va">cohort</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">gss_homosex</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/vis.gam.html" class="external-link">vis.gam</a></span><span class="op">(</span><span class="va">splinemodel</span>, theta <span class="op">=</span> <span class="fl">40</span><span class="op">)</span></span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-3-1.png" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_gam_surface.html">plot_gam_surface</a></span><span class="op">(</span><span class="va">splinemodel</span><span class="op">)</span></span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-3-2.png" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section><section class="level2"><h2 id="cr-ic-decomposition">CR-IC decomposition<a class="anchor" aria-label="anchor" href="#cr-ic-decomposition"></a>
+</h2>
+<p>The <code><a href="../reference/cr_ic.html">cr_ic()</a></code> function implements four methods for separating intracohort change (IC) from cohort replacement (CR): algebraic decomposition (AD), linear decomposition (LD), and two model-based improvements (AD+ and Model). For a detailed explanation of each method, including a replication of Firebaugh (1989), see the <a href="replicating_firebaugh.html">Replications: Firebaugh</a> vignette.</p>
+<p>Acceptance rose by about 43 percentage points between 1973 and 2018 (from 0.19 to 0.62). Using the full panel, the model-based methods attribute roughly 56% of this change to intracohort change and 44% to cohort replacement, meaning attitude shifts within individuals account for the larger share.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># complete period</span></span>
 <span><span class="va">form</span> <span class="op">&lt;-</span> <span class="va">homosex</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">cohort</span><span class="op">)</span></span>
 <span><span class="op">(</span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cr_ic.html">cr_ic</a></span><span class="op">(</span><span class="va">gss_homosex</span>, <span class="va">homosex</span> <span class="op">~</span> <span class="va">year</span> <span class="op">+</span> <span class="va">cohort</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span>, model <span class="op">=</span> <span class="va">form</span><span class="op">)</span><span class="op">)</span></span>
@@ -206,17 +231,18 @@
 <span><span class="co">#&gt;   Model  resid 0.0000000        NA</span></span></code></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
-<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-4-1.png" width="672"></p>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-5-1.png" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
+<p>When only the first and last survey years are used, the balance shifts slightly toward cohort replacement (~54% CR, ~46% IC). This illustrates how the choice of time points can affect decomposition results, and why the model-based AD+ and Model methods are preferred over the simpler AD.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># only beginning and end year (also compare to Baunach 2011)</span></span>
 <span><span class="va">form</span> <span class="op">&lt;-</span> <span class="va">homosex</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span> <span class="op">+</span> <span class="fu">splines</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/splines/bs.html" class="external-link">bs</a></span><span class="op">(</span><span class="va">cohort</span>, <span class="fl">10</span><span class="op">)</span></span>
 <span><span class="op">(</span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cr_ic.html">cr_ic</a></span><span class="op">(</span><span class="va">gss_homosex</span><span class="op">[</span><span class="va">year</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span><span class="op">)</span><span class="op">]</span>, <span class="va">homosex</span> <span class="op">~</span> <span class="va">year</span> <span class="op">+</span> <span class="va">cohort</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span>, model <span class="op">=</span> <span class="va">form</span><span class="op">)</span><span class="op">)</span></span>

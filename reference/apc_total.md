@@ -22,3 +22,9 @@ apc_total(model, assumption)
 ## Value
 
 List of total effect estimates
+
+## See also
+
+\[apc()\] for model estimation, \[apc_nonlinearities()\] for the
+non-linear effects that are combined with the linear trend assumption
+here.

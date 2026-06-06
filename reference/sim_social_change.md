@@ -69,10 +69,17 @@ S3 object of class `social_change_sim` with components:
 
 - `record`: list of event-by-event change records
 
+## See also
+
+\[decompose_aggregated()\] for decomposing change in stacked
+cross-sectional data, \[decompose_events()\] for event-driven
+decomposition. Vignette:
+[`vignette("simulate", package = "socialchange")`](https://elbersb.github.io/socialchange/articles/simulate.md).
+
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 library(data.table)
 data <- data.table(age = 20:39, n = rep(100, 20))
 fun_y <- function(data, time) data[, age / 40]
@@ -87,5 +94,32 @@ result <- sim_social_change(
     fun_coming_of_age = fun_coming_of_age
 )
 print(result)
-} # }
+#> Overview by period:
+#>  period   mean    N intraindividual coming_of_age mortality inmigration
+#>       0 0.7375 2000              NA            NA        NA          NA
+#>       1 0.7431 2000           0.025      -0.01263 -0.006740           0
+#>       2 0.7474 1990           0.025      -0.01292 -0.007845           0
+#>       3 0.7500 1970           0.025      -0.01318 -0.009183           0
+#>       4 0.7508 1940           0.025      -0.01345 -0.010778           0
+#>       5 0.7493 1900           0.025      -0.01366 -0.012771           0
+#>  outmigration
+#>            NA
+#>             0
+#>             0
+#>             0
+#>             0
+#>             0
+#> 
+#> Decomposition of total change:
+#>                 Component    Value
+#>  At initial                0.73750
+#>  At end                    0.74934
+#>  Total change              0.01184
+#>  - Intraindividual change  0.12500
+#>  - Population turnover    -0.11316
+#>    - Mortality            -0.04732
+#>    - Out-migration         0.00000
+#>    - Coming-of-age        -0.06584
+#>    - In-migration          0.00000
+# }
 ```

@@ -11,11 +11,17 @@ also analyzed in Ekstam (2021).
 library("socialchange")
 library("modelsummary")
 library("ggplot2")
+library("mgcv")
 
 data(gss_homosex)
 ```
 
 ## Descriptives
+
+The `homosex` outcome is rescaled to \[0, 1\], where 0 means “always
+wrong” and 1 means “not wrong at all”. The table below gives summary
+statistics; the line plot shows a clear upward trend in acceptance over
+the survey period.
 
 ``` r
 
@@ -44,7 +50,27 @@ ggplot(by_year, aes(x = year, y = y)) + geom_line() + ylim(0, 1) + theme_light()
 
 ![](gss_homosexuality_files/figure-html/unnamed-chunk-2-1.png)
 
-## IC-CR decomposition
+To separate period and cohort effects, we fit a GAM with a
+two-dimensional smooth over survey year and birth cohort. The 3D surface
+and the contour plot below both shows that acceptance increased more
+strongly among younger cohorts and in later periods.
+
+``` r
+
+splinemodel = gam(homosex ~ s(year, cohort), data = gss_homosex)
+vis.gam(splinemodel, theta = 40)
+```
+
+![](gss_homosexuality_files/figure-html/unnamed-chunk-3-1.png)
+
+``` r
+
+plot_gam_surface(splinemodel)
+```
+
+![](gss_homosexuality_files/figure-html/unnamed-chunk-3-2.png)
+
+## CR-IC decomposition
 
 The
 [`cr_ic()`](https://elbersb.github.io/socialchange/reference/cr_ic.md)
@@ -55,6 +81,12 @@ For a detailed explanation of each method, including a replication of
 Firebaugh (1989), see the [Replications:
 Firebaugh](https://elbersb.github.io/socialchange/articles/replicating_firebaugh.md)
 vignette.
+
+Acceptance rose by about 43 percentage points between 1973 and 2018
+(from 0.19 to 0.62). Using the full panel, the model-based methods
+attribute roughly 56% of this change to intracohort change and 44% to
+cohort replacement, meaning attitude shifts within individuals account
+for the larger share.
 
 ``` r
 
@@ -95,7 +127,12 @@ form <- homosex ~ as.factor(year) + as.factor(cohort)
 plot(res)
 ```
 
-![](gss_homosexuality_files/figure-html/unnamed-chunk-4-1.png)
+![](gss_homosexuality_files/figure-html/unnamed-chunk-5-1.png)
+
+When only the first and last survey years are used, the balance shifts
+slightly toward cohort replacement (~54% CR, ~46% IC). This illustrates
+how the choice of time points can affect decomposition results, and why
+the model-based AD+ and Model methods are preferred over the simpler AD.
 
 ``` r
 

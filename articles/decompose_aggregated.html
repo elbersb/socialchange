@@ -42,11 +42,13 @@
     <li><a class="dropdown-item" href="../articles/simulate.html">Simulating social change</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/elbersb/socialchange/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -61,7 +63,7 @@
 
 
 
-
+      <small class="dont-index">Source: <a href="https://github.com/elbersb/socialchange/blob/main/vignettes/decompose_aggregated.qmd" class="external-link"><code>vignettes/decompose_aggregated.qmd</code></a></small>
       <div class="d-none name"><code></code></div>
     </div>
 
@@ -113,9 +115,9 @@
 <span><span class="co">#&gt;  Total change              0.0000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.2500</span></span>
 <span><span class="co">#&gt;  - Population turnover    -0.2500</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.1207</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.1206</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.0000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.1293</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.1294</span></span>
 <span><span class="co">#&gt;    - In-migration          0.0000</span></span></code></pre></div>
 </div>
 <p>We now feed the simulated data into the event-based decomposition:</p>
@@ -134,8 +136,8 @@
 <span><span class="co">#&gt;  Total change              0.0000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.2500</span></span>
 <span><span class="co">#&gt;  - Population turnover    -0.2500</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.1208</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.1292</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.1207</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.1293</span></span>
 <span><span class="co">#&gt; Assumes no in- or out-migration.</span></span></code></pre></div>
 </div>
 <p>The event-based decomposition has exactly recovered the results.</p>
@@ -174,11 +176,11 @@
 <span><span class="co">#&gt;  At initial                0.37580</span></span>
 <span><span class="co">#&gt;  At end                    0.37580</span></span>
 <span><span class="co">#&gt;  Total change              0.00000</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.12491</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.12491</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.06031</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.12522</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.12522</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.06048</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.00000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06460</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06474</span></span>
 <span><span class="co">#&gt;    - In-migration          0.00000</span></span></code></pre></div>
 </div>
 <p>For the event-based decomposition, we first try a misspecified model that ignores gender entirely. Still, the decomposition in this case recovers the result almost exactly:</p>
@@ -198,8 +200,8 @@
 <span><span class="co">#&gt;  Total change              0.00000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.12500</span></span>
 <span><span class="co">#&gt;  - Population turnover    -0.12500</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.06038</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06462</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.06037</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06463</span></span>
 <span><span class="co">#&gt; Assumes no in- or out-migration.</span></span></code></pre></div>
 </div>
 <p>And here are the results for the fully-specified model:</p>
@@ -216,10 +218,10 @@
 <span><span class="co">#&gt;  At initial (modeled)      0.37580</span></span>
 <span><span class="co">#&gt;  At end (modeled)          0.37580</span></span>
 <span><span class="co">#&gt;  Total change              0.00000</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.12483</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.12483</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.06023</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06460</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.12478</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.12478</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.06024</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06454</span></span>
 <span><span class="co">#&gt; Assumes no in- or out-migration.</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="only-intraindividual-change-scenario-3">Only intraindividual change (Scenario 3)<a class="anchor" aria-label="anchor" href="#only-intraindividual-change-scenario-3"></a>
@@ -244,9 +246,9 @@
 <span><span class="co">#&gt;  Total change              0.500000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.500000</span></span>
 <span><span class="co">#&gt;  - Population turnover     0.000000</span></span>
-<span><span class="co">#&gt;    - Mortality             0.000045</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.000025</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.000000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.000045</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.000025</span></span>
 <span><span class="co">#&gt;    - In-migration          0.000000</span></span></code></pre></div>
 </div>
 <p>Again, we first try a misspecified model that ignores gender entirely. Again, the decomposition recovers the result almost exactly despite the misspecification:</p>
@@ -286,8 +288,8 @@
 <span><span class="co">#&gt;  Total change              0.500000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.500000</span></span>
 <span><span class="co">#&gt;  - Population turnover     0.000000</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.000031</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.000031</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.000035</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.000035</span></span>
 <span><span class="co">#&gt; Assumes no in- or out-migration.</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="only-population-turnover-scenario-4">Only population turnover (Scenario 4)<a class="anchor" aria-label="anchor" href="#only-population-turnover-scenario-4"></a>
@@ -334,8 +336,8 @@
 <span><span class="co">#&gt;  Total change             0.5000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change 0.0000</span></span>
 <span><span class="co">#&gt;  - Population turnover    0.5000</span></span>
-<span><span class="co">#&gt;    - Mortality            0.2414</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        0.2586</span></span>
+<span><span class="co">#&gt;    - Mortality            0.2415</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        0.2585</span></span>
 <span><span class="co">#&gt; Assumes no in- or out-migration.</span></span></code></pre></div>
 </div>
 <p>And here are the results for the fully-specified model:</p>
@@ -400,9 +402,9 @@
 <span><span class="co">#&gt;  Total change              0.000000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.000000</span></span>
 <span><span class="co">#&gt;  - Population turnover     0.000000</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.000821</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.000853</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.000000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.000821</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.000853</span></span>
 <span><span class="co">#&gt;    - In-migration          0.000000</span></span></code></pre></div>
 </div>
 <p>Compare to decomposition:</p>
@@ -422,8 +424,8 @@
 <span><span class="co">#&gt;  Total change              0.000000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.000000</span></span>
 <span><span class="co">#&gt;  - Population turnover     0.000000</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.000835</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.000835</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.000824</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.000824</span></span>
 <span><span class="co">#&gt; Assumes no in- or out-migration.</span></span></code></pre></div>
 </div>
 </section><section class="level3"><h3 id="intraindividual-change-scenario-5b">Intraindividual change (Scenario 5b)<a class="anchor" aria-label="anchor" href="#intraindividual-change-scenario-5b"></a>
@@ -446,11 +448,11 @@
 <span><span class="co">#&gt;  At initial                0.867686</span></span>
 <span><span class="co">#&gt;  At end                    0.590757</span></span>
 <span><span class="co">#&gt;  Total change             -0.276929</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.276978</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.000049</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.001090</span></span>
+<span><span class="co">#&gt;  - Intraindividual change -0.277006</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.000078</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.001168</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.000000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.001139</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.001246</span></span>
 <span><span class="co">#&gt;    - In-migration          0.000000</span></span></code></pre></div>
 </div>
 <p>Compare to decomposition:</p>
@@ -468,10 +470,10 @@
 <span><span class="co">#&gt;  At initial (modeled)      0.867686</span></span>
 <span><span class="co">#&gt;  At end (modeled)          0.590757</span></span>
 <span><span class="co">#&gt;  Total change             -0.276929</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.277130</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.000202</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.001203</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.001405</span></span>
+<span><span class="co">#&gt;  - Intraindividual change -0.276825</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.000103</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.001098</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.000995</span></span>
 <span><span class="co">#&gt; Assumes no in- or out-migration.</span></span></code></pre></div>
 </div>
 </section><section class="level3"><h3 id="coming-of-age-scenario-5c">Coming of age (Scenario 5c)<a class="anchor" aria-label="anchor" href="#coming-of-age-scenario-5c"></a>
@@ -494,11 +496,11 @@
 <span><span class="co">#&gt;  At initial                0.86769</span></span>
 <span><span class="co">#&gt;  At end                    0.50476</span></span>
 <span><span class="co">#&gt;  Total change             -0.36293</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.29115</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.07177</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.01064</span></span>
+<span><span class="co">#&gt;  - Intraindividual change -0.29116</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.07176</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.01068</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.00000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06113</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06108</span></span>
 <span><span class="co">#&gt;    - In-migration          0.00000</span></span></code></pre></div>
 </div>
 <p>Compare to decomposition:</p>
@@ -516,10 +518,10 @@
 <span><span class="co">#&gt;  At initial (modeled)      0.86769</span></span>
 <span><span class="co">#&gt;  At end (modeled)          0.50476</span></span>
 <span><span class="co">#&gt;  Total change             -0.36293</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.29104</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.07189</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.01076</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06112</span></span>
+<span><span class="co">#&gt;  - Intraindividual change -0.29117</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.07176</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.01067</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06109</span></span>
 <span><span class="co">#&gt; Assumes no in- or out-migration.</span></span></code></pre></div>
 </div>
 </section></section><script id="quarto-html-after-body" type="application/javascript">
