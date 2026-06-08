@@ -35,9 +35,8 @@
 #' @import data.table
 #' @export
 decompose_events <- function(
-  events, outcomes, formula, end_period = NULL,
-  event_type = "event_type", fun = mean
-) {
+    events, outcomes, formula, end_period = NULL,
+    event_type = "event_type", fun = mean) {
   vars <- all.vars(formula)
   checkmate::assert_vector(vars, len = 3, any.missing = FALSE)
   checkmate::assert_data_frame(events)
