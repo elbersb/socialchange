@@ -4,8 +4,6 @@ vignette: >
   %\VignetteIndexEntry{Decomposing General Social Survey data: Attitudes on Homosexuality}
   %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
-execute:
-  warning: false
 knitr:
   opts_chunk:
     collapse: true
@@ -52,7 +50,7 @@ plot_gam_surface(splinemodel)
 
 The `cr_ic()` function implements four methods for separating intracohort change (IC) from cohort replacement (CR): algebraic decomposition (AD), linear decomposition (LD), and two model-based improvements (AD+ and Model). For a detailed explanation of each method, including a replication of Firebaugh (1989), see the [Replications: Firebaugh](replicating_firebaugh.html) vignette.
 
-Acceptance rose by about 43 percentage points between 1973 and 2018 (from 0.19 to 0.62). Using the full panel, the model-based methods attribute roughly 56% of this change to intracohort change and 44% to cohort replacement, meaning attitude shifts within individuals account for the larger share.
+Acceptance rose by about 43 percentage points between 1973 and 2018 (from 0.19 to 0.62). Using the full panel, the two model-based methods both attribute the larger share to intracohort change, though they differ on the exact split: AD+ gives roughly 63% intracohort change and 37% cohort replacement, while the Model method gives roughly 56% and 44%.
 
 ```{r}
 # complete period
@@ -71,5 +69,36 @@ When only the first and last survey years are used, the balance shifts slightly 
 form <- homosex ~ as.factor(year) + splines::bs(cohort, 10)
 (res <- cr_ic(gss_homosex[year %in% c(min(year), max(year))], homosex ~ year + cohort, weight = "wtssall", model = form))
 ```
+
+## Event-based decomposition
+
+The `decompose_aggregated()` function separates change in the aggregate outcome into intraindividual change (attitude shifts within respondents already in the population) and population turnover (mortality and coming-of-age effects). We rename `year` and `homosex` to the column names the function expects, then pass the full dataset directly.
+
+```{r}
+gss_all <- gss_homosex[, .(age, period = year, y = homosex, wtssall)]
+```
+
+We fit a GAM to the individual responses to model acceptance as a smooth function of age and period.
+
+```{r}
+set.seed(42)
+model <- mgcv::gam(y ~ s(age) + s(period), data = gss_all, weights = wtssall)
+predict_y <- function(newdata) as.vector(mgcv::predict.gam(model, newdata = newdata))
+
+result <- decompose_aggregated(gss_all, predict_y, weight = "wtssall", tol = 0.15)
+print(result)
+```
+
+Of the roughly 41 percentage point rise in acceptance between 1973 and 2018, the decomposition attributes about 61% to intraindividual change and 39% to population turnover (mortality of older, less accepting cohorts; coming-of-age of younger, more accepting ones). This falls within the range spanned by the CR-IC model-based methods above (37–44% turnover), closest to the AD+ estimate.
+
+```{r}
+plot(result)
+```
+
+What is most interesting about these results is how the components behave over time. Until the early-to-mid 1990s, intraindividual change and population turnover offset each other, leaving the aggregate mean roughly flat. The mean even dipped in the mid-1980s, falling from about 0.21 in 1977 to 0.18 in 1987, as the existing members of the population became less accepting of homosexuality. Turnover pulled the mean back up over the same period, so that by the early 1990s acceptance had barely moved from its 1973 level. Only from the mid-1990s did intraindividual change start to contribute toward acceptance, and from that point on it became the main driver of the rising trend. Turnover contributed in the positive direction throughout. Mortality of older, less accepting cohorts had a much stronger effect than the coming-of-age of younger ones, likely because new members of the population are already closer to the population mean.
+
+One speculative reading of the early decline in intraindividual acceptance is the backlash associated with the AIDS epidemic of the 1980s. The decomposition itself cannot establish this, but it does isolate a within-person decline that is invisible in the raw trend line.
+
+## Further reading
 
 For APC analysis of the same `gss_homosex` dataset, see the [APC vignette](apc.html).
