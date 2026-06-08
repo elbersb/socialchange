@@ -325,6 +325,7 @@ print.social_change_decomp <- function(x, detailed = TRUE, ...) {
     if (detailed) {
         cat("\nDecomposition of total change:\n")
     }
+    total_change <- meanN - mean0
     decomp <- data.table(
         Component = c(
             "At initial (modeled)",
@@ -340,20 +341,25 @@ print.social_change_decomp <- function(x, detailed = TRUE, ...) {
         Value = c(
             mean0,
             meanN,
-            meanN - mean0,
+            total_change,
             intraindividual,
             pt,
             mortality,
             outmigration,
             coming_of_age,
             inmigration
+        ),
+        Percent = c(
+            "", "", "100.0",
+            sprintf("%.1f", round(100 * c(intraindividual, pt, mortality,
+                outmigration, coming_of_age, inmigration) / total_change, 1))
         )
     )
     if (!x$migration) {
         decomp <- decomp[!grepl("migration", Component)]
     }
 
-    print(decomp, row.names = FALSE, class = FALSE, justify = "left")
+    print(decomp, row.names = FALSE, class = FALSE, justify = "left", na.print = "")
     if (!x$migration) {
         cat("Assumes no in- or out-migration.\n")
     }
