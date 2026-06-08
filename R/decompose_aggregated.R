@@ -379,10 +379,13 @@ plot.social_change_decomp <- function(x, ...) {
     means_long <- data.table::melt(summary,
         id.vars = "period",
         measure.vars = c("observed_mean", "modeled_mean"),
-        variable.name = "type", value.name = "value")
-    means_long[, type := factor(type,
+        variable.name = "type", value.name = "value"
+    )
+    means_long[, type := factor(
+        type,
         c("observed_mean", "modeled_mean"),
-        c("Observed", "Modeled"))]
+        c("Observed", "Modeled")
+    )]
     means_long[, panel := "Mean outcome"]
 
     components <- c("intraindividual", "mortality", "coming_of_age")
@@ -398,7 +401,8 @@ plot.social_change_decomp <- function(x, ...) {
     decomp_long <- data.table::melt(summary,
         id.vars = "period",
         measure.vars = components,
-        variable.name = "type", value.name = "value")
+        variable.name = "type", value.name = "value"
+    )
     decomp_long[is.na(value), value := 0]
     decomp_long[, value := cumsum(value), by = "type"]
     decomp_long[, type := factor(type, components, comp_labels[components])]
@@ -411,17 +415,17 @@ plot.social_change_decomp <- function(x, ...) {
     combine[, panel := factor(panel, c("Mean outcome", "Cumulative change"))]
 
     color_map <- c(
-        "Observed"              = "black",
-        "Modeled"               = "#888888",
+        "Observed" = "black",
+        "Modeled" = "#888888",
         "Intraindividual change" = "#450C54",
-        "Mortality"             = "#22908C",
-        "Coming-of-age"         = "#FDE724",
-        "Out-migration"         = "#3B518B",
-        "In-migration"          = "#5DC963"
+        "Mortality" = "#22908C",
+        "Coming-of-age" = "#FDE724",
+        "Out-migration" = "#3B518B",
+        "In-migration" = "#5DC963"
     )
 
     ggplot(combine, aes(x = period, y = value, color = type)) +
-        facet_wrap("panel", nrow = 2, scales = "free_y") +
+        facet_wrap("panel", nrow = 1, scales = "free_y") +
         geom_hline(yintercept = 0, color = "gray") +
         geom_line() +
         scale_color_manual(values = color_map) +
