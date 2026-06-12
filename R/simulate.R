@@ -276,7 +276,8 @@ sim_social_change <- function(periods, data, fun_y,
 #' @import data.table
 #' @export
 print.social_change_sim <- function(x, detailed = TRUE, ...) {
-    options(digits = 4, scipen = 999)
+    old <- options(digits = 4, scipen = 999)
+    on.exit(options(old))
     if (detailed) {
         cat("Overview by period:\n")
         print(x$summary, row.names = FALSE, class = FALSE, na.print = "")
@@ -320,5 +321,5 @@ print.social_change_sim <- function(x, detailed = TRUE, ...) {
     )
 
     print(decomp, row.names = FALSE, class = FALSE, justify = "left")
-    options(digits = 7, scipen = 0) # reset to default
+    invisible(x)
 }

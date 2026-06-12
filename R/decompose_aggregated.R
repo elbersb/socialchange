@@ -410,7 +410,8 @@ schedule_events <- function(data, min_age, gap, n_ev) {
 #' @import data.table
 #' @export
 print.social_change_decomp <- function(x, detailed = TRUE, ...) {
-    options(digits = 4, scipen = 999)
+    old <- options(digits = 4, scipen = 999)
+    on.exit(options(old))
     if (detailed) {
         cat("Overview by period:\n")
         print(x$summary, row.names = FALSE, class = FALSE, na.print = "")
@@ -468,7 +469,6 @@ print.social_change_decomp <- function(x, detailed = TRUE, ...) {
     if (outmigration == 0) decomp <- decomp[Component != "  - Out-migration"]
 
     print(decomp, row.names = FALSE, class = FALSE, justify = "left", na.print = "")
-    options(digits = 7, scipen = 0) # reset to default
     invisible(x)
 }
 
