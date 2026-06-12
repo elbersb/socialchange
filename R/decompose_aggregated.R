@@ -171,6 +171,24 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
         # min_age down to 0 -- otherwise no cohort is ever classified as "new" and the
         # entering cohort's growth is misrouted to in-migration instead of coming-of-age.
         min_age_data1 <- data1[n > 0, min(age)]
+        # A later wave must not contain ages below the earlier wave's minimum.
+        # Such respondents are still below min_age in period i+1, so they have not
+        # crossed the threshold during the gap: the coming-of-age premise fails and
+        # schedule_events() would assign them an entry tick > 1 (past the period
+        # boundary), extrapolating fun_y beyond period i+1. A later wave whose
+        # minimum is *above* the earlier wave's is harmless (e.g. a wave that simply
+        # did not sample the youngest age), so the guard is one-sided.
+        min_age_data2 <- data2[n > 0, min(age)]
+        if (min_age_data2 < min_age_data1) {
+            stop(sprintf(
+                paste0(
+                    "Period %s contains ages as young as %g, below period %s's minimum age of %g. ",
+                    "These cohorts have not crossed the minimum age by the later period and cannot be ",
+                    "classified as coming-of-age. Restrict each wave to a common minimum age before decomposing."
+                ),
+                periods[i_period + 1], min_age_data2, periods[i_period], min_age_data1
+            ))
+        }
         data2[, age := age - gap]
         for (var in vars) {
             if (!(var %in% cells)) {

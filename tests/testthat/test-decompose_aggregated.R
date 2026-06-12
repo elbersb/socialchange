@@ -635,3 +635,36 @@ test_that("decompose_aggregated errors on single-period input", {
     "at least 2 distinct periods"
   )
 })
+
+test_that("decompose_aggregated errors when a later wave dips below the earlier minimum age", {
+  # Period 2004 contains a 17-year-old, below period 2000's minimum of 20. Such a
+  # respondent has not crossed min_age by the later wave, so classifying them as
+  # coming-of-age would schedule their entry past the period boundary and
+  # extrapolate fun_y. The function should error instead.
+  stacked_data <- rbindlist(list(
+    data.table(age = 20:30, period = 2000),
+    data.table(age = 17:30, period = 2004)
+  ))
+  stacked_data[, y := (age - 20) / 20]
+  model <- lm(y ~ age, data = stacked_data)
+  predict_y <- function(newdata) predict(model, newdata = newdata)
+
+  expect_error(
+    decompose_aggregated(stacked_data, predict_y),
+    "below period 2000's minimum age"
+  )
+})
+
+test_that("decompose_aggregated allows a later wave whose minimum age is above the earlier one", {
+  # The guard is one-sided: a wave that simply did not sample the youngest age
+  # (here period 2004 starts at 22, above period 2000's 20) is harmless.
+  stacked_data <- rbindlist(list(
+    data.table(age = 20:30, period = 2000),
+    data.table(age = 22:32, period = 2004)
+  ))
+  stacked_data[, y := (age - 20) / 20]
+  model <- lm(y ~ age, data = stacked_data)
+  predict_y <- function(newdata) predict(model, newdata = newdata)
+
+  expect_no_error(decompose_aggregated(stacked_data, predict_y))
+})
