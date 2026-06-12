@@ -31,8 +31,13 @@ The `homosex` outcome is rescaled to [0, 1], where 0 means "always wrong" and 1 
 ```{r}
 # compare to Table 1 in Ekstam -- roughly similar
 modelsummary::datasummary(
-  homosex + year + cohort + age + educ + sex + race ~ mean + SD + min + max,
+  homosex + year + cohort + age + educ ~ mean + SD + min + max,
   data = gss_homosex, output = "markdown", fmt = 3)
+
+# sex and race are categorical, so show their level breakdown instead
+modelsummary::datasummary(
+  sex + race ~ N + Percent(),
+  data = gss_homosex, output = "markdown", fmt = 1)
 
 by_year <- gss_homosex[, list(y = weighted.mean(homosex, wtssall)), by = c("year")]
 ggplot(by_year, aes(x = year, y = y)) + geom_line() + ylim(0, 1) + theme_light()

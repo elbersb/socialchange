@@ -25,7 +25,8 @@
 #'   \item{educ}{Highest year of school completed.}
 #'   \item{marital}{Marital status (1 = Married, 2 = Widowed, 3 = Divorced,
 #'     4 = Separated, 5 = Never Married).}
-#'   \item{race}{Race of respondent (1 = White, 2 = Black, 3 = Other).}
+#'   \item{race}{Race of respondent (\code{"white"}, \code{"black"}, or
+#'     \code{"other"}).}
 #'   \item{region}{Region of interview (1--9, Census divisions).}
 #'   \item{born}{Whether respondent was born in the United States
 #'     (1 = Yes, 2 = No; NA for many years).}
