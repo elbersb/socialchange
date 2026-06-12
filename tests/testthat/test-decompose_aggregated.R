@@ -589,3 +589,34 @@ test_that("decompose_aggregated handles unequal gaps between periods", {
     tolerance = 1e-3
   )
 })
+
+test_that("decompose_aggregated is invariant to input row order (period sorting)", {
+  # Regression test: periods were previously taken in appearance order, so
+  # rows ordered e.g. 2002, 2000, 2001 silently decomposed a backwards
+  # transition (negative gap -> garbage components) with no error. The fix
+  # sorts unique(period), so shuffling input rows must not change the result.
+  set.seed(12345)
+  data <- build_simple_population()
+  simresult <- sim_social_change(
+    periods = 5,
+    data = data,
+    fun_y = make_age_only_outcome(),
+    fun_mortality = make_stable_mortality_simple(),
+    fun_coming_of_age = make_stable_coming_of_age_simple()
+  )
+  stacked_data <- rbindlist(simresult$snapshot)
+  model <- lm(y ~ age, data = stacked_data)
+  predict_y <- function(newdata) { predict(model, newdata = newdata) }
+
+  set.seed(999)
+  decomp_ordered <- decompose_aggregated(stacked_data, predict_y)
+
+  # shuffle the period blocks (and rows within) into a non-chronological order
+  set.seed(7)
+  shuffled <- stacked_data[sample(.N)]
+  set.seed(999)
+  decomp_shuffled <- decompose_aggregated(shuffled, predict_y)
+
+  expect_equal(decomp_shuffled$summary, decomp_ordered$summary)
+  expect_equal(decomp_shuffled$record, decomp_ordered$record)
+})

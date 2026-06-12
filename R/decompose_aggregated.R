@@ -113,7 +113,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
         frame <- population
     }
 
-    periods <- frame[, unique(period)]
+    periods <- sort(frame[, unique(period)])
     cells <- c(cells, "age")
 
     record <- vector("list", length(periods))
