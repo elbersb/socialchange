@@ -19,7 +19,7 @@ A data.table with 36,494 rows and 19 variables:
     3 = Sometimes Wrong, 4 = Not Wrong at All.}
   \item{age}{Age of respondent at time of interview.}
   \item{cohort}{Birth year, computed as \code{year - age}.}
-  \item{sex}{Sex of respondent (1 = Male, 2 = Female).}
+  \item{sex}{Sex of respondent (\code{"male"} or \code{"female"}).}
   \item{educ}{Highest year of school completed.}
   \item{marital}{Marital status (1 = Married, 2 = Widowed, 3 = Divorced,
     4 = Separated, 5 = Never Married).}

@@ -21,7 +21,7 @@
 #'     3 = Sometimes Wrong, 4 = Not Wrong at All.}
 #'   \item{age}{Age of respondent at time of interview.}
 #'   \item{cohort}{Birth year, computed as \code{year - age}.}
-#'   \item{sex}{Sex of respondent (1 = Male, 2 = Female).}
+#'   \item{sex}{Sex of respondent (\code{"male"} or \code{"female"}).}
 #'   \item{educ}{Highest year of school completed.}
 #'   \item{marital}{Marital status (1 = Married, 2 = Widowed, 3 = Divorced,
 #'     4 = Separated, 5 = Never Married).}
@@ -98,6 +98,30 @@
 #'   Population Division. World Population Prospects 2022.
 #'   \url{https://population.un.org/wpp/}
 "wpp_data"
+
+#' US population by age and sex, 1973--2016
+#'
+#' United States population by single year of age and sex, from the UN World
+#' Population Prospects (WPP) 2022, for every year from 1973 to 2016 (the span
+#' of the \code{\link{gss_homosex}} survey waves). Ages run from 18 to 89, with
+#' 89 representing "89 or older" to match the GSS age top-code. Counts are in
+#' thousands and reflect the true US age/sex structure; they are intended for
+#' use as the \code{population} frame in \code{\link{decompose_aggregated}},
+#' where only the relative cell structure matters (rescale per period as needed).
+#' Prepared via the \href{https://github.com/PPgp/tidywpp}{tidywpp} package.
+#'
+#' @format A data.table with 6,336 rows and 4 variables:
+#' \describe{
+#'   \item{period}{Year (numeric), 1973--2016.}
+#'   \item{age}{Single year of age (18--89; 89 = "89 or older").}
+#'   \item{sex}{Sex (\code{"male"} or \code{"female"}), matching
+#'     \code{gss_homosex$sex}.}
+#'   \item{n}{Population in thousands (numeric).}
+#' }
+#' @source United Nations, Department of Economic and Social Affairs,
+#'   Population Division. World Population Prospects 2022.
+#'   \url{https://population.un.org/wpp/}
+"wpp_us"
 
 #' EU membership events
 #'

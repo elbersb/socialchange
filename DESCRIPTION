@@ -13,16 +13,18 @@ Description: Provides methods for decomposing aggregate-level social change
 Depends: R (>= 4.0.0)
 License: MIT + file LICENSE
 Imports: data.table, ggplot2, checkmate, weightedcontrasts
-Remotes: elbersb/weightedcontrasts
+Remotes: elbersb/weightedcontrasts, kjhealy/gssr, guyabel/tidywpp
 Encoding: UTF-8
 LazyData: true
 URL: https://elbersb.github.io/socialchange/
 BugReports: https://github.com/elbersb/socialchange/issues
 Suggests:
+    gssr,
     knitr,
     mgcv,
     quarto,
     testthat (>= 3.0.0),
+    tidywpp,
     modelsummary
 VignetteBuilder: quarto
 Config/roxygen2/version: 8.0.0
