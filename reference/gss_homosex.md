@@ -58,7 +58,7 @@ A data.table with 36,494 rows and 19 variables:
 
 - sex:
 
-  Sex of respondent (1 = Male, 2 = Female).
+  Sex of respondent (`"male"` or `"female"`).
 
 - educ:
 

@@ -102,7 +102,11 @@ The package implements three main decomposition approaches:
     - Requires: stacked panel data with age, period, and cell counts
     - Requires: `fun_y` function that computes the outcome from data
     - Decomposes into: intraindividual change, coming-of-age, mortality,
-      and (optionally) migration
+      and net in-migration (the last derived as a residual from
+      cell-count growth; see Known Limitations → Migration)
+    - Optional `population` argument supplies a true cell × period count
+      frame, overriding survey counts for the population frame and event
+      derivation
 3.  **Simulation-based** (`R/simulate.R`)
     - [`sim_social_change()`](https://elbersb.github.io/socialchange/reference/sim_social_change.md):
       Forward simulation of social change dynamics
@@ -174,29 +178,61 @@ preparation scripts are in `data-raw/`.
 
 ### Migration
 
-Funcationality not implemented yet.
+**Only net in-migration is recovered, and only as a residual from
+cell-count growth.** Per the “never a residual” principle, every change
+in a cell’s size between two waves is attributed to a demographic event:
+a survivor cohort that *shrinks* is credited to mortality, one that
+*grows* is credited to net in-migration (`derive_events()`:
+`inmigration = pmax(0, n2 - n1)` for survivors). This is **always-on** —
+it is not gated on a population frame, and there is no `migration`
+argument to toggle it. There is also no `migration` field on the output:
+the `inmigration`/`outmigration` columns are always present in
+`summary`, and print/plot show a migration component only for whichever
+of the two is non-zero (so today: in-migration when present, never
+out-migration).
+
+Consequences and limits: - **Out-migration is never separately
+identified.** Gross out-migration is not separable from deaths (a
+survivor loss could be either), so it is folded into mortality and the
+reported `outmigration` is always `0`. - **On survey data the
+in-migration term is mostly noise.** Run on raw survey cells, a
+“growing” cohort usually reflects sampling fluctuation in cell sizes
+across waves rather than genuine immigration. The term is therefore
+small (e.g. ~1.9% / +0.007 on the GSS homosexuality example) and should
+be read as honest accounting of where the cell-count change went, not as
+a demographic estimate. It becomes meaningful only when `population`
+supplies a true population frame, where a growing survivor cohort really
+does signal net immigration. - Migration among coming-of-age cohorts is
+not modeled (new cohorts get all their growth as coming-of-age).
+
+The remaining migration work (feature (b) in the planned-features notes
+below) is supplying mortality/migration **inputs**
+(e.g. `fun_mortality`) to close the accounting identity properly rather
+than reading net change off cell-count differences.
 
 ### Aggregated Decomposition with Transitions
 
 **[`decompose_aggregated()`](https://elbersb.github.io/socialchange/reference/decompose_aggregated.md)
 does not properly handle within-cell transitions** (e.g., smokers
-becoming non-smokers). The function only decomposes change into: -
-Intraindividual change - Mortality - Coming-of-age - Migration
-(optional)
+becoming non-smokers). The function decomposes change into: -
+Intraindividual change - Mortality - Coming-of-age - Net in-migration
+(residual from cell-count growth; see above)
 
 When the input data includes transitions between cells, these transition
 effects are **not separately identified** and instead get absorbed into
 the intraindividual change component. Additionally:
 
-- Mortality and coming-of-age are estimated from simple population
-  differences between periods: `mortality = n1 - n2` and
-  `coming_of_age = n2 - n1`
+- Mortality, coming-of-age, and net in-migration are estimated from
+  simple population differences between periods: for survivors
+  `mortality = pmax(0, n1 - n2)` and `inmigration = pmax(0, n2 - n1)`;
+  for new cohorts `coming_of_age = pmax(0, n2 - n1)`
 - When transitions occur, these differences no longer accurately reflect
   demographic events
-- The code uses `pmax(0, ...)` to prevent negative
-  mortality/coming-of-age counts, but this masks the underlying problem
+- The `pmax(0, ...)` guard routes each cell’s net change to exactly one
+  of mortality / in-migration depending on its sign, which masks any
+  offsetting flows
 - Cells with net inflow from transitions will show 0 mortality even if
-  deaths occurred
+  deaths occurred (the inflow is labeled in-migration instead)
 
 **Workaround**: This is a fundamental limitation of the aggregated
 decomposition approach. The simulation function

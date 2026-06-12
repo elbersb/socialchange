@@ -186,6 +186,8 @@ plot(ev)
   : Simulate social change with demographic processes
 - [`wpp_data`](https://elbersb.github.io/socialchange/reference/wpp_data.md)
   : UN World Population Prospects population data
+- [`wpp_us`](https://elbersb.github.io/socialchange/reference/wpp_us.md)
+  : US population by age and sex, 1973–2016
 
 # Articles
 

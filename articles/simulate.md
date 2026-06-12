@@ -148,11 +148,11 @@ simresult
 #> Overview by period:
 #>  period   mean    N intraindividual coming_of_age mortality inmigration
 #>       0 0.3758 1550              NA            NA        NA          NA
-#>       1 0.3758 1550            0.05      -0.02586  -0.02414           0
-#>       2 0.3758 1550            0.05      -0.02588  -0.02412           0
-#>       3 0.3758 1550            0.05      -0.02587  -0.02413           0
-#>       4 0.3758 1550            0.05      -0.02589  -0.02411           0
-#>       5 0.3758 1550            0.05      -0.02586  -0.02414           0
+#>       1 0.3758 1550            0.05      -0.02590  -0.02410           0
+#>       2 0.3758 1550            0.05      -0.02584  -0.02416           0
+#>       3 0.3758 1550            0.05      -0.02585  -0.02415           0
+#>       4 0.3758 1550            0.05      -0.02584  -0.02416           0
+#>       5 0.3758 1550            0.05      -0.02585  -0.02415           0
 #>  outmigration
 #>            NA
 #>             0
@@ -168,9 +168,9 @@ simresult
 #>  Total change              0.0000
 #>  - Intraindividual change  0.2500
 #>  - Population turnover    -0.2500
-#>    - Mortality            -0.1206
+#>    - Mortality            -0.1207
 #>    - Out-migration         0.0000
-#>    - Coming-of-age        -0.1294
+#>    - Coming-of-age        -0.1293
 #>    - In-migration          0.0000
 ```
 
@@ -249,11 +249,11 @@ simresult
 #> Overview by period:
 #>  period   mean    N intraindividual coming_of_age mortality inmigration
 #>       0 0.3758 1550              NA            NA        NA          NA
-#>       1 0.3758 1550         0.02495      -0.01289  -0.01206           0
-#>       2 0.3758 1550         0.02498      -0.01292  -0.01206           0
-#>       3 0.3758 1550         0.02503      -0.01292  -0.01211           0
-#>       4 0.3758 1550         0.02487      -0.01286  -0.01200           0
-#>       5 0.3758 1550         0.02507      -0.01295  -0.01212           0
+#>       1 0.3758 1550         0.02505      -0.01296  -0.01209           0
+#>       2 0.3758 1550         0.02488      -0.01288  -0.01200           0
+#>       3 0.3758 1550         0.02503      -0.01296  -0.01207           0
+#>       4 0.3758 1550         0.02501      -0.01294  -0.01207           0
+#>       5 0.3758 1550         0.02499      -0.01296  -0.01203           0
 #>  outmigration
 #>            NA
 #>             0
@@ -267,11 +267,11 @@ simresult
 #>  At initial                0.37580
 #>  At end                    0.37580
 #>  Total change              0.00000
-#>  - Intraindividual change  0.12490
-#>  - Population turnover    -0.12490
-#>    - Mortality            -0.06036
+#>  - Intraindividual change  0.12495
+#>  - Population turnover    -0.12495
+#>    - Mortality            -0.06026
 #>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.06454
+#>    - Coming-of-age        -0.06469
 #>    - In-migration          0.00000
 ```
 
@@ -310,13 +310,13 @@ simresult <- socialchange::sim_social_change(
 )
 simresult
 #> Overview by period:
-#>  period mean    N intraindividual coming_of_age    mortality inmigration
-#>       0  0.3 1550              NA            NA           NA          NA
-#>       1  0.4 1550             0.1  -0.000011048  0.000011048           0
-#>       2  0.5 1550             0.1  -0.000005013  0.000005013           0
-#>       3  0.6 1550             0.1   0.000010794 -0.000010794           0
-#>       4  0.7 1550             0.1  -0.000013429  0.000013429           0
-#>       5  0.8 1550             0.1  -0.000022369  0.000022369           0
+#>  period mean    N intraindividual coming_of_age   mortality inmigration
+#>       0  0.3 1550              NA            NA          NA          NA
+#>       1  0.4 1550             0.1   -0.00002091  0.00002091           0
+#>       2  0.5 1550             0.1   -0.00001269  0.00001269           0
+#>       3  0.6 1550             0.1    0.00003366 -0.00003366           0
+#>       4  0.7 1550             0.1   -0.00003037  0.00003037           0
+#>       5  0.8 1550             0.1    0.00001592 -0.00001592           0
 #>  outmigration
 #>            NA
 #>             0
@@ -332,9 +332,9 @@ simresult
 #>  Total change              0.500000
 #>  - Intraindividual change  0.500000
 #>  - Population turnover     0.000000
-#>    - Mortality             0.000041
+#>    - Mortality             0.000014
 #>    - Out-migration         0.000000
-#>    - Coming-of-age        -0.000041
+#>    - Coming-of-age        -0.000014
 #>    - In-migration          0.000000
 ```
 
@@ -377,11 +377,11 @@ simresult
 #> Overview by period:
 #>  period mean    N        intraindividual coming_of_age mortality inmigration
 #>       0  0.3 1550                     NA            NA        NA          NA
-#>       1  0.4 1550 -0.0000000000000013323       0.05175   0.04825           0
-#>       2  0.5 1550  0.0000000000000007772       0.05173   0.04827           0
-#>       3  0.6 1550 -0.0000000000000011102       0.05169   0.04831           0
-#>       4  0.7 1550  0.0000000000000014433       0.05170   0.04830           0
-#>       5  0.8 1550 -0.0000000000000004441       0.05173   0.04827           0
+#>       1  0.4 1550 -0.0000000000000008882       0.05173   0.04827           0
+#>       2  0.5 1550  0.0000000000000007772       0.05172   0.04828           0
+#>       3  0.6 1550 -0.0000000000000003331       0.05167   0.04833           0
+#>       4  0.7 1550  0.0000000000000013323       0.05171   0.04829           0
+#>       5  0.8 1550 -0.0000000000000001110       0.05170   0.04830           0
 #>  outmigration
 #>            NA
 #>             0
@@ -397,9 +397,9 @@ simresult
 #>  Total change             0.5000
 #>  - Intraindividual change 0.0000
 #>  - Population turnover    0.5000
-#>    - Mortality            0.2414
+#>    - Mortality            0.2415
 #>    - Out-migration        0.0000
-#>    - Coming-of-age        0.2586
+#>    - Coming-of-age        0.2585
 #>    - In-migration         0.0000
 ```
 
@@ -503,11 +503,11 @@ smoking1
 #> Overview by period:
 #>  period   mean    N        intraindividual coming_of_age  mortality inmigration
 #>       0 0.8677 1439                     NA            NA         NA          NA
-#>       1 0.8677 1439  0.0000000000000005551     0.0001602 -0.0001602           0
-#>       2 0.8677 1439  0.0000000000000000000     0.0001838 -0.0001838           0
-#>       3 0.8677 1439 -0.0000000000000009992     0.0001651 -0.0001651           0
-#>       4 0.8677 1439  0.0000000000000001110     0.0001845 -0.0001845           0
-#>       5 0.8677 1439 -0.0000000000000009992     0.0001742 -0.0001742           0
+#>       1 0.8677 1439 -0.0000000000000003331     0.0001908 -0.0001908           0
+#>       2 0.8677 1439 -0.0000000000000014433     0.0001721 -0.0001721           0
+#>       3 0.8677 1439 -0.0000000000000007772     0.0001500 -0.0001500           0
+#>       4 0.8677 1439 -0.0000000000000007772     0.0001439 -0.0001439           0
+#>       5 0.8677 1439 -0.0000000000000003331     0.0001698 -0.0001698           0
 #>  outmigration
 #>            NA
 #>             0
@@ -523,9 +523,9 @@ smoking1
 #>  Total change              0.000000
 #>  - Intraindividual change  0.000000
 #>  - Population turnover     0.000000
-#>    - Mortality            -0.000868
+#>    - Mortality            -0.000827
 #>    - Out-migration         0.000000
-#>    - Coming-of-age         0.000868
+#>    - Coming-of-age         0.000827
 #>    - In-migration          0.000000
 ```
 
@@ -555,11 +555,11 @@ smoking2
 #> Overview by period:
 #>  period   mean    N intraindividual coming_of_age  mortality inmigration
 #>       0 0.8677 1439              NA            NA         NA          NA
-#>       1 0.8123 1439        -0.05543     0.0002437 -0.0002004           0
-#>       2 0.7569 1439        -0.05547     0.0003001 -0.0002198           0
-#>       3 0.7015 1439        -0.05536     0.0001819 -0.0002052           0
-#>       4 0.6461 1439        -0.05539     0.0002676 -0.0002619           0
-#>       5 0.5908 1439        -0.05531     0.0001804 -0.0002571           0
+#>       1 0.8123 1439        -0.05533     0.0001059 -0.0001661           0
+#>       2 0.7569 1439        -0.05533     0.0001678 -0.0002202           0
+#>       3 0.7015 1439        -0.05536     0.0002107 -0.0002376           0
+#>       4 0.6461 1439        -0.05540     0.0002564 -0.0002452           0
+#>       5 0.5908 1439        -0.05532     0.0002485 -0.0003155           0
 #>  outmigration
 #>            NA
 #>             0
@@ -573,11 +573,11 @@ smoking2
 #>  At initial                0.867686
 #>  At end                    0.590757
 #>  Total change             -0.276929
-#>  - Intraindividual change -0.276958
-#>  - Population turnover     0.000030
-#>    - Mortality            -0.001144
+#>  - Intraindividual change -0.276733
+#>  - Population turnover    -0.000196
+#>    - Mortality            -0.001185
 #>    - Out-migration         0.000000
-#>    - Coming-of-age         0.001174
+#>    - Coming-of-age         0.000989
 #>    - In-migration          0.000000
 ```
 
@@ -616,11 +616,11 @@ smoking3
 #> Overview by period:
 #>  period   mean    N intraindividual coming_of_age  mortality inmigration
 #>       0 0.8677 1439              NA            NA         NA          NA
-#>       1 0.8087 1439        -0.05569     -0.003004 -0.0003379           0
-#>       2 0.7444 1439        -0.05647     -0.007015 -0.0007652           0
-#>       3 0.6734 1439        -0.05772     -0.011703 -0.0016030           0
-#>       4 0.5940 1439        -0.05943     -0.016913 -0.0030134           0
-#>       5 0.5048 1439        -0.06199     -0.022189 -0.0050809           0
+#>       1 0.8087 1439        -0.05557     -0.003163 -0.0003006           0
+#>       2 0.7444 1439        -0.05646     -0.006970 -0.0008172           0
+#>       3 0.6734 1439        -0.05770     -0.011725 -0.0015963           0
+#>       4 0.5940 1439        -0.05961     -0.016694 -0.0030548           0
+#>       5 0.5048 1439        -0.06182     -0.022387 -0.0050521           0
 #>  outmigration
 #>            NA
 #>             0
@@ -634,11 +634,11 @@ smoking3
 #>  At initial                0.86769
 #>  At end                    0.50476
 #>  Total change             -0.36293
-#>  - Intraindividual change -0.29130
-#>  - Population turnover    -0.07162
-#>    - Mortality            -0.01080
+#>  - Intraindividual change -0.29117
+#>  - Population turnover    -0.07176
+#>    - Mortality            -0.01082
 #>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.06082
+#>    - Coming-of-age        -0.06094
 #>    - In-migration          0.00000
 ```
 
@@ -680,11 +680,11 @@ smoking4
 #> Overview by period:
 #>  period   mean    N intraindividual coming_of_age mortality inmigration
 #>       0 0.8677 1439              NA            NA        NA          NA
-#>       1 0.7617 1439         -0.1025     -0.001488 -0.002001           0
-#>       2 0.6460 1439         -0.1079     -0.002093 -0.005752           0
-#>       3 0.5217 1443         -0.1117     -0.002817 -0.009733           0
-#>       4 0.3932 1465         -0.1129     -0.004599 -0.011021           0
-#>       5 0.2599 1493         -0.1131     -0.006590 -0.014044           0
+#>       1 0.7617 1439         -0.1027     -0.001571 -0.001741           0
+#>       2 0.6460 1442         -0.1080     -0.002131 -0.005614           0
+#>       3 0.5227 1451         -0.1113     -0.003051 -0.009185           0
+#>       4 0.3924 1463         -0.1135     -0.004368 -0.012360           0
+#>       5 0.2580 1486         -0.1135     -0.006512 -0.014579           0
 #>  outmigration
 #>            NA
 #>             0
@@ -696,13 +696,13 @@ smoking4
 #> Decomposition of total change:
 #>                 Component    Value
 #>  At initial                0.86769
-#>  At end                    0.25988
-#>  Total change             -0.60781
-#>  - Intraindividual change -0.54809
-#>  - Population turnover    -0.06014
-#>    - Mortality            -0.04255
+#>  At end                    0.25804
+#>  Total change             -0.60964
+#>  - Intraindividual change -0.54902
+#>  - Population turnover    -0.06111
+#>    - Mortality            -0.04348
 #>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.01759
+#>    - Coming-of-age        -0.01763
 #>    - In-migration          0.00000
 ```
 
@@ -721,11 +721,11 @@ by_year[, .(mean_age = weighted.mean(age, n), max_age = max(age)), by = .(period
 #>    period mean_age max_age
 #>     <num>    <num>   <num>
 #> 1:      0 26.87630      39
-#> 2:      1 26.87630      39
-#> 3:      2 26.87630      39
-#> 4:      3 26.90644      39
-#> 5:      4 27.07430      39
-#> 6:      5 27.26457      40
+#> 2:      1 26.88403      39
+#> 3:      2 26.91482      39
+#> 4:      3 26.97105      40
+#> 5:      4 27.06899      40
+#> 6:      5 27.23605      41
 ```
 
 This is a side effect of fewer people smoking, which decreases their

@@ -79,9 +79,9 @@ print(simresult, detailed = FALSE)
 #>  Total change              0.0000
 #>  - Intraindividual change  0.2500
 #>  - Population turnover    -0.2500
-#>    - Mortality            -0.1206
+#>    - Mortality            -0.1207
 #>    - Out-migration         0.0000
-#>    - Coming-of-age        -0.1294
+#>    - Coming-of-age        -0.1293
 #>    - In-migration          0.0000
 ```
 
@@ -96,15 +96,14 @@ predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
 decompresult <- decompose_aggregated(stacked_data, predict_y)
 print(decompresult, detailed = FALSE)
-#>                 Component   Value
-#>  At initial (modeled)      0.3758
-#>  At end (modeled)          0.3758
-#>  Total change              0.0000
-#>  - Intraindividual change  0.2500
-#>  - Population turnover    -0.2500
-#>    - Mortality            -0.1207
-#>    - Coming-of-age        -0.1293
-#> Assumes no in- or out-migration.
+#>                 Component   Value Percent
+#>  At initial (modeled)      0.3758        
+#>  At end (modeled)          0.3758        
+#>  Total change              0.0000   100.0
+#>  - Intraindividual change  0.2500   Inf  
+#>  - Population turnover    -0.2500   -Inf 
+#>    - Mortality            -0.1207   -Inf 
+#>    - Coming-of-age        -0.1293   -Inf
 ```
 
 The event-based decomposition has exactly recovered the results.
@@ -144,11 +143,11 @@ print(simresult, detailed = FALSE)
 #>  At initial                0.37580
 #>  At end                    0.37580
 #>  Total change              0.00000
-#>  - Intraindividual change  0.12522
-#>  - Population turnover    -0.12522
-#>    - Mortality            -0.06048
+#>  - Intraindividual change  0.12485
+#>  - Population turnover    -0.12485
+#>    - Mortality            -0.06025
 #>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.06474
+#>    - Coming-of-age        -0.06461
 #>    - In-migration          0.00000
 ```
 
@@ -166,15 +165,14 @@ predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
 
 decomp <- decompose_aggregated(stacked_data, predict_y)
 print(decomp, detailed = FALSE)
-#>                 Component    Value
-#>  At initial (modeled)      0.37580
-#>  At end (modeled)          0.37580
-#>  Total change              0.00000
-#>  - Intraindividual change  0.12500
-#>  - Population turnover    -0.12500
-#>    - Mortality            -0.06037
-#>    - Coming-of-age        -0.06463
-#> Assumes no in- or out-migration.
+#>                 Component    Value Percent
+#>  At initial (modeled)      0.37580        
+#>  At end (modeled)          0.37580        
+#>  Total change              0.00000   100.0
+#>  - Intraindividual change  0.12500   Inf  
+#>  - Population turnover    -0.12500   -Inf 
+#>    - Mortality            -0.06034   -Inf 
+#>    - Coming-of-age        -0.06466   -Inf
 ```
 
 And here are the results for the fully-specified model:
@@ -188,15 +186,14 @@ predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
 decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
 print(decomp, detailed = FALSE)
-#>                 Component    Value
-#>  At initial (modeled)      0.37580
-#>  At end (modeled)          0.37580
-#>  Total change              0.00000
-#>  - Intraindividual change  0.12478
-#>  - Population turnover    -0.12478
-#>    - Mortality            -0.06024
-#>    - Coming-of-age        -0.06454
-#> Assumes no in- or out-migration.
+#>                 Component    Value Percent
+#>  At initial (modeled)      0.37580        
+#>  At end (modeled)          0.37580        
+#>  Total change              0.00000   100.0
+#>  - Intraindividual change  0.12526   Inf  
+#>  - Population turnover    -0.12526   -Inf 
+#>    - Mortality            -0.06049   -Inf 
+#>    - Coming-of-age        -0.06477   -Inf
 ```
 
 ## Only intraindividual change (Scenario 3)
@@ -221,9 +218,9 @@ print(simresult, detailed = FALSE)
 #>  Total change              0.500000
 #>  - Intraindividual change  0.500000
 #>  - Population turnover     0.000000
-#>    - Mortality            -0.000025
+#>    - Mortality             0.000079
 #>    - Out-migration         0.000000
-#>    - Coming-of-age         0.000025
+#>    - Coming-of-age        -0.000079
 #>    - In-migration          0.000000
 ```
 
@@ -241,15 +238,14 @@ predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
 
 decomp <- decompose_aggregated(stacked_data, predict_y)
 print(decomp, detailed = FALSE)
-#>                 Component Value
-#>  At initial (modeled)       0.3
-#>  At end (modeled)           0.8
-#>  Total change               0.5
-#>  - Intraindividual change   0.5
-#>  - Population turnover      0.0
-#>    - Mortality              0.0
-#>    - Coming-of-age          0.0
-#> Assumes no in- or out-migration.
+#>                 Component Value Percent
+#>  At initial (modeled)       0.3        
+#>  At end (modeled)           0.8        
+#>  Total change               0.5   100.0
+#>  - Intraindividual change   0.5   100.0
+#>  - Population turnover      0.0   0.0  
+#>    - Mortality              0.0   -0.0 
+#>    - Coming-of-age          0.0   0.0
 ```
 
 And here are the results for the fully-specified model:
@@ -263,15 +259,14 @@ predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
 decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
 print(decomp, detailed = FALSE)
-#>                 Component     Value
-#>  At initial (modeled)      0.300000
-#>  At end (modeled)          0.800000
-#>  Total change              0.500000
-#>  - Intraindividual change  0.500000
-#>  - Population turnover     0.000000
-#>    - Mortality            -0.000035
-#>    - Coming-of-age         0.000035
-#> Assumes no in- or out-migration.
+#>                 Component     Value Percent
+#>  At initial (modeled)      0.300000        
+#>  At end (modeled)          0.800000        
+#>  Total change              0.500000   100.0
+#>  - Intraindividual change  0.500000   100.0
+#>  - Population turnover     0.000000   0.0  
+#>    - Mortality            -0.000001   -0.0 
+#>    - Coming-of-age         0.000001   0.0
 ```
 
 ## Only population turnover (Scenario 4)
@@ -316,15 +311,14 @@ predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
 
 decomp <- decompose_aggregated(stacked_data, predict_y)
 print(decomp, detailed = FALSE)
-#>                 Component  Value
-#>  At initial (modeled)     0.3000
-#>  At end (modeled)         0.8000
-#>  Total change             0.5000
-#>  - Intraindividual change 0.0000
-#>  - Population turnover    0.5000
-#>    - Mortality            0.2415
-#>    - Coming-of-age        0.2585
-#> Assumes no in- or out-migration.
+#>                 Component  Value Percent
+#>  At initial (modeled)     0.3000        
+#>  At end (modeled)         0.8000        
+#>  Total change             0.5000   100.0
+#>  - Intraindividual change 0.0000   -0.0 
+#>  - Population turnover    0.5000   100.0
+#>    - Mortality            0.2414   48.3 
+#>    - Coming-of-age        0.2586   51.7
 ```
 
 And here are the results for the fully-specified model:
@@ -338,15 +332,14 @@ predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
 decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
 print(decomp, detailed = FALSE)
-#>                 Component  Value
-#>  At initial (modeled)     0.3000
-#>  At end (modeled)         0.8000
-#>  Total change             0.5000
-#>  - Intraindividual change 0.0000
-#>  - Population turnover    0.5000
-#>    - Mortality            0.2414
-#>    - Coming-of-age        0.2586
-#> Assumes no in- or out-migration.
+#>                 Component  Value Percent
+#>  At initial (modeled)     0.3000        
+#>  At end (modeled)         0.8000        
+#>  Total change             0.5000   100.0
+#>  - Intraindividual change 0.0000   0.0  
+#>  - Population turnover    0.5000   100.0
+#>    - Mortality            0.2414   48.3 
+#>    - Coming-of-age        0.2586   51.7
 ```
 
 ## Smoking (Scenario 5)
@@ -391,9 +384,9 @@ print(smoking1, detailed = FALSE)
 #>  Total change              0.000000
 #>  - Intraindividual change  0.000000
 #>  - Population turnover     0.000000
-#>    - Mortality            -0.000853
+#>    - Mortality            -0.000786
 #>    - Out-migration         0.000000
-#>    - Coming-of-age         0.000853
+#>    - Coming-of-age         0.000786
 #>    - In-migration          0.000000
 ```
 
@@ -409,15 +402,14 @@ predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
 decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
 print(decomp, detailed = FALSE)
-#>                 Component     Value
-#>  At initial (modeled)      0.867686
-#>  At end (modeled)          0.867686
-#>  Total change              0.000000
-#>  - Intraindividual change  0.000000
-#>  - Population turnover     0.000000
-#>    - Mortality            -0.000824
-#>    - Coming-of-age         0.000824
-#> Assumes no in- or out-migration.
+#>                 Component     Value Percent
+#>  At initial (modeled)      0.867686        
+#>  At end (modeled)          0.867686        
+#>  Total change              0.000000   100.0
+#>  - Intraindividual change  0.000000   NaN  
+#>  - Population turnover     0.000000   NaN  
+#>    - Mortality            -0.000766   -Inf 
+#>    - Coming-of-age         0.000766   Inf
 ```
 
 ### Intraindividual change (Scenario 5b)
@@ -440,11 +432,11 @@ print(smoking2, detailed = FALSE)
 #>  At initial                0.867686
 #>  At end                    0.590757
 #>  Total change             -0.276929
-#>  - Intraindividual change -0.277006
-#>  - Population turnover     0.000078
-#>    - Mortality            -0.001168
+#>  - Intraindividual change -0.276715
+#>  - Population turnover    -0.000213
+#>    - Mortality            -0.001037
 #>    - Out-migration         0.000000
-#>    - Coming-of-age         0.001246
+#>    - Coming-of-age         0.000824
 #>    - In-migration          0.000000
 ```
 
@@ -460,15 +452,14 @@ predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
 decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
 print(decomp, detailed = FALSE)
-#>                 Component     Value
-#>  At initial (modeled)      0.867686
-#>  At end (modeled)          0.590757
-#>  Total change             -0.276929
-#>  - Intraindividual change -0.276825
-#>  - Population turnover    -0.000103
-#>    - Mortality            -0.001098
-#>    - Coming-of-age         0.000995
-#> Assumes no in- or out-migration.
+#>                 Component     Value Percent
+#>  At initial (modeled)      0.867686        
+#>  At end (modeled)          0.590757        
+#>  Total change             -0.276929   100.0
+#>  - Intraindividual change -0.277081   100.1
+#>  - Population turnover     0.000153   -0.1 
+#>    - Mortality            -0.001180   0.4  
+#>    - Coming-of-age         0.001333   -0.5
 ```
 
 ### Coming of age (Scenario 5c)
@@ -491,11 +482,11 @@ print(smoking3, detailed = FALSE)
 #>  At initial                0.86769
 #>  At end                    0.50476
 #>  Total change             -0.36293
-#>  - Intraindividual change -0.29116
-#>  - Population turnover    -0.07176
-#>    - Mortality            -0.01068
+#>  - Intraindividual change -0.29131
+#>  - Population turnover    -0.07162
+#>    - Mortality            -0.01073
 #>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.06108
+#>    - Coming-of-age        -0.06089
 #>    - In-migration          0.00000
 ```
 
@@ -511,13 +502,12 @@ predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
 decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
 print(decomp, detailed = FALSE)
-#>                 Component    Value
-#>  At initial (modeled)      0.86769
-#>  At end (modeled)          0.50476
-#>  Total change             -0.36293
-#>  - Intraindividual change -0.29117
-#>  - Population turnover    -0.07176
-#>    - Mortality            -0.01067
-#>    - Coming-of-age        -0.06109
-#> Assumes no in- or out-migration.
+#>                 Component    Value Percent
+#>  At initial (modeled)      0.86769        
+#>  At end (modeled)          0.50476        
+#>  Total change             -0.36293   100.0
+#>  - Intraindividual change -0.29131   80.3 
+#>  - Population turnover    -0.07162   19.7 
+#>    - Mortality            -0.01082   3.0  
+#>    - Coming-of-age        -0.06080   16.8
 ```
