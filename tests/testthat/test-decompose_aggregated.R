@@ -620,3 +620,18 @@ test_that("decompose_aggregated is invariant to input row order (period sorting)
   expect_equal(decomp_shuffled$summary, decomp_ordered$summary)
   expect_equal(decomp_shuffled$record, decomp_ordered$record)
 })
+
+test_that("decompose_aggregated errors on single-period input", {
+  stacked_data <- data.table(
+    age = c(20, 21, 22, 23),
+    period = 2000,
+    y = c(0.1, 0.2, 0.3, 0.4)
+  )
+  model <- lm(y ~ age, data = stacked_data)
+  predict_y <- function(newdata) { predict(model, newdata = newdata) }
+
+  expect_error(
+    decompose_aggregated(stacked_data, predict_y),
+    "at least 2 distinct periods"
+  )
+})

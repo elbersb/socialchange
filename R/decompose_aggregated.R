@@ -114,6 +114,9 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
     }
 
     periods <- sort(frame[, unique(period)])
+    if (length(periods) < 2) {
+        stop("decompose_aggregated() requires at least 2 distinct periods, but found ", length(periods), ".")
+    }
     cells <- c(cells, "age")
 
     record <- vector("list", length(periods))
@@ -157,7 +160,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
     }
     summary[means, `:=`(observed_mean = observed, modeled_mean = modeled), on = "period"]
 
-    for (i_period in 1:(length(periods) - 1)) {
+    for (i_period in seq_len(length(periods) - 1)) {
         gap <- as.numeric(periods[i_period + 1] - periods[i_period])
         vars <- c("n", cells)
         # aggregate so that join doesn't fan out
