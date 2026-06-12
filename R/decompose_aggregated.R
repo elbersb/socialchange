@@ -109,7 +109,9 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
     if (!"n" %in% names(stacked_data)) {
         stacked_data <- aggregate_to_cells(stacked_data, cells, weight)
     } else {
-        checkmate::assert_numeric(stacked_data$n, lower = 0, any.missing = FALSE, .var.name = "n")
+        # n must be whole: the microsimulation is integer-based, so fractional
+        # counts would be silently truncated by runif()/indexing.
+        checkmate::assert_integerish(stacked_data$n, lower = 0, any.missing = FALSE, .var.name = "n")
     }
     stacked_data[, y_pred := fun_y(.SD)]
 

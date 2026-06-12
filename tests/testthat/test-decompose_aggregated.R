@@ -469,6 +469,19 @@ test_that("decompose_aggregated validates input", {
   )
 })
 
+test_that("decompose_aggregated errors on fractional directly-supplied n", {
+  # The microsimulation is integer-based; fractional n would be silently
+  # truncated by runif()/indexing and leave an empty trailing record row.
+  stacked_data <- rbind(
+    data.table(age = 20:24, period = 0, y = 20:24, n = 100.4),
+    data.table(age = 20:24, period = 1, y = 21:25, n = 100)
+  )
+  expect_error(
+    decompose_aggregated(stacked_data, function(d) d$age),
+    "integerish|n"
+  )
+})
+
 test_that("decompose_aggregated handles non-annual data (gap = 2)", {
   # ARRANGE - Simulate 4 annual periods, then use only every other snapshot (gap = 2)
   set.seed(42)
