@@ -86,16 +86,30 @@
 decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, weight = NULL, population = NULL) {
     checkmate::assert_data_frame(stacked_data)
     checkmate::assert_subset(c("age", "period", "y", cells), names(stacked_data))
+    # NAs here would otherwise crash deep in the simulation or silently drop a wave.
+    checkmate::assert_numeric(stacked_data$age, any.missing = FALSE, .var.name = "age")
+    checkmate::assert_numeric(stacked_data$y, any.missing = FALSE, .var.name = "y")
+    checkmate::assert_atomic_vector(stacked_data$period, any.missing = FALSE, .var.name = "period")
     checkmate::assert_function(fun_y, nargs = 1)
-    checkmate::assert_vector(cells, any.missing = FALSE, null.ok = TRUE)
+    checkmate::assert_character(cells, any.missing = FALSE, null.ok = TRUE)
     checkmate::assert_number(tol, lower = 0)
     checkmate::assert_string(weight, null.ok = TRUE)
     checkmate::assert_data_frame(population, null.ok = TRUE)
+    # cells/weight name columns; reserved names collide with internal ones.
+    reserved <- c("age", "period", "y", "n", "y_pred", "cell_id")
+    if (length(intersect(cells, reserved)) > 0) {
+        stop("`cells` must not name reserved columns: ", paste(intersect(cells, reserved), collapse = ", "), ".")
+    }
+    if (!is.null(weight) && weight %in% reserved) {
+        stop("`weight` must not name a reserved column: ", weight, ".")
+    }
 
     stacked_data <- copy(as.data.table(stacked_data))
 
     if (!"n" %in% names(stacked_data)) {
         stacked_data <- aggregate_to_cells(stacked_data, cells, weight)
+    } else {
+        checkmate::assert_numeric(stacked_data$n, lower = 0, any.missing = FALSE, .var.name = "n")
     }
     stacked_data[, y_pred := fun_y(.SD)]
 
@@ -109,6 +123,9 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
     } else {
         population <- copy(as.data.table(population))
         checkmate::assert_subset(c("period", "age", "n", cells), names(population))
+        checkmate::assert_numeric(population$n, lower = 0, any.missing = FALSE, .var.name = "population$n")
+        checkmate::assert_numeric(population$age, any.missing = FALSE, .var.name = "population$age")
+        checkmate::assert_atomic_vector(population$period, any.missing = FALSE, .var.name = "population$period")
         # counts must be whole numbers for the integer-based microsimulation
         population[, n := round(n)]
         population[, y_pred := fun_y(.SD)]
@@ -347,6 +364,7 @@ aggregate_to_cells <- function(stacked_data, cells, weight) {
     group_cols <- c("age", "period", cells)
     if (!is.null(weight)) {
         checkmate::assert_subset(weight, names(stacked_data))
+        checkmate::assert_numeric(stacked_data[[weight]], any.missing = FALSE, .var.name = weight)
         setnames(stacked_data, weight, ".wt")
         stacked_data[, .wt := .wt / sum(.wt) * .N, by = period]
         stacked_data[, .(n = round(sum(.wt)), y = stats::weighted.mean(y, .wt)), by = group_cols]
