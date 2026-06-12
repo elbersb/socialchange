@@ -71,6 +71,31 @@ test_that("decomposition components sum to the total modeled change with a popul
   expect_equal(components, total)
 })
 
+test_that("zero-count young cells in the population frame do not affect classification", {
+  # A WPP-style frame lists young ages with n = 0. These rows must not drag
+  # min_age down to 0: otherwise no cohort is classified as "new" and the
+  # entering cohort's growth is misrouted from coming-of-age to in-migration.
+  fx <- build_population_fixture()
+  pop <- fx$stacked[, .(n = sum(n)), by = .(age, period)]
+
+  # pad every period with zero-count rows below the minimum populated age (20)
+  padding <- CJ(age = 0:19, period = pop[, unique(period)])[, n := 0]
+  pop_padded <- rbind(pop, padding)
+
+  set.seed(999)
+  unpadded <- decompose_aggregated(fx$stacked, fx$fun_y, population = pop)
+  set.seed(999)
+  padded <- decompose_aggregated(fx$stacked, fx$fun_y, population = pop_padded)
+
+  # zero-count rows are inert: events, RNG draws and means are bit-for-bit equal
+  expect_equal(padded$summary, unpadded$summary)
+  expect_equal(padded$record, unpadded$record)
+
+  # and the entering cohort is credited to coming-of-age, not in-migration
+  expect_true(padded$summary[2:.N, sum(coming_of_age)] != 0)
+  expect_equal(padded$summary[2:.N, sum(inmigration)], 0)
+})
+
 test_that("population accepts a plain data.frame and validates required columns", {
   fx <- build_population_fixture()
   pop <- fx$stacked[, .(n = sum(n)), by = .(age, period)]

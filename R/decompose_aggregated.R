@@ -163,7 +163,11 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
         # aggregate so that join doesn't fan out
         data1 <- frame[period == periods[i_period], .(n = sum(n)), by = cells]
         data2 <- frame[period == periods[i_period + 1], .(n = sum(n)), by = cells]
-        min_age_data1 <- data1[, min(age)]
+        # Only cells with people define the minimum age: a population frame may list
+        # young ages with n = 0 (e.g. WPP-style 0-19 rows), which must not drag
+        # min_age down to 0 -- otherwise no cohort is ever classified as "new" and the
+        # entering cohort's growth is misrouted to in-migration instead of coming-of-age.
+        min_age_data1 <- data1[n > 0, min(age)]
         data2[, age := age - gap]
         for (var in vars) {
             if (!(var %in% cells)) {
