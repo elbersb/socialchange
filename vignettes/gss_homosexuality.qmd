@@ -16,6 +16,7 @@ towards homosexuality in the U.S. This data was also analyzed in Ekstam (2021).
 ## Packages
 
 ```{r}
+#| message: false
 library("socialchange")
 library("modelsummary")
 library("ggplot2")

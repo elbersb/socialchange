@@ -27,6 +27,7 @@ Building up a simulation requires three steps:
 Here's our simple population:
 
 ```{r}
+#| message: false
 library("data.table")
 
 data <- data.table(

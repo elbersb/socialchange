@@ -24,6 +24,7 @@ If we continue to ignore migration, the only other input that is required is a f
 ## Starting with a simple simulation (Scenario 1)
 
 ```{r}
+#| message: false
 library("data.table")
 
 data <- data.table(

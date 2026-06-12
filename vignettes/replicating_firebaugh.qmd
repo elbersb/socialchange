@@ -13,6 +13,7 @@ knitr:
 ---
 
 ```{r}
+#| message: false
 library("socialchange")
 library("ggplot2")
 library("data.table")
