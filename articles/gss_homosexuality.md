@@ -12,8 +12,6 @@ library("socialchange")
 library("modelsummary")
 library("ggplot2")
 library("mgcv")
-#> Loading required package: nlme
-#> This is mgcv 1.9-4. For overview type '?mgcv'.
 
 data(gss_homosex)
 ```
@@ -29,20 +27,34 @@ the survey period.
 
 # compare to Table 1 in Ekstam -- roughly similar
 modelsummary::datasummary(
-  homosex + year + cohort + age + educ + sex + race ~ mean + SD + min + max,
+  homosex + year + cohort + age + educ ~ mean + SD + min + max,
   data = gss_homosex, output = "markdown", fmt = 3)
 ```
 
-|     |                                  | mean     | SD     | min      | max      |
-|-----|----------------------------------|----------|--------|----------|----------|
-|     | homosexual sex relations         | 0.315    | 0.436  | 0.000    | 1.000    |
-|     | gss year for this respondent     | 1993.803 | 12.928 | 1973.000 | 2016.000 |
-|     | cohort                           | 1947.852 | 20.826 | 1892.000 | 1995.000 |
-|     | age of respondent                | 45.950   | 17.485 | 18.000   | 89.000   |
-|     | highest year of school completed | 12.835   | 3.171  | 0.000    | 20.000   |
-| sex | female                           |          |        |          |          |
-|     | male                             |          |        |          |          |
-|     | race of respondent               | 1.232    | 0.532  | 1.000    | 3.000    |
+|                                  | mean     | SD     | min      | max      |
+|----------------------------------|----------|--------|----------|----------|
+| homosexual sex relations         | 0.315    | 0.436  | 0.000    | 1.000    |
+| gss year for this respondent     | 1993.803 | 12.928 | 1973.000 | 2016.000 |
+| cohort                           | 1947.852 | 20.826 | 1892.000 | 1995.000 |
+| age of respondent                | 45.950   | 17.485 | 18.000   | 89.000   |
+| highest year of school completed | 12.835   | 3.171  | 0.000    | 20.000   |
+
+``` r
+
+
+# sex and race are categorical, so show their level breakdown instead
+modelsummary::datasummary(
+  sex + race ~ N + Percent(),
+  data = gss_homosex, output = "markdown", fmt = 1)
+```
+
+|      |        | N     | Percent |
+|------|--------|-------|---------|
+| sex  | female | 19403 | 55.3    |
+|      | male   | 15703 | 44.7    |
+| race | black  | 4460  | 12.7    |
+|      | other  | 1836  | 5.2     |
+|      | white  | 28810 | 82.1    |
 
 ``` r
 
@@ -204,7 +216,7 @@ following commmand:
 
 ``` r
 
-result <- decompose_aggregated(gss_all, predict_y, weight = "wtssall", tol = 0.15)
+result <- decompose_aggregated(gss_all, predict_y, weight = "wtssall")
 print(result, detailed = FALSE)
 #>                 Component    Value Percent
 #>  At initial (modeled)     0.200317        
@@ -275,7 +287,7 @@ sex cell.
 model <- mgcv::gam(y ~ s(age) + s(period) + sex, data = gss_all, weights = wtssall)
 predict_y <- function(newdata) as.vector(mgcv::predict.gam(model, newdata = newdata))
 set.seed(42)
-result <- decompose_aggregated(gss_all, predict_y, cells = "sex", weight = "wtssall", tol = 0.15)
+result <- decompose_aggregated(gss_all, predict_y, cells = "sex", weight = "wtssall")
 print(result, detailed = FALSE)
 #>                 Component    Value Percent
 #>  At initial (modeled)      0.20030        
@@ -321,7 +333,7 @@ pop[, n := n / sum(n) * scale_total, by = period]
 
 set.seed(42)
 result <- decompose_aggregated(gss_all, predict_y, cells = "sex",
-                               weight = "wtssall", population = pop, tol = 0.15)
+                               weight = "wtssall", population = pop)
 print(result, detailed = FALSE)
 #>                 Component    Value Percent
 #>  At initial (modeled)      0.19663        

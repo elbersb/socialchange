@@ -42,9 +42,12 @@ plot(x, ...)
 
 - tol:
 
-  Maximum tolerated relative deviation between observed and modeled
-  period means (default 0.05 = 5%). Emits a warning rather than stopping
-  when exceeded.
+  Maximum tolerated absolute deviation between observed and modeled
+  period means, in the outcome's own units (default 0.05). Checks that
+  `fun_y` reproduces the observed period means; if the largest deviation
+  exceeds `tol`, the function errors. The default suits outcomes on a
+  roughly unit scale (e.g. proportions in \[0, 1\]); set `tol` to match
+  outcomes on another scale.
 
 - weight:
 
@@ -154,38 +157,7 @@ library(data.table)
 data("gss_homosex", package = "socialchange")
 stacked <- as.data.table(gss_homosex)[, .(age, period = year, y = homosex)]
 model <- stats::lm(y ~ age + period, data = stacked)
-result <- decompose_aggregated(stacked, function(d) predict(model, newdata = d))
-#>     period  observed   modeled
-#>      <num>     <num>     <num>
-#>  1:   1973 0.1876190 0.1286709
-#>  2:   1974 0.2092385 0.1373759
-#>  3:   1976 0.2334528 0.1534639
-#>  4:   1977 0.2187208 0.1643362
-#>  5:   1980 0.2072464 0.1908825
-#>  6:   1982 0.2085096 0.2085745
-#>  7:   1984 0.2101606 0.2318568
-#>  8:   1985 0.1969697 0.2336910
-#>  9:   1987 0.1809661 0.2541551
-#> 10:   1988 0.1820128 0.2630115
-#> 11:   1989 0.2107793 0.2680154
-#> 12:   1990 0.1845033 0.2771405
-#> 13:   1991 0.2041260 0.2898777
-#> 14:   1993 0.2840985 0.3062341
-#> 15:   1994 0.2878949 0.3195715
-#> 16:   1996 0.3406532 0.3423002
-#> 17:   1998 0.3588710 0.3557258
-#> 18:   2000 0.3579073 0.3714806
-#> 19:   2002 0.3956670 0.3872281
-#> 20:   2004 0.3680556 0.4121824
-#> 21:   2006 0.3907865 0.4232998
-#> 22:   2008 0.4371497 0.4400315
-#> 23:   2010 0.4913722 0.4592941
-#> 24:   2012 0.5004068 0.4759978
-#> 25:   2014 0.5475752 0.4906554
-#> 26:   2016 0.5724020 0.5027095
-#>     period  observed   modeled
-#>      <num>     <num>     <num>
-#> Warning: Modeled means deviate from observed by up to 52.3% (tol = 5.0%), evaluated on the survey's own age structure. Consider a more flexible model or increase tol.
+result <- decompose_aggregated(stacked, function(d) predict(model, newdata = d), tol = 0.1)
 print(result)
 #> Overview by period:
 #>  period observed_mean modeled_mean intraindividual coming_of_age mortality

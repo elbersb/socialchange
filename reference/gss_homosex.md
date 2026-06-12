@@ -71,7 +71,7 @@ A data.table with 36,494 rows and 19 variables:
 
 - race:
 
-  Race of respondent (1 = White, 2 = Black, 3 = Other).
+  Race of respondent (`"white"`, `"black"`, or `"other"`).
 
 - region:
 

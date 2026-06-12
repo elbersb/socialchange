@@ -81,8 +81,6 @@
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://modelsummary.com" class="external-link">"modelsummary"</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st"><a href="https://ggplot2.tidyverse.org" class="external-link">"ggplot2"</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="st">"mgcv"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Loading required package: nlme</span></span>
-<span><span class="co">#&gt; This is mgcv 1.9-4. For overview type '?mgcv'.</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">gss_homosex</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -93,20 +91,18 @@
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># compare to Table 1 in Ekstam -- roughly similar</span></span>
 <span><span class="fu">modelsummary</span><span class="fu">::</span><span class="fu"><a href="https://modelsummary.com/man/datasummary.html" class="external-link">datasummary</a></span><span class="op">(</span></span>
-<span>  <span class="va">homosex</span> <span class="op">+</span> <span class="va">year</span> <span class="op">+</span> <span class="va">cohort</span> <span class="op">+</span> <span class="va">age</span> <span class="op">+</span> <span class="va">educ</span> <span class="op">+</span> <span class="va">sex</span> <span class="op">+</span> <span class="va">race</span> <span class="op">~</span> <span class="va">mean</span> <span class="op">+</span> <span class="va">SD</span> <span class="op">+</span> <span class="va">min</span> <span class="op">+</span> <span class="va">max</span>,</span>
+<span>  <span class="va">homosex</span> <span class="op">+</span> <span class="va">year</span> <span class="op">+</span> <span class="va">cohort</span> <span class="op">+</span> <span class="va">age</span> <span class="op">+</span> <span class="va">educ</span> <span class="op">~</span> <span class="va">mean</span> <span class="op">+</span> <span class="va">SD</span> <span class="op">+</span> <span class="va">min</span> <span class="op">+</span> <span class="va">max</span>,</span>
 <span>  data <span class="op">=</span> <span class="va">gss_homosex</span>, output <span class="op">=</span> <span class="st">"markdown"</span>, fmt <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
-<table class="table caption-top" style="width:95%;">
+<table class="table caption-top" style="width:96%;">
 <colgroup>
-<col style="width: 6%">
-<col style="width: 40%">
-<col style="width: 12%">
-<col style="width: 10%">
-<col style="width: 12%">
-<col style="width: 12%">
+<col style="width: 43%">
+<col style="width: 13%">
+<col style="width: 11%">
+<col style="width: 13%">
+<col style="width: 13%">
 </colgroup>
 <thead><tr class="header">
-<th></th>
 <th></th>
 <th>mean</th>
 <th>SD</th>
@@ -115,7 +111,6 @@
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td></td>
 <td>homosexual sex relations</td>
 <td>0.315</td>
 <td>0.436</td>
@@ -123,7 +118,6 @@
 <td>1.000</td>
 </tr>
 <tr class="even">
-<td></td>
 <td>gss year for this respondent</td>
 <td>1993.803</td>
 <td>12.928</td>
@@ -131,7 +125,6 @@
 <td>2016.000</td>
 </tr>
 <tr class="odd">
-<td></td>
 <td>cohort</td>
 <td>1947.852</td>
 <td>20.826</td>
@@ -139,7 +132,6 @@
 <td>1995.000</td>
 </tr>
 <tr class="even">
-<td></td>
 <td>age of respondent</td>
 <td>45.950</td>
 <td>17.485</td>
@@ -147,41 +139,70 @@
 <td>89.000</td>
 </tr>
 <tr class="odd">
-<td></td>
 <td>highest year of school completed</td>
 <td>12.835</td>
 <td>3.171</td>
 <td>0.000</td>
 <td>20.000</td>
 </tr>
-<tr class="even">
-<td>sex</td>
-<td>female</td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="odd">
-<td></td>
-<td>male</td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-</tr>
-<tr class="even">
-<td></td>
-<td>race of respondent</td>
-<td>1.232</td>
-<td>0.532</td>
-<td>1.000</td>
-<td>3.000</td>
-</tr>
 </tbody>
 </table>
 </div>
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span></span>
+<span><span class="co"># sex and race are categorical, so show their level breakdown instead</span></span>
+<span><span class="fu">modelsummary</span><span class="fu">::</span><span class="fu"><a href="https://modelsummary.com/man/datasummary.html" class="external-link">datasummary</a></span><span class="op">(</span></span>
+<span>  <span class="va">sex</span> <span class="op">+</span> <span class="va">race</span> <span class="op">~</span> <span class="va">N</span> <span class="op">+</span> <span class="fu"><a href="https://dmurdoch.github.io/tables/reference/Percent.html" class="external-link">Percent</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  data <span class="op">=</span> <span class="va">gss_homosex</span>, output <span class="op">=</span> <span class="st">"markdown"</span>, fmt <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<div class="cell-output-display">
+<table class="table caption-top" style="width:47%;">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 12%">
+<col style="width: 11%">
+<col style="width: 13%">
+</colgroup>
+<thead><tr class="header">
+<th></th>
+<th></th>
+<th>N</th>
+<th>Percent</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>sex</td>
+<td>female</td>
+<td>19403</td>
+<td>55.3</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>male</td>
+<td>15703</td>
+<td>44.7</td>
+</tr>
+<tr class="odd">
+<td>race</td>
+<td>black</td>
+<td>4460</td>
+<td>12.7</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>other</td>
+<td>1836</td>
+<td>5.2</td>
+</tr>
+<tr class="odd">
+<td></td>
+<td>white</td>
+<td>28810</td>
+<td>82.1</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span></span>
 <span><span class="va">by_year</span> <span class="op">&lt;-</span> <span class="va">gss_homosex</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/weighted.mean.html" class="external-link">weighted.mean</a></span><span class="op">(</span><span class="va">homosex</span>, <span class="va">wtssall</span><span class="op">)</span><span class="op">)</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"year"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">by_year</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">year</span>, y <span class="op">=</span> <span class="va">y</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/lims.html" class="external-link">ylim</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_light</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
@@ -194,7 +215,7 @@
 </div>
 <p>To separate period and cohort effects, we fit a GAM with a two-dimensional smooth over survey year and birth cohort. The 3D surface and the contour plot below both shows that acceptance increased more strongly among younger cohorts and in later periods.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">splinemodel</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span><span class="va">homosex</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">year</span>, <span class="va">cohort</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">gss_homosex</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/vis.gam.html" class="external-link">vis.gam</a></span><span class="op">(</span><span class="va">splinemodel</span>, theta <span class="op">=</span> <span class="fl">40</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
@@ -203,7 +224,7 @@
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_gam_surface.html">plot_gam_surface</a></span><span class="op">(</span><span class="va">splinemodel</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
@@ -217,7 +238,7 @@
 <p>The <code><a href="../reference/cr_ic.html">cr_ic()</a></code> function implements four methods for separating intracohort change (IC) from cohort replacement (CR): algebraic decomposition (AD), linear decomposition (LD), and two model-based improvements (AD+ and Model). For a detailed explanation of each method, including a replication of Firebaugh (1989), see the <a href="replicating_firebaugh.html">Replications: Firebaugh</a> vignette.</p>
 <p>Acceptance rose by about 43 percentage points between 1973 and 2018 (from 0.19 to 0.62). Using the full panel, the two model-based methods both attribute the larger share to intracohort change, though they differ on the exact split: AD+ gives roughly 63% intracohort change and 37% cohort replacement, while the Model method gives roughly 56% and 44%.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># complete period</span></span>
 <span><span class="va">form</span> <span class="op">&lt;-</span> <span class="va">homosex</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">cohort</span><span class="op">)</span></span>
 <span><span class="op">(</span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cr_ic.html">cr_ic</a></span><span class="op">(</span><span class="va">gss_homosex</span>, <span class="va">homosex</span> <span class="op">~</span> <span class="va">year</span> <span class="op">+</span> <span class="va">cohort</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span>, model <span class="op">=</span> <span class="va">form</span><span class="op">)</span><span class="op">)</span></span>
@@ -250,7 +271,7 @@
 <span><span class="co">#&gt;   Model  resid 0.0000000        NA</span></span></code></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
@@ -261,7 +282,7 @@
 </div>
 <p>When only the first and last survey years are used, the balance shifts slightly toward cohort replacement (~54% CR, ~46% IC). This illustrates how the choice of time points can affect decomposition results, and why the model-based AD+ and Model methods are preferred over the simpler AD.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># only beginning and end year (also compare to Baunach 2011)</span></span>
 <span><span class="va">form</span> <span class="op">&lt;-</span> <span class="va">homosex</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span> <span class="op">+</span> <span class="fu">splines</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/splines/bs.html" class="external-link">bs</a></span><span class="op">(</span><span class="va">cohort</span>, <span class="fl">10</span><span class="op">)</span></span>
 <span><span class="op">(</span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cr_ic.html">cr_ic</a></span><span class="op">(</span><span class="va">gss_homosex</span><span class="op">[</span><span class="va">year</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span><span class="op">)</span><span class="op">]</span>, <span class="va">homosex</span> <span class="op">~</span> <span class="va">year</span> <span class="op">+</span> <span class="va">cohort</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span>, model <span class="op">=</span> <span class="va">form</span><span class="op">)</span><span class="op">)</span></span>
@@ -297,12 +318,12 @@
 </h2>
 <p>The <code><a href="../reference/decompose_aggregated.html">decompose_aggregated()</a></code> function separates change in the aggregate outcome into intraindividual change (attitude shifts within respondents already in the population) and population turnover (mortality and coming-of-age effects). We rename <code>year</code> and <code>homosex</code> to the column names the function expects, then pass the full dataset directly.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">gss_all</span> <span class="op">&lt;-</span> <span class="va">gss_homosex</span><span class="op">[</span>, <span class="fu">.</span><span class="op">(</span><span class="va">age</span>, period <span class="op">=</span> <span class="va">year</span>, <span class="va">sex</span>, y <span class="op">=</span> <span class="va">homosex</span>, <span class="va">wtssall</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
 </div>
 <p>We fit a GAM to the individual responses to model acceptance as a smooth function of age and period.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">mgcv</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">age</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">period</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">gss_all</span>, weights <span class="op">=</span> <span class="va">wtssall</span><span class="op">)</span></span>
 <span><span class="va">predict_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">newdata</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="fu">mgcv</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/predict.gam.html" class="external-link">predict.gam</a></span><span class="op">(</span><span class="va">model</span>, newdata <span class="op">=</span> <span class="va">newdata</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -311,8 +332,8 @@
 </h3>
 <p>We can run the simplest case of the event decomposition with the following commmand:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">gss_all</span>, <span class="va">predict_y</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span>, tol <span class="op">=</span> <span class="fl">0.15</span><span class="op">)</span></span>
+<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">gss_all</span>, <span class="va">predict_y</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component    Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)     0.200317        </span></span>
@@ -327,7 +348,7 @@
 <p>This decomposition compares cells across years, attributing shrinking cohorts to mortality and the youngest cohorts to coming-of-age. Every change in a cell’s size must be attributed to <em>some</em> demographic event — the decomposition never leaves a residual — so a survivor cohort that <em>grows</em> between two waves is credited to net in-migration. With only the survey to work from, this in-migration term is small (about +0.007, or 1.9% of the total change) and largely reflects sampling fluctuation in cell sizes across waves rather than genuine immigration. It becomes meaningful only once a true population frame is supplied (see below), where a growing cohort really does signal net immigration.</p>
 <p>Of the roughly 41 percentage point rise in acceptance between 1973 and 2018, the decomposition attributes about 62% to intraindividual change and 38% to population turnover (mortality of older, less accepting cohorts; coming-of-age of younger, more accepting ones; and a small net in-migration term). This falls within the range spanned by the CR-IC model-based methods above (37–44% turnover), closest to the AD+ estimate.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
@@ -342,11 +363,11 @@
 </h3>
 <p>We can split the population into covariate cells with the <code>cells</code> argument. Adding <code>sex</code> lets the outcome model predict differently for men and women, and derives the demographic events separately within each sex cell.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">mgcv</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">age</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">period</span><span class="op">)</span> <span class="op">+</span> <span class="va">sex</span>, data <span class="op">=</span> <span class="va">gss_all</span>, weights <span class="op">=</span> <span class="va">wtssall</span><span class="op">)</span></span>
 <span><span class="va">predict_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">newdata</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="fu">mgcv</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/predict.gam.html" class="external-link">predict.gam</a></span><span class="op">(</span><span class="va">model</span>, newdata <span class="op">=</span> <span class="va">newdata</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">gss_all</span>, <span class="va">predict_y</span>, cells <span class="op">=</span> <span class="st">"sex"</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span>, tol <span class="op">=</span> <span class="fl">0.15</span><span class="op">)</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">gss_all</span>, <span class="va">predict_y</span>, cells <span class="op">=</span> <span class="st">"sex"</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component    Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)      0.20030        </span></span>
@@ -371,7 +392,7 @@
 <p>So far the cell counts <code>n</code> have come from the survey itself, so the demographic events are inferred from the noisy survey cell sizes across waves. When true population counts are available, the <code>population</code> argument lets the survey supply only the outcome model <code>fun_y</code>, while an external frame supplies the cell counts that drive the demographic events.</p>
 <p>The package ships <code>wpp_us</code>, US population by age and sex from the UN World Population Prospects for each survey year. Only the <em>relative</em> cell structure matters, so we rescale each wave to a tractable per-period total before passing it in.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">wpp_us</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">survey_years</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">gss_all</span><span class="op">$</span><span class="va">period</span><span class="op">)</span><span class="op">)</span></span>
@@ -381,7 +402,7 @@
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">gss_all</span>, <span class="va">predict_y</span>, cells <span class="op">=</span> <span class="st">"sex"</span>,</span>
-<span>                               weight <span class="op">=</span> <span class="st">"wtssall"</span>, population <span class="op">=</span> <span class="va">pop</span>, tol <span class="op">=</span> <span class="fl">0.15</span><span class="op">)</span></span>
+<span>                               weight <span class="op">=</span> <span class="st">"wtssall"</span>, population <span class="op">=</span> <span class="va">pop</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component    Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)      0.19663        </span></span>

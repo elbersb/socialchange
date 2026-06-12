@@ -85,8 +85,10 @@ rows are aggregated internally using <code>weight</code>.</p></dd>
 
 
 <dt id="arg-tol">tol<a class="anchor" aria-label="anchor" href="#arg-tol"></a></dt>
-<dd><p>Maximum tolerated relative deviation between observed and modeled period means (default 0.05 = 5%).
-Emits a warning rather than stopping when exceeded.</p></dd>
+<dd><p>Maximum tolerated absolute deviation between observed and modeled period means, in the
+outcome's own units (default 0.05). Checks that <code>fun_y</code> reproduces the observed period means;
+if the largest deviation exceeds <code>tol</code>, the function errors. The default suits outcomes on a
+roughly unit scale (e.g. proportions in [0, 1]); set <code>tol</code> to match outcomes on another scale.</p></dd>
 
 
 <dt id="arg-weight">weight<a class="anchor" aria-label="anchor" href="#arg-weight"></a></dt>
@@ -173,38 +175,7 @@ effects are absorbed into the intraindividual change component.</p>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"gss_homosex"</span>, package <span class="op">=</span> <span class="st">"socialchange"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">stacked</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/as.data.table.html" class="external-link">as.data.table</a></span><span class="op">(</span><span class="va">gss_homosex</span><span class="op">)</span><span class="op">[</span>, <span class="fu">.</span><span class="op">(</span><span class="va">age</span>, period <span class="op">=</span> <span class="va">year</span>, y <span class="op">=</span> <span class="va">homosex</span><span class="op">)</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">stats</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">period</span>, data <span class="op">=</span> <span class="va">stacked</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">decompose_aggregated</span><span class="op">(</span><span class="va">stacked</span>, <span class="kw">function</span><span class="op">(</span><span class="va">d</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model</span>, newdata <span class="op">=</span> <span class="va">d</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     period  observed   modeled</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      &lt;num&gt;     &lt;num&gt;     &lt;num&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  1:   1973 0.1876190 0.1286709</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  2:   1974 0.2092385 0.1373759</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  3:   1976 0.2334528 0.1534639</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  4:   1977 0.2187208 0.1643362</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  5:   1980 0.2072464 0.1908825</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  6:   1982 0.2085096 0.2085745</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  7:   1984 0.2101606 0.2318568</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  8:   1985 0.1969697 0.2336910</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  9:   1987 0.1809661 0.2541551</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10:   1988 0.1820128 0.2630115</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11:   1989 0.2107793 0.2680154</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12:   1990 0.1845033 0.2771405</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 13:   1991 0.2041260 0.2898777</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 14:   1993 0.2840985 0.3062341</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 15:   1994 0.2878949 0.3195715</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 16:   1996 0.3406532 0.3423002</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 17:   1998 0.3588710 0.3557258</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 18:   2000 0.3579073 0.3714806</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 19:   2002 0.3956670 0.3872281</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 20:   2004 0.3680556 0.4121824</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 21:   2006 0.3907865 0.4232998</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 22:   2008 0.4371497 0.4400315</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 23:   2010 0.4913722 0.4592941</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 24:   2012 0.5004068 0.4759978</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 25:   2014 0.5475752 0.4906554</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 26:   2016 0.5724020 0.5027095</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     period  observed   modeled</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      &lt;num&gt;     &lt;num&gt;     &lt;num&gt;</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Modeled means deviate from observed by up to 52.3% (tol = 5.0%), evaluated on the survey's own age structure. Consider a more flexible model or increase tol.</span>
+<span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">decompose_aggregated</span><span class="op">(</span><span class="va">stacked</span>, <span class="kw">function</span><span class="op">(</span><span class="va">d</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model</span>, newdata <span class="op">=</span> <span class="va">d</span><span class="op">)</span>, tol <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Overview by period:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  period observed_mean modeled_mean intraindividual coming_of_age mortality</span>
