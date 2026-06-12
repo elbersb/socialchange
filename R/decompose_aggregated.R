@@ -9,7 +9,6 @@
 #'   rows are aggregated internally using \code{weight}.
 #' @param fun_y Prediction function taking \code{(newdata)} and returning predicted outcome values
 #' @param cells Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")
-#' @param migration Logical; if TRUE, decompose migration components (not yet implemented)
 #' @param tol Maximum tolerated relative deviation between observed and modeled period means (default 0.05 = 5\%).
 #'   Emits a warning rather than stopping when exceeded.
 #' @param weight Name of the weight column used when aggregating individual-level data (ignored if \code{n} is present).
@@ -17,22 +16,52 @@
 #'   counts \code{n} (rounded sums of normalized weights) reflect the relative population structure rather than
 #'   raw sample sizes. This preserves simulation tractability but is an approximation: the ideal approach would
 #'   use true population counts, which are generally unavailable from survey data alone.
+#' @param population Optional data frame of true cell counts \code{n} per cell and period (columns \code{period},
+#'   \code{age}, the \code{cells} identifiers, and \code{n}). When supplied, these counts replace the survey-derived
+#'   cell counts as the population frame: they drive event derivation and weight the modeled mean, while \code{fun_y}
+#'   continues to supply every cell's outcome and \code{stacked_data} is used only for the observed-mean / model-fit
+#'   diagnostic. This is the preferred input when true population counts (e.g. from a census or official statistics)
+#'   are available alongside survey data, as it sidesteps survey age-structure noise. \code{n} is rounded to whole
+#'   counts for the microsimulation, so rescale large frames (e.g. raw population counts in the millions) to a
+#'   tractable per-period total first -- only the relative cell structure matters. Periods and cells need not match
+#'   the survey exactly; cells absent from the survey are still handled because \code{fun_y} can predict their outcome.
 #'
 #' @return S3 object of class \code{social_change_decomp} with components:
 #'   \itemize{
-#'     \item \code{summary}: data.table with decomposition components by period
+#'     \item \code{summary}: data.table with decomposition components by period (including the
+#'       \code{inmigration} and \code{outmigration} columns; print/plot show a migration component
+#'       only for whichever of these is non-zero)
 #'     \item \code{record}: list of detailed event records for each period transition
-#'     \item \code{migration}: logical indicating whether migration was decomposed
 #'   }
 #'
 #' @details
-#' The function estimates mortality and coming-of-age from period-to-period population
-#' differences within cells, then uses microsimulation to randomly order demographic
+#' The function estimates mortality, coming-of-age, and net in-migration from period-to-period
+#' population differences within cells, then uses microsimulation to randomly order demographic
 #' events and track their contribution to aggregate change. Unequal and multi-year gaps
 #' between periods are supported: when the gap exceeds one year, each entering cohort is
 #' assigned to the specific calendar year within the gap when it crosses the minimum age,
 #' so that post-entry aging is correctly attributed to intraindividual change rather than
 #' coming-of-age.
+#'
+#' By default the survey itself supplies both the cell counts and the outcomes. Supplying
+#' \code{population} decouples these: the population frame supplies the cell counts \code{n}
+#' (and hence the inferred demographic events), while \code{fun_y} supplies the outcomes. The
+#' reported \code{modeled_mean} is then weighted by the population frame, whereas
+#' \code{observed_mean} remains the survey's own observed mean, so the two lines may diverge
+#' when the survey and population age structures differ.
+#'
+#' Within a cell, a survivor cohort that shrinks between periods loses people to mortality,
+#' while one that grows gains people through net in-migration. Only \emph{net} migration is
+#' recovered: gross out-migration is not separable from deaths (a survivor loss could be either),
+#' so it is folded into mortality and the reported out-migration is always zero. Each cell's net
+#' change is attributed to a single event type by sign: a shrinking cell records only mortality
+#' (any concurrent in-migration is invisible) and a growing cell records only net in-migration
+#' (any concurrent deaths are folded in), so offsetting flows within a cell cannot be seen. New
+#' cohorts (below the minimum age in the earlier period) attribute all their growth to coming-of-age;
+#' migration among entering cohorts is not modeled. On noisy survey cells this strategy relabels
+#' sampling fluctuation as in-migration and mortality, so the inferred in-migration is most
+#' meaningful when \code{population} supplies a true population frame, where growing cohorts reflect
+#' genuine net immigration rather than survey noise.
 #'
 #' \strong{Limitation}: Does not properly handle within-cell state transitions. Transition
 #' effects are absorbed into the intraindividual change component.
@@ -52,22 +81,39 @@
 #'   Vignette: \code{vignette("decompose_aggregated", package = "socialchange")}.
 #' @import data.table
 #' @export
-decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = FALSE, tol = 0.05, weight = NULL) {
+decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, weight = NULL, population = NULL) {
     checkmate::assert_data_frame(stacked_data)
     checkmate::assert_subset(c("age", "period", "y", cells), names(stacked_data))
     checkmate::assert_function(fun_y, nargs = 1)
     checkmate::assert_vector(cells, any.missing = FALSE, null.ok = TRUE)
-    checkmate::assert_logical(migration)
     checkmate::assert_number(tol, lower = 0)
     checkmate::assert_string(weight, null.ok = TRUE)
+    checkmate::assert_data_frame(population, null.ok = TRUE)
 
     stacked_data <- copy(as.data.table(stacked_data))
 
     if (!"n" %in% names(stacked_data)) {
         stacked_data <- aggregate_to_cells(stacked_data, cells, weight)
     }
-    periods <- stacked_data[, unique(period)]
     stacked_data[, y_pred := fun_y(.SD)]
+
+    # The population frame supplies the cell counts n that drive event derivation
+    # and weight the modeled mean. By default it is the survey itself. When a
+    # `population` table is supplied it replaces the survey counts: the survey
+    # then only supplies fun_y (which still provides every cell's outcome) and the
+    # observed-mean / model-fit diagnostic, while n comes from the external frame.
+    if (is.null(population)) {
+        frame <- stacked_data
+    } else {
+        population <- copy(as.data.table(population))
+        checkmate::assert_subset(c("period", "age", "n", cells), names(population))
+        # counts must be whole numbers for the integer-based microsimulation
+        population[, n := round(n)]
+        population[, y_pred := fun_y(.SD)]
+        frame <- population
+    }
+
+    periods <- frame[, unique(period)]
     cells <- c(cells, "age")
 
     record <- vector("list", length(periods))
@@ -77,22 +123,37 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
         modeled_mean = NA_real_,
         intraindividual = NA_real_,
         coming_of_age = NA_real_,
-        mortality = NA_real_
+        mortality = NA_real_,
+        outmigration = NA_real_,
+        inmigration = NA_real_
     )
-    if (migration) {
-        stop("Migration not supported")
-
-        summary[, inmigration := NA_real_]
-        summary[, outmigration := NA_real_]
-    }
-    means <- stacked_data[, .(observed = stats::weighted.mean(y, n), modeled = stats::weighted.mean(y_pred, n)), by = .(period)]
-    max_dev <- means[, max(abs(observed / modeled - 1))]
+    # Model-fit diagnostic, always computed on the survey's own structure: does
+    # fun_y reproduce the observed mean? This is independent of the population
+    # frame, so it stays a meaningful check even when an external frame is used.
+    survey_means <- stacked_data[, .(observed = stats::weighted.mean(y, n), modeled = stats::weighted.mean(y_pred, n)), by = .(period)]
+    max_dev <- survey_means[, max(abs(observed / modeled - 1))]
     if (max_dev > tol) {
-        print(means)
+        print(survey_means)
         warning(sprintf(
-            "Modeled means deviate from observed by up to %.1f%% (tol = %.1f%%). Consider a more flexible model or increase tol.",
+            paste0(
+                "Modeled means deviate from observed by up to %.1f%% (tol = %.1f%%), ",
+                "evaluated on the survey's own age structure. Consider a more flexible ",
+                "model or increase tol."
+            ),
             max_dev * 100, tol * 100
         ))
+    }
+    if (is.null(population)) {
+        means <- survey_means
+    } else {
+        # observed_mean stays the survey's observed mean (a reference line);
+        # modeled_mean is fun_y weighted by the population frame, which is what
+        # the decomposition components below sum to.
+        means <- merge(
+            survey_means[, .(period, observed)],
+            frame[, .(modeled = stats::weighted.mean(y_pred, n)), by = .(period)],
+            by = "period", all = TRUE
+        )
     }
     summary[means, `:=`(observed_mean = observed, modeled_mean = modeled), on = "period"]
 
@@ -100,8 +161,8 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
         gap <- as.numeric(periods[i_period + 1] - periods[i_period])
         vars <- c("n", cells)
         # aggregate so that join doesn't fan out
-        data1 <- stacked_data[period == periods[i_period], .(n = sum(n)), by = cells]
-        data2 <- stacked_data[period == periods[i_period + 1], .(n = sum(n)), by = cells]
+        data1 <- frame[period == periods[i_period], .(n = sum(n)), by = cells]
+        data2 <- frame[period == periods[i_period + 1], .(n = sum(n)), by = cells]
         min_age_data1 <- data1[, min(age)]
         data2[, age := age - gap]
         for (var in vars) {
@@ -120,8 +181,8 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
 
         # Derive the per-cell, four-type event table. Ages below min_age_data1 are
         # cohorts that entered during the gap; all others are survivors from the prior
-        # period. The default strategy emits only coming-of-age and mortality; both
-        # migration columns are 0 (see derive_events()).
+        # period. Emits coming-of-age, mortality, and net in-migration; out-migration
+        # is always 0 (see derive_events()).
         data <- derive_events(data, min_age_data1)
 
         n_ev <- data[, sum(coming_of_age) + sum(mortality) + sum(inmigration) + sum(outmigration)]
@@ -239,7 +300,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), migration = F
         }
     } # i_period loop
 
-    ret <- list(summary = summary, record = record, migration = migration)
+    ret <- list(summary = summary, record = record)
     class(ret) <- c("social_change_decomp", "list")
     ret
 }
@@ -261,17 +322,14 @@ aggregate_to_cells <- function(stacked_data, cells, weight) {
 }
 
 # Add the four per-cell event-count columns to a period-aligned cell table
-# (columns age, n1, n2). Default strategy: net population change goes to
-# coming-of-age for new cohorts (age < min_age) and mortality for survivors.
-# Migration is not identified from cell counts alone, so both migration columns
-# are always 0 here; they exist so the simulation loop can consume a uniform
-# four-type table, and are filled in by future strategies (feature (b)).
-# pmax() guards against negative counts but ignores within-cell transitions.
+# (columns age, n1, n2). New cohorts (age < min_age) enter via coming-of-age;
+# survivor cells reconcile n1 -> n2 via mortality (shrink) or net in-migration
+# (grow). Out-migration is folded into mortality and stays 0 (see @details).
 derive_events <- function(data, min_age) {
     is_new <- data$age < min_age
     data[, coming_of_age := ifelse(is_new, pmax(0, n2 - n1), 0)]
     data[, mortality := ifelse(is_new, 0, pmax(0, n1 - n2))]
-    data[, inmigration := 0]
+    data[, inmigration := ifelse(is_new, 0, pmax(0, n2 - n1))]
     data[, outmigration := 0]
     data
 }
@@ -302,9 +360,8 @@ schedule_events <- function(data, min_age, gap, n_ev) {
     ev_time <- numeric(n_ev)
     ev_idx <- 1L
     coa_vec <- data$coming_of_age
-    # Uniform-over-gap event types, in fixed order. mortality fires on existing
-    # inputs; the two migration types are 0 under the default strategy, so their
-    # guarded branches never run and the runif() draw order is preserved.
+    # Uniform-over-gap event types, in fixed order. outmigration is always 0, so
+    # its guarded branch never runs.
     unif_vecs <- list(
         mortality = data$mortality,
         inmigration = data$inmigration,
@@ -397,14 +454,13 @@ print.social_change_decomp <- function(x, detailed = TRUE, ...) {
             ) / total_change, 1))
         )
     )
-    if (!x$migration) {
-        decomp <- decomp[!grepl("migration", Component)]
-    }
+    # Show a migration row only for whichever migration type was actually inferred.
+    # In-migration is derived as a residual from cell growth; out-migration is always
+    # zero under the current strategy, so its row is dropped here.
+    if (inmigration == 0) decomp <- decomp[Component != "  - In-migration"]
+    if (outmigration == 0) decomp <- decomp[Component != "  - Out-migration"]
 
     print(decomp, row.names = FALSE, class = FALSE, justify = "left", na.print = "")
-    if (!x$migration) {
-        cat("Assumes no in- or out-migration.\n")
-    }
     options(digits = 7, scipen = 0) # reset to default
     invisible(x)
 }
@@ -431,7 +487,9 @@ plot.social_change_decomp <- function(x, ...) {
     means_long[, panel := "Mean outcome"]
 
     components <- c("intraindividual", "mortality", "coming_of_age")
-    if (x$migration) components <- c(components, "outmigration", "inmigration")
+    # Add a migration component only for whichever type was actually inferred.
+    if (summary[, sum(outmigration, na.rm = TRUE)] != 0) components <- c(components, "outmigration")
+    if (summary[, sum(inmigration, na.rm = TRUE)] != 0) components <- c(components, "inmigration")
     comp_labels <- c(
         "intraindividual" = "Intraindividual change",
         "mortality"       = "Mortality",

@@ -9,9 +9,9 @@ decompose_aggregated(
   stacked_data,
   fun_y,
   cells = c(),
-  migration = FALSE,
   tol = 0.05,
-  weight = NULL
+  weight = NULL,
+  population = NULL
 )
 
 \method{plot}{social_change_decomp}(x, ...)
@@ -25,8 +25,6 @@ rows are aggregated internally using \code{weight}.}
 
 \item{cells}{Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")}
 
-\item{migration}{Logical; if TRUE, decompose migration components (not yet implemented)}
-
 \item{tol}{Maximum tolerated relative deviation between observed and modeled period means (default 0.05 = 5\%).
 Emits a warning rather than stopping when exceeded.}
 
@@ -36,6 +34,16 @@ counts \code{n} (rounded sums of normalized weights) reflect the relative popula
 raw sample sizes. This preserves simulation tractability but is an approximation: the ideal approach would
 use true population counts, which are generally unavailable from survey data alone.}
 
+\item{population}{Optional data frame of true cell counts \code{n} per cell and period (columns \code{period},
+\code{age}, the \code{cells} identifiers, and \code{n}). When supplied, these counts replace the survey-derived
+cell counts as the population frame: they drive event derivation and weight the modeled mean, while \code{fun_y}
+continues to supply every cell's outcome and \code{stacked_data} is used only for the observed-mean / model-fit
+diagnostic. This is the preferred input when true population counts (e.g. from a census or official statistics)
+are available alongside survey data, as it sidesteps survey age-structure noise. \code{n} is rounded to whole
+counts for the microsimulation, so rescale large frames (e.g. raw population counts in the millions) to a
+tractable per-period total first -- only the relative cell structure matters. Periods and cells need not match
+the survey exactly; cells absent from the survey are still handled because \code{fun_y} can predict their outcome.}
+
 \item{x}{A `social_change_decomp` object returned by [decompose_aggregated()].}
 
 \item{...}{Not used.}
@@ -43,9 +51,10 @@ use true population counts, which are generally unavailable from survey data alo
 \value{
 S3 object of class \code{social_change_decomp} with components:
   \itemize{
-    \item \code{summary}: data.table with decomposition components by period
+    \item \code{summary}: data.table with decomposition components by period (including the
+      \code{inmigration} and \code{outmigration} columns; print/plot show a migration component
+      only for whichever of these is non-zero)
     \item \code{record}: list of detailed event records for each period transition
-    \item \code{migration}: logical indicating whether migration was decomposed
   }
 }
 \description{
@@ -54,13 +63,33 @@ components using microsimulation on stacked cross-sectional data. Requires a pre
 function that models the outcome as a function of age, period, and covariates.
 }
 \details{
-The function estimates mortality and coming-of-age from period-to-period population
-differences within cells, then uses microsimulation to randomly order demographic
+The function estimates mortality, coming-of-age, and net in-migration from period-to-period
+population differences within cells, then uses microsimulation to randomly order demographic
 events and track their contribution to aggregate change. Unequal and multi-year gaps
 between periods are supported: when the gap exceeds one year, each entering cohort is
 assigned to the specific calendar year within the gap when it crosses the minimum age,
 so that post-entry aging is correctly attributed to intraindividual change rather than
 coming-of-age.
+
+By default the survey itself supplies both the cell counts and the outcomes. Supplying
+\code{population} decouples these: the population frame supplies the cell counts \code{n}
+(and hence the inferred demographic events), while \code{fun_y} supplies the outcomes. The
+reported \code{modeled_mean} is then weighted by the population frame, whereas
+\code{observed_mean} remains the survey's own observed mean, so the two lines may diverge
+when the survey and population age structures differ.
+
+Within a cell, a survivor cohort that shrinks between periods loses people to mortality,
+while one that grows gains people through net in-migration. Only \emph{net} migration is
+recovered: gross out-migration is not separable from deaths (a survivor loss could be either),
+so it is folded into mortality and the reported out-migration is always zero. Each cell's net
+change is attributed to a single event type by sign: a shrinking cell records only mortality
+(any concurrent in-migration is invisible) and a growing cell records only net in-migration
+(any concurrent deaths are folded in), so offsetting flows within a cell cannot be seen. New
+cohorts (below the minimum age in the earlier period) attribute all their growth to coming-of-age;
+migration among entering cohorts is not modeled. On noisy survey cells this strategy relabels
+sampling fluctuation as in-migration and mortality, so the inferred in-migration is most
+meaningful when \code{population} supplies a true population frame, where growing cohorts reflect
+genuine net immigration rather than survey noise.
 
 \strong{Limitation}: Does not properly handle within-cell state transitions. Transition
 effects are absorbed into the intraindividual change component.

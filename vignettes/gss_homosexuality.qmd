@@ -75,7 +75,7 @@ form <- homosex ~ as.factor(year) + splines::bs(cohort, 10)
 The `decompose_aggregated()` function separates change in the aggregate outcome into intraindividual change (attitude shifts within respondents already in the population) and population turnover (mortality and coming-of-age effects). We rename `year` and `homosex` to the column names the function expects, then pass the full dataset directly.
 
 ```{r}
-gss_all <- gss_homosex[, .(age, period = year, y = homosex, wtssall)]
+gss_all <- gss_homosex[, .(age, period = year, sex, y = homosex, wtssall)]
 ```
 
 We fit a GAM to the individual responses to model acceptance as a smooth function of age and period.
@@ -84,12 +84,20 @@ We fit a GAM to the individual responses to model acceptance as a smooth functio
 set.seed(42)
 model <- mgcv::gam(y ~ s(age) + s(period), data = gss_all, weights = wtssall)
 predict_y <- function(newdata) as.vector(mgcv::predict.gam(model, newdata = newdata))
-
-result <- decompose_aggregated(gss_all, predict_y, weight = "wtssall", tol = 0.15)
-print(result)
 ```
 
-Of the roughly 41 percentage point rise in acceptance between 1973 and 2018, the decomposition attributes about 61% to intraindividual change and 39% to population turnover (mortality of older, less accepting cohorts; coming-of-age of younger, more accepting ones). This falls within the range spanned by the CR-IC model-based methods above (37–44% turnover), closest to the AD+ estimate.
+### The simplest decomposition
+
+We can run the simplest case of the event decomposition with the following commmand:
+
+```{r}
+result <- decompose_aggregated(gss_all, predict_y, weight = "wtssall", tol = 0.15)
+print(result, detailed = FALSE)
+```
+
+This decomposition compares cells across years, attributing shrinking cohorts to mortality and the youngest cohorts to coming-of-age. Every change in a cell's size must be attributed to *some* demographic event — the decomposition never leaves a residual — so a survivor cohort that *grows* between two waves is credited to net in-migration. With only the survey to work from, this in-migration term is small (about +0.007, or 1.9% of the total change) and largely reflects sampling fluctuation in cell sizes across waves rather than genuine immigration. It becomes meaningful only once a true population frame is supplied (see below), where a growing cohort really does signal net immigration.
+
+Of the roughly 41 percentage point rise in acceptance between 1973 and 2018, the decomposition attributes about 62% to intraindividual change and 38% to population turnover (mortality of older, less accepting cohorts; coming-of-age of younger, more accepting ones; and a small net in-migration term). This falls within the range spanned by the CR-IC model-based methods above (37–44% turnover), closest to the AD+ estimate.
 
 ```{r}
 plot(result)
@@ -98,6 +106,44 @@ plot(result)
 What is most interesting about these results is how the components behave over time. Until the early-to-mid 1990s, intraindividual change and population turnover offset each other, leaving the aggregate mean roughly flat. The mean even dipped in the mid-1980s, falling from about 0.21 in 1977 to 0.18 in 1987, as the existing members of the population became less accepting of homosexuality. Turnover pulled the mean back up over the same period, so that by the early 1990s acceptance had barely moved from its 1973 level. Only from the mid-1990s did intraindividual change start to contribute toward acceptance, and from that point on it became the main driver of the rising trend. Turnover contributed in the positive direction throughout. Mortality of older, less accepting cohorts had a much stronger effect than the coming-of-age of younger ones, likely because new members of the population are already closer to the population mean.
 
 One speculative reading of the early decline in intraindividual acceptance is the backlash associated with the AIDS epidemic of the 1980s. The decomposition itself cannot establish this, but it does isolate a within-person decline that is invisible in the raw trend line.
+
+### Adding a covariate
+
+We can split the population into covariate cells with the `cells` argument. Adding `sex` lets the outcome model predict differently for men and women, and derives the demographic events separately within each sex cell.
+
+```{r}
+model <- mgcv::gam(y ~ s(age) + s(period) + sex, data = gss_all, weights = wtssall)
+predict_y <- function(newdata) as.vector(mgcv::predict.gam(model, newdata = newdata))
+set.seed(42)
+result <- decompose_aggregated(gss_all, predict_y, cells = "sex", weight = "wtssall", tol = 0.15)
+print(result, detailed = FALSE)
+plot(result)
+```
+
+The headline result is unchanged: the same ~61/39 intraindividual-versus-turnover split as the pooled model. Conditioning on sex barely moves the population-weighted mean, since the sex composition is roughly stable across waves.
+
+### Adding a population frame
+
+So far the cell counts `n` have come from the survey itself, so the demographic events are inferred from the noisy survey cell sizes across waves. When true population counts are available, the `population` argument lets the survey supply only the outcome model `fun_y`, while an external frame supplies the cell counts that drive the demographic events.
+
+The package ships `wpp_us`, US population by age and sex from the UN World Population Prospects for each survey year. Only the *relative* cell structure matters, so we rescale each wave to a tractable per-period total before passing it in.
+
+```{r}
+data(wpp_us)
+
+survey_years <- sort(unique(gss_all$period))
+pop <- wpp_us[period %in% survey_years]
+scale_total <- round(mean(gss_all[, .N, by = period]$N))
+pop[, n := n / sum(n) * scale_total, by = period]
+
+set.seed(42)
+result <- decompose_aggregated(gss_all, predict_y, cells = "sex",
+                               weight = "wtssall", population = pop, tol = 0.15)
+print(result, detailed = FALSE)
+plot(result)
+```
+
+The intraindividual/turnover split is again about 61/39, but the turnover detail now reflects real demographics: coming-of-age roughly doubles and mortality falls, because the true US age structure has more young entrants than the survey implied, and net in-migration becomes a genuine signal of immigration rather than survey noise.
 
 ## Further reading
 

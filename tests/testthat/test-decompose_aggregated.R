@@ -25,7 +25,7 @@ test_that("decompose_aggregated recovers Scenario 1 (perfect recovery)", {
   # ASSERT - Structure
   expect_s3_class(decomp, "social_change_decomp")
   expect_true(is.list(decomp))
-  expect_named(decomp, c("summary", "record", "migration"))
+  expect_named(decomp, c("summary", "record"))
   expect_s3_class(decomp$summary, "data.table")
   expect_true(is.list(decomp$record))
 
@@ -417,6 +417,42 @@ test_that("decompose_aggregated print method works", {
   # ACT & ASSERT
   expect_output(print(decomp), "Overview by period")
   expect_output(print(decomp, detailed = FALSE), "Component")
+})
+
+test_that("components fully account for total change when a survivor cohort grows", {
+  # The decomposition is an exact accounting identity: every component must sum
+  # to ybar_N - ybar_1, with no residual. A survivor cohort that *grows* between
+  # periods (n2 > n1) is net in-migration; the older clip-to-zero strategy
+  # dropped that growth and left part of the change unaccounted for. The earlier
+  # consistency tests all come from sim_social_change (cells only shrink or come
+  # of age), so none exercised this case -- this fixture does, with a survivor
+  # cell that grows in both transitions.
+  stacked <- data.table(
+    period = rep(1:3, each = 3),
+    age    = rep(c(20, 21, 22), times = 3),
+    n      = c(
+      100, 100, 100, # period 1
+      100, 130,  90, # period 2: age-21 cohort grew 100 -> 130 (in-migration)
+      100, 150, 110  # period 3: age-21 cohort grew 130 -> 150 (in-migration)
+    ),
+    y = rep(c(0, 0.05, 0.1), times = 3) # outcome rises with age; matches fun_y
+  )
+  fun_y <- function(nd) (nd$age - 20) / 20
+
+  set.seed(1)
+  decomp <- decompose_aggregated(stacked, fun_y)
+
+  total_change <- decomp$summary[.N, modeled_mean] - decomp$summary[1, modeled_mean]
+  all_components <- decomp$summary[period > min(period), sum(
+    intraindividual + coming_of_age + mortality + inmigration + outmigration
+  )]
+  expect_equal(all_components, total_change, tolerance = 1e-10)
+
+  # the growth must register as in-migration events, not vanish into a residual
+  n_inmig <- sum(vapply(decomp$record, function(r) sum(r$component == "inmigration"), integer(1)))
+  expect_gt(n_inmig, 0)
+  # in-migration contributes (non-zero), so print/plot display the migration component
+  expect_true(decomp$summary[, sum(inmigration, na.rm = TRUE)] != 0)
 })
 
 test_that("decompose_aggregated validates input", {
