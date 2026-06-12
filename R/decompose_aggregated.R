@@ -502,11 +502,17 @@ print.social_change_decomp <- function(x, detailed = TRUE, ...) {
             inmigration
         ),
         Percent = c(
-            "", "", "100.0",
-            sprintf("%.1f", round(100 * c(
-                intraindividual, pt, mortality,
-                outmigration, coming_of_age, inmigration
-            ) / total_change, 1))
+            "", "", if (total_change == 0) "" else "100.0",
+            # Percentages are undefined when total change is zero (components may
+            # still net to zero from offsetting flows), so leave them blank.
+            if (total_change == 0) {
+                rep("", 6)
+            } else {
+                sprintf("%.1f", round(100 * c(
+                    intraindividual, pt, mortality,
+                    outmigration, coming_of_age, inmigration
+                ) / total_change, 1))
+            }
         )
     )
     # Show a migration row only for whichever migration type was actually inferred.
