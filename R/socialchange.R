@@ -10,7 +10,7 @@ utils::globalVariables(c(
     ".", "pct", "term", "total", ".wt",
     "inmigration", "outmigration", "coming_of_age", "mortality",
     "n_mortality", "n_outmigration",
-    "observed", "modeled", "counterf", "Component",
+    "observed", "modeled", "deviation", "counterf", "Component",
     "outcome", "outcome_post", "outcome_pre", "type", "event_type",
     "panel"
 ))

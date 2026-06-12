@@ -74,7 +74,7 @@
 #' data("gss_homosex", package = "socialchange")
 #' stacked <- as.data.table(gss_homosex)[, .(age, period = year, y = homosex)]
 #' model <- stats::lm(y ~ age + period, data = stacked)
-#' result <- decompose_aggregated(stacked, function(d) predict(model, newdata = d))
+#' result <- decompose_aggregated(stacked, function(d) predict(model, newdata = d), tol = 0.1)
 #' print(result)
 #' }
 #'
