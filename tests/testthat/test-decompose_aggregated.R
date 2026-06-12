@@ -668,3 +668,50 @@ test_that("decompose_aggregated allows a later wave whose minimum age is above t
 
   expect_no_error(decompose_aggregated(stacked_data, predict_y))
 })
+
+test_that("decompose_aggregated handles a zero-centered outcome via the absolute fit check", {
+  # The fit diagnostic is a plain absolute deviation between observed and modeled
+  # period means (exceeding `tol` errors). An earlier relative check
+  # (abs(observed/modeled - 1)) blew up for a zero-centered outcome whose period
+  # means sit at (or near) 0: it either crashed (0/0 = NaN in the `max_dev > tol`
+  # comparison) or flagged a spurious ~100% deviation even for a perfect fit. The
+  # absolute check stays finite and passes a perfect fit here.
+  stacked_data <- rbindlist(list(
+    data.table(age = c(20, 21), period = 2000),
+    data.table(age = c(20, 21), period = 2004)
+  ))
+  # symmetric +/-1 with equal cell counts => weighted period mean is exactly 0
+  stacked_data[, y := fifelse(age == 20, -1, 1)]
+  predict_y <- function(d) fifelse(d$age == 20, -1, 1)
+
+  expect_no_error(decomp <- decompose_aggregated(stacked_data, predict_y))
+  expect_equal(decomp$summary[, modeled_mean], c(0, 0), tolerance = 1e-12)
+
+  # Near-zero (not exactly zero) period means: an lm fit leaves tiny float drift,
+  # which a relative check would have flagged as a huge deviation. A perfect-fit
+  # model should pass the absolute check.
+  stacked2 <- rbindlist(list(
+    data.table(age = 20:39, period = 2000),
+    data.table(age = 20:39, period = 2004)
+  ))
+  stacked2[, y := age - 29.5]  # zero-centered within each wave
+  model <- lm(y ~ age, data = stacked2)
+  predict2 <- function(newdata) predict(model, newdata = newdata)
+  expect_no_error(decompose_aggregated(stacked2, predict2))
+})
+
+test_that("decompose_aggregated errors when the model badly misfits the period means", {
+  # A model that cannot reproduce the observed period means should halt rather
+  # than silently decompose a divergent modeled trajectory. fun_y here returns a
+  # constant far from the observed means.
+  stacked_data <- rbindlist(list(
+    data.table(age = 20:39, period = 2000),
+    data.table(age = 20:39, period = 2004)
+  ))
+  stacked_data[, y := 0.5]
+  predict_y <- function(d) rep(0.0, nrow(d))  # off by 0.5, well above default tol
+
+  expect_error(decompose_aggregated(stacked_data, predict_y), "deviate from observed")
+  # ...unless the caller deliberately loosens tol
+  expect_no_error(decompose_aggregated(stacked_data, predict_y, tol = 1))
+})

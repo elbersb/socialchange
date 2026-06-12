@@ -9,8 +9,10 @@
 #'   rows are aggregated internally using \code{weight}.
 #' @param fun_y Prediction function taking \code{(newdata)} and returning predicted outcome values
 #' @param cells Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")
-#' @param tol Maximum tolerated relative deviation between observed and modeled period means (default 0.05 = 5\%).
-#'   Emits a warning rather than stopping when exceeded.
+#' @param tol Maximum tolerated absolute deviation between observed and modeled period means, in the
+#'   outcome's own units (default 0.05). Checks that \code{fun_y} reproduces the observed period means;
+#'   if the largest deviation exceeds \code{tol}, the function errors. The default suits outcomes on a
+#'   roughly unit scale (e.g. proportions in [0, 1]); set \code{tol} to match outcomes on another scale.
 #' @param weight Name of the weight column used when aggregating individual-level data (ignored if \code{n} is present).
 #'   Weights are normalized within each period to sum to the period sample size before aggregation, so that cell
 #'   counts \code{n} (rounded sums of normalized weights) reflect the relative population structure rather than
@@ -134,16 +136,23 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
     # fun_y reproduce the observed mean? This is independent of the population
     # frame, so it stays a meaningful check even when an external frame is used.
     survey_means <- stacked_data[, .(observed = stats::weighted.mean(y, n), modeled = stats::weighted.mean(y_pred, n)), by = .(period)]
-    max_dev <- survey_means[, max(abs(observed / modeled - 1))]
+    # A deliberately simple gut check: does fun_y reproduce each period mean to
+    # within `tol`, measured as a plain absolute deviation in the outcome's own
+    # units? No ratio or rescaling, so it is well-defined for any outcome,
+    # including ones whose means sit at or near zero (a relative check would give
+    # NaN/Inf there). The cost is that the default `tol` is only meaningful for
+    # bounded outcomes; rescale `tol` for outcomes on an unusual scale.
+    survey_means[, deviation := abs(observed - modeled)]
+    max_dev <- survey_means[, max(deviation)]
     if (max_dev > tol) {
         print(survey_means)
-        warning(sprintf(
+        stop(sprintf(
             paste0(
-                "Modeled means deviate from observed by up to %.1f%% (tol = %.1f%%), ",
-                "evaluated on the survey's own age structure. Consider a more flexible ",
-                "model or increase tol."
+                "Modeled means deviate from observed by up to %.3f (tol = %.3f), in the ",
+                "outcome's own units, evaluated on the survey's own age structure. Consider ",
+                "a more flexible model or increase tol."
             ),
-            max_dev * 100, tol * 100
+            max_dev, tol
         ))
     }
     if (is.null(population)) {

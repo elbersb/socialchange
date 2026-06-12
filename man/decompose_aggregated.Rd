@@ -25,8 +25,10 @@ rows are aggregated internally using \code{weight}.}
 
 \item{cells}{Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")}
 
-\item{tol}{Maximum tolerated relative deviation between observed and modeled period means (default 0.05 = 5\%).
-Emits a warning rather than stopping when exceeded.}
+\item{tol}{Maximum tolerated absolute deviation between observed and modeled period means, in the
+outcome's own units (default 0.05). Checks that \code{fun_y} reproduces the observed period means;
+if the largest deviation exceeds \code{tol}, the function errors. The default suits outcomes on a
+roughly unit scale (e.g. proportions in [0, 1]); set \code{tol} to match outcomes on another scale.}
 
 \item{weight}{Name of the weight column used when aggregating individual-level data (ignored if \code{n} is present).
 Weights are normalized within each period to sum to the period sample size before aggregation, so that cell

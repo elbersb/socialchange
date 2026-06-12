@@ -91,7 +91,7 @@ predict_y <- function(newdata) as.vector(mgcv::predict.gam(model, newdata = newd
 We can run the simplest case of the event decomposition with the following commmand:
 
 ```{r}
-result <- decompose_aggregated(gss_all, predict_y, weight = "wtssall", tol = 0.15)
+result <- decompose_aggregated(gss_all, predict_y, weight = "wtssall")
 print(result, detailed = FALSE)
 ```
 
@@ -115,7 +115,7 @@ We can split the population into covariate cells with the `cells` argument. Addi
 model <- mgcv::gam(y ~ s(age) + s(period) + sex, data = gss_all, weights = wtssall)
 predict_y <- function(newdata) as.vector(mgcv::predict.gam(model, newdata = newdata))
 set.seed(42)
-result <- decompose_aggregated(gss_all, predict_y, cells = "sex", weight = "wtssall", tol = 0.15)
+result <- decompose_aggregated(gss_all, predict_y, cells = "sex", weight = "wtssall")
 print(result, detailed = FALSE)
 plot(result)
 ```
@@ -138,7 +138,7 @@ pop[, n := n / sum(n) * scale_total, by = period]
 
 set.seed(42)
 result <- decompose_aggregated(gss_all, predict_y, cells = "sex",
-                               weight = "wtssall", population = pop, tol = 0.15)
+                               weight = "wtssall", population = pop)
 print(result, detailed = FALSE)
 plot(result)
 ```
