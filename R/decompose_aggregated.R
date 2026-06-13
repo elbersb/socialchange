@@ -141,10 +141,14 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
     }
     cells <- c(cells, "age")
 
+    # Collapse to one row per cell per period. y_pred is constant within a
+    # cell (fun_y depends only on the grouping columns)
+    frame <- frame[, .(n = sum(n), y_pred = y_pred[1L]), by = c("period", cells)]
+    frame <- frame[n > 0]
+
     # One minimum age, shared by every wave: the threshold splitting entering
-    # cohorts (age < min_age) from survivors. The n > 0 filter stops n = 0 young
-    # rows in a population frame (e.g. WPP 0-19) from dragging it down to 0.
-    min_ages <- frame[n > 0, .(min_age = min(age)), by = period]
+    # cohorts (age < min_age) from survivors.
+    min_ages <- frame[, .(min_age = min(age)), by = period]
     if (uniqueN(min_ages$min_age) > 1L) {
         setorder(min_ages, period)
         stop(sprintf(
@@ -200,12 +204,14 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
     }
     summary[means, `:=`(observed_mean = observed, modeled_mean = modeled), on = "period"]
 
+    # decompose - main loop
     for (i_period in seq_len(length(periods) - 1)) {
         gap <- as.numeric(periods[i_period + 1] - periods[i_period])
         vars <- c("n", cells)
-        # aggregate so that join doesn't fan out
-        data1 <- frame[period == periods[i_period], .(n = sum(n)), by = cells]
-        data2 <- frame[period == periods[i_period + 1], .(n = sum(n)), by = cells]
+        # frame is already one row per cell per period, so a plain subset
+        # (no re-aggregation) gives the period's cell counts.
+        data1 <- frame[period == periods[i_period], c(cells, "n"), with = FALSE]
+        data2 <- frame[period == periods[i_period + 1], c(cells, "n"), with = FALSE]
         data2[, age := age - gap]
         for (var in vars) {
             if (!(var %in% cells)) {
