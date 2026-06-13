@@ -102,7 +102,8 @@ effects are absorbed into the intraindividual change component.
 \donttest{
 library(data.table)
 data("gss_homosex", package = "socialchange")
-stacked <- as.data.table(gss_homosex)[, .(age, period = year, y = homosex)]
+# restrict to age >= 21 so every wave shares a common minimum age
+stacked <- as.data.table(gss_homosex)[age >= 21, .(age, period = year, y = homosex)]
 model <- stats::lm(y ~ age + period, data = stacked)
 result <- decompose_aggregated(stacked, function(d) predict(model, newdata = d), tol = 0.1)
 print(result)

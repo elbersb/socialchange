@@ -81,7 +81,10 @@ form <- homosex ~ as.factor(year) + splines::bs(cohort, 10)
 The `decompose_aggregated()` function separates change in the aggregate outcome into intraindividual change (attitude shifts within respondents already in the population) and population turnover (mortality and coming-of-age effects). We rename `year` and `homosex` to the column names the function expects, then pass the full dataset directly.
 
 ```{r}
-gss_all <- gss_homosex[, .(age, period = year, sex, y = homosex, wtssall)]
+# decompose_aggregated() requires every wave to share a common minimum age. The
+# 2014 and 2016 waves sampled no one under 19 and 21 respectively, so we restrict
+# to age >= 21 to give all waves the same minimum age.
+gss_all <- gss_homosex[age >= 21, .(age, period = year, sex, y = homosex, wtssall)]
 ```
 
 We fit a GAM to the individual responses to model acceptance as a smooth function of age and period.
@@ -101,9 +104,9 @@ result <- decompose_aggregated(gss_all, predict_y, weight = "wtssall")
 print(result, detailed = FALSE)
 ```
 
-This decomposition compares cells across years, attributing shrinking cohorts to mortality and the youngest cohorts to coming-of-age. Every change in a cell's size must be attributed to *some* demographic event — the decomposition never leaves a residual — so a survivor cohort that *grows* between two waves is credited to net in-migration. With only the survey to work from, this in-migration term is small (about +0.007, or 1.9% of the total change) and largely reflects sampling fluctuation in cell sizes across waves rather than genuine immigration. It becomes meaningful only once a true population frame is supplied (see below), where a growing cohort really does signal net immigration.
+This decomposition compares cells across years, attributing shrinking cohorts to mortality and the youngest cohorts to coming-of-age. Every change in a cell's size must be attributed to *some* demographic event — the decomposition never leaves a residual — so a survivor cohort that *grows* between two waves is credited to net in-migration. With only the survey to work from, this in-migration term (about −0.025, or −7% of the total change) largely reflects sampling fluctuation in cell sizes across waves rather than genuine immigration. It becomes meaningful only once a true population frame is supplied (see below), where a growing cohort really does signal net immigration.
 
-Of the roughly 41 percentage point rise in acceptance between 1973 and 2018, the decomposition attributes about 62% to intraindividual change and 38% to population turnover (mortality of older, less accepting cohorts; coming-of-age of younger, more accepting ones; and a small net in-migration term). This falls within the range spanned by the CR-IC model-based methods above (37–44% turnover), closest to the AD+ estimate.
+Of the roughly 37 percentage point rise in acceptance between 1973 and 2016, the decomposition attributes about 52% to intraindividual change and 48% to population turnover (mortality of older, less accepting cohorts; coming-of-age of younger, more accepting ones; and a small net in-migration term). This is close to, though slightly above, the range spanned by the CR-IC model-based methods above (37–44% turnover).
 
 ```{r}
 plot(result)
@@ -126,7 +129,7 @@ print(result, detailed = FALSE)
 plot(result)
 ```
 
-The headline result is unchanged: the same ~61/39 intraindividual-versus-turnover split as the pooled model. Conditioning on sex barely moves the population-weighted mean, since the sex composition is roughly stable across waves.
+The headline result is unchanged: the same ~51/49 intraindividual-versus-turnover split as the pooled model. Conditioning on sex barely moves the population-weighted mean, since the sex composition is roughly stable across waves.
 
 ### Adding a population frame
 
@@ -149,7 +152,7 @@ print(result, detailed = FALSE)
 plot(result)
 ```
 
-The intraindividual/turnover split is again about 61/39, but the turnover detail now reflects real demographics: coming-of-age roughly doubles and mortality falls, because the true US age structure has more young entrants than the survey implied, and net in-migration becomes a genuine signal of immigration rather than survey noise.
+The intraindividual/turnover split is again similar (about 53/47), but the turnover detail now reflects real demographics: mortality falls and the net in-migration term shrinks toward zero (from about −0.046 to −0.024), because the smoother true US age structure strips out much of the cell-size noise that the survey counts introduced, leaving net in-migration as a genuine signal of immigration rather than survey noise.
 
 ## Further reading
 
