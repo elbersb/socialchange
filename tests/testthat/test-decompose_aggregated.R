@@ -531,12 +531,12 @@ test_that("coming-of-age events respect their entry-year window (gap > 1)", {
   }
 
   # Aligned age 19: year-1 entrants, all ticks in [0, 0.5].
-  sched_yr1 <- socialchange:::schedule_events(make_cell(19), min_age = 20, gap = 2, n_ev = 100)
+  sched_yr1 <- socialchange:::schedule_events(make_cell(19), min_age = 20, gap = 2)
   expect_true(all(sched_yr1$ev_type == "coming_of_age"))
   expect_true(all(sched_yr1$events_tick <= 0.5))
 
   # Aligned age 18: year-2 entrants, all ticks in [0.5, 1.0].
-  sched_yr2 <- socialchange:::schedule_events(make_cell(18), min_age = 20, gap = 2, n_ev = 100)
+  sched_yr2 <- socialchange:::schedule_events(make_cell(18), min_age = 20, gap = 2)
   expect_true(all(sched_yr2$events_tick >= 0.5))
 })
 

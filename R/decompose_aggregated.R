@@ -25,8 +25,9 @@
 #'   diagnostic. This is the preferred input when true population counts (e.g. from a census or official statistics)
 #'   are available alongside survey data, as it sidesteps survey age-structure noise. \code{n} is rounded to whole
 #'   counts for the microsimulation, so rescale large frames (e.g. raw population counts in the millions) to a
-#'   tractable per-period total first -- only the relative cell structure matters. Periods and cells need not match
-#'   the survey exactly; cells absent from the survey are still handled because \code{fun_y} can predict their outcome.
+#'   tractable per-period total first -- only the relative cell structure matters. The frame must match the survey's
+#'   minimum age and the level set of each \code{cells} column, and cover every survey period (extra periods are
+#'   dropped); these are compared over rows with \code{n > 0}.
 #'
 #' @return S3 object of class \code{social_change_decomp} with components:
 #'   \itemize{
@@ -130,6 +131,39 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
         checkmate::assert_numeric(population$n, lower = 0, any.missing = FALSE, .var.name = "population$n")
         checkmate::assert_numeric(population$age, any.missing = FALSE, .var.name = "population$age")
         checkmate::assert_atomic_vector(population$period, any.missing = FALSE, .var.name = "population$period")
+
+        # Frame and survey must share structure
+        survey_nz <- stacked_data[n > 0]
+        pop_nz <- population[n > 0]
+
+        if (min(survey_nz$age) != min(pop_nz$age)) {
+            stop(sprintf(
+                "Survey and population must share a minimum age, but it is %g for the survey and %g for the population.",
+                min(survey_nz$age), min(pop_nz$age)
+            ))
+        }
+        # Per-column level sets, not unique combinations (the survey may be sparser).
+        for (col in cells) {
+            survey_levels <- sort(unique(as.character(survey_nz[[col]])))
+            pop_levels <- sort(unique(as.character(pop_nz[[col]])))
+            if (!identical(survey_levels, pop_levels)) {
+                stop(sprintf(
+                    "Survey and population must share the same levels of cell column '%s'.\n  survey: %s\n  population: %s",
+                    col, paste(survey_levels, collapse = ", "), paste(pop_levels, collapse = ", ")
+                ))
+            }
+        }
+        # The frame may cover extra periods; subset to the survey's, but require all.
+        survey_periods <- unique(survey_nz$period)
+        missing_periods <- setdiff(survey_periods, unique(pop_nz$period))
+        if (length(missing_periods) > 0) {
+            stop(sprintf(
+                "Population frame is missing survey period(s): %s.",
+                paste(sort(missing_periods), collapse = ", ")
+            ))
+        }
+        population <- population[period %in% survey_periods]
+
         # counts must be whole numbers for the integer-based microsimulation
         population[, n := round(n)]
         population[, y_pred := fun_y(.SD)]

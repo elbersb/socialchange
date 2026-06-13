@@ -96,6 +96,60 @@ test_that("zero-count young cells in the population frame do not affect classifi
   expect_equal(padded$summary[2:.N, sum(inmigration)], 0)
 })
 
+test_that("population frame must share the survey's minimum age", {
+  fx <- build_population_fixture()
+  pop <- fx$stacked[, .(n = sum(n)), by = .(age, period)]
+
+  # drop the youngest survivors from the survey so its min age rises above pop's
+  survey_high <- fx$stacked[age > min(age) + 1]
+  expect_error(
+    decompose_aggregated(survey_high, fx$fun_y, population = pop),
+    "minimum age"
+  )
+})
+
+test_that("population frame must share each cell column's level set", {
+  set.seed(1)
+  sim <- sim_social_change(periods = 5, data = build_gendered_population(),
+    fun_y = make_age_only_outcome(),
+    fun_mortality = make_stable_mortality_gendered(),
+    fun_coming_of_age = make_stable_coming_of_age_gendered())
+  stacked <- rbindlist(sim$snapshot)
+  model <- lm(y ~ age, data = stacked)
+  fun_y <- function(nd) predict(model, newdata = nd)
+
+  pop <- stacked[, .(n = sum(n)), by = .(age, period, gender)]
+  pop_one_gender <- pop[gender == pop$gender[1]]
+  expect_error(
+    decompose_aggregated(stacked, fun_y, cells = "gender", population = pop_one_gender),
+    "levels of cell column 'gender'"
+  )
+})
+
+test_that("population frame must cover every survey period, but may have more", {
+  fx <- build_population_fixture()
+  pop <- fx$stacked[, .(n = sum(n)), by = .(age, period)]
+  survey_periods <- pop[, unique(period)]
+
+  # missing a survey period is an error
+  pop_missing <- pop[period != max(survey_periods)]
+  expect_error(
+    decompose_aggregated(fx$stacked, fx$fun_y, population = pop_missing),
+    "missing survey period"
+  )
+
+  # extra population periods are dropped, giving the same result
+  extra <- copy(pop[period == max(survey_periods)])[, period := max(survey_periods) + 4]
+  pop_extra <- rbind(pop, extra)
+
+  set.seed(999)
+  base <- decompose_aggregated(fx$stacked, fx$fun_y, population = pop)
+  set.seed(999)
+  with_extra <- decompose_aggregated(fx$stacked, fx$fun_y, population = pop_extra)
+  expect_equal(with_extra$summary, base$summary)
+  expect_equal(with_extra$record, base$record)
+})
+
 test_that("population accepts a plain data.frame and validates required columns", {
   fx <- build_population_fixture()
   pop <- fx$stacked[, .(n = sum(n)), by = .(age, period)]

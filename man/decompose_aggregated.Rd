@@ -43,8 +43,9 @@ continues to supply every cell's outcome and \code{stacked_data} is used only fo
 diagnostic. This is the preferred input when true population counts (e.g. from a census or official statistics)
 are available alongside survey data, as it sidesteps survey age-structure noise. \code{n} is rounded to whole
 counts for the microsimulation, so rescale large frames (e.g. raw population counts in the millions) to a
-tractable per-period total first -- only the relative cell structure matters. Periods and cells need not match
-the survey exactly; cells absent from the survey are still handled because \code{fun_y} can predict their outcome.}
+tractable per-period total first -- only the relative cell structure matters. The frame must match the survey's
+minimum age and the level set of each \code{cells} column, and cover every survey period (extra periods are
+dropped); these are compared over rows with \code{n > 0}.}
 
 \item{x}{A `social_change_decomp` object returned by [decompose_aggregated()].}
 

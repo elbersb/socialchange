@@ -24,7 +24,7 @@ wpp_us <- d[
 # match gss_homosex coding/structure
 wpp_us[, sex := fcase(sex == "Male", "male", sex == "Female", "female")]
 wpp_us[age >= 89L, age := 89L]   # GSS top-codes age at "89 or older"
-wpp_us <- wpp_us[age >= 18L, .(n = sum(n)), by = .(period, age, sex)]
+wpp_us <- wpp_us[age >= 21L, .(n = sum(n)), by = .(period, age, sex)]   # GSS example restricted to 21+
 setkey(wpp_us, period, age, sex)
 
 save(wpp_us, file = "../data/wpp_us.rda", version = 2, compress = "bzip2")

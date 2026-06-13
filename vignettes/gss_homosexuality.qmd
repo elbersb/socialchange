@@ -152,7 +152,7 @@ print(result, detailed = FALSE)
 plot(result)
 ```
 
-The intraindividual/turnover split is again similar (about 53/47), but the turnover detail now reflects real demographics: mortality falls and the net in-migration term shrinks toward zero (from about −0.046 to −0.024), because the smoother true US age structure strips out much of the cell-size noise that the survey counts introduced, leaving net in-migration as a genuine signal of immigration rather than survey noise.
+The intraindividual/turnover split is again similar (roughly 50/50), but the turnover detail now reflects real demographics: mortality falls and the net in-migration term shrinks toward zero (from about −0.046 to −0.026), because the smoother true US age structure strips out much of the cell-size noise that the survey counts introduced, leaving net in-migration as a genuine signal of immigration rather than survey noise.
 
 ## Further reading
 

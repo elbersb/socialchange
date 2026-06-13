@@ -5,10 +5,10 @@
 \alias{wpp_us}
 \title{US population by age and sex, 1973--2016}
 \format{
-A data.table with 6,336 rows and 4 variables:
+A data.table with 6,072 rows and 4 variables:
 \describe{
   \item{period}{Year (numeric), 1973--2016.}
-  \item{age}{Single year of age (18--89; 89 = "89 or older").}
+  \item{age}{Single year of age (21--89; 89 = "89 or older").}
   \item{sex}{Sex (\code{"male"} or \code{"female"}), matching
     \code{gss_homosex$sex}.}
   \item{n}{Population in thousands (numeric).}
@@ -25,7 +25,7 @@ wpp_us
 \description{
 United States population by single year of age and sex, from the UN World
 Population Prospects (WPP) 2022, for every year from 1973 to 2016 (the span
-of the \code{\link{gss_homosex}} survey waves). Ages run from 18 to 89, with
+of the \code{\link{gss_homosex}} survey waves). Ages run from 21 to 89, with
 89 representing "89 or older" to match the GSS age top-code. Counts are in
 thousands and reflect the true US age/sex structure; they are intended for
 use as the \code{population} frame in \code{\link{decompose_aggregated}},
