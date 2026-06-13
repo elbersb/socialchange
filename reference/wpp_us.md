@@ -4,7 +4,7 @@ United States population by single year of age and sex, from the UN
 World Population Prospects (WPP) 2022, for every year from 1973 to 2016
 (the span of the
 [`gss_homosex`](https://elbersb.github.io/socialchange/reference/gss_homosex.md)
-survey waves). Ages run from 18 to 89, with 89 representing "89 or
+survey waves). Ages run from 21 to 89, with 89 representing "89 or
 older" to match the GSS age top-code. Counts are in thousands and
 reflect the true US age/sex structure; they are intended for use as the
 `population` frame in
@@ -21,7 +21,7 @@ wpp_us
 
 ## Format
 
-A data.table with 6,336 rows and 4 variables:
+A data.table with 6,072 rows and 4 variables:
 
 - period:
 
@@ -29,7 +29,7 @@ A data.table with 6,336 rows and 4 variables:
 
 - age:
 
-  Single year of age (18–89; 89 = "89 or older").
+  Single year of age (21–89; 89 = "89 or older").
 
 - sex:
 

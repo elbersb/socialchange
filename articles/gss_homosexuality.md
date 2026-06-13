@@ -196,7 +196,10 @@ the full dataset directly.
 
 ``` r
 
-gss_all <- gss_homosex[, .(age, period = year, sex, y = homosex, wtssall)]
+# decompose_aggregated() requires every wave to share a common minimum age. The
+# 2014 and 2016 waves sampled no one under 19 and 21 respectively, so we restrict
+# to age >= 21 to give all waves the same minimum age.
+gss_all <- gss_homosex[age >= 21, .(age, period = year, sex, y = homosex, wtssall)]
 ```
 
 We fit a GAM to the individual responses to model acceptance as a smooth
@@ -219,14 +222,14 @@ following commmand:
 result <- decompose_aggregated(gss_all, predict_y, weight = "wtssall")
 print(result, detailed = FALSE)
 #>                 Component    Value Percent
-#>  At initial (modeled)     0.200317        
-#>  At end (modeled)         0.566382        
-#>  Total change             0.366065   100.0
-#>  - Intraindividual change 0.227625   62.2 
-#>  - Population turnover    0.138439   37.8 
-#>    - Mortality            0.099504   27.2 
-#>    - Coming-of-age        0.032009   8.7  
-#>    - In-migration         0.006926   1.9
+#>  At initial (modeled)      0.19738        
+#>  At end (modeled)          0.56751        
+#>  Total change              0.37013   100.0
+#>  - Intraindividual change  0.19236   52.0 
+#>  - Population turnover     0.17777   48.0 
+#>    - Mortality             0.09952   26.9 
+#>    - Coming-of-age         0.10297   27.8 
+#>    - In-migration         -0.02472   -6.7
 ```
 
 This decomposition compares cells across years, attributing shrinking
@@ -234,19 +237,18 @@ cohorts to mortality and the youngest cohorts to coming-of-age. Every
 change in a cell’s size must be attributed to *some* demographic event —
 the decomposition never leaves a residual — so a survivor cohort that
 *grows* between two waves is credited to net in-migration. With only the
-survey to work from, this in-migration term is small (about +0.007, or
-1.9% of the total change) and largely reflects sampling fluctuation in
-cell sizes across waves rather than genuine immigration. It becomes
-meaningful only once a true population frame is supplied (see below),
-where a growing cohort really does signal net immigration.
+survey to work from, this in-migration term (about −0.025, or −7% of the
+total change) largely reflects sampling fluctuation in cell sizes across
+waves rather than genuine immigration. It becomes meaningful only once a
+true population frame is supplied (see below), where a growing cohort
+really does signal net immigration.
 
-Of the roughly 41 percentage point rise in acceptance between 1973 and
-2018, the decomposition attributes about 62% to intraindividual change
-and 38% to population turnover (mortality of older, less accepting
+Of the roughly 37 percentage point rise in acceptance between 1973 and
+2016, the decomposition attributes about 52% to intraindividual change
+and 48% to population turnover (mortality of older, less accepting
 cohorts; coming-of-age of younger, more accepting ones; and a small net
-in-migration term). This falls within the range spanned by the CR-IC
-model-based methods above (37–44% turnover), closest to the AD+
-estimate.
+in-migration term). This is close to, though slightly above, the range
+spanned by the CR-IC model-based methods above (37–44% turnover).
 
 ``` r
 
@@ -279,8 +281,10 @@ isolate a within-person decline that is invisible in the raw trend line.
 
 We can split the population into covariate cells with the `cells`
 argument. Adding `sex` lets the outcome model predict differently for
-men and women, and derives the demographic events separately within each
-sex cell.
+men and women, and — more consequentially for the decomposition —
+derives the demographic events (mortality, coming-of-age, migration)
+separately within each sex cell rather than from the pooled age
+structure.
 
 ``` r
 
@@ -290,23 +294,67 @@ set.seed(42)
 result <- decompose_aggregated(gss_all, predict_y, cells = "sex", weight = "wtssall")
 print(result, detailed = FALSE)
 #>                 Component    Value Percent
-#>  At initial (modeled)      0.20030        
-#>  At end (modeled)          0.56646        
-#>  Total change              0.36616   100.0
-#>  - Intraindividual change  0.22339   61.0 
-#>  - Population turnover     0.14277   39.0 
-#>    - Mortality             0.12283   33.5 
-#>    - Coming-of-age         0.03215   8.8  
-#>    - In-migration         -0.01221   -3.3
+#>  At initial (modeled)      0.19732        
+#>  At end (modeled)          0.56757        
+#>  Total change              0.37025   100.0
+#>  - Intraindividual change  0.18867   51.0 
+#>  - Population turnover     0.18158   49.0 
+#>    - Mortality             0.12478   33.7 
+#>    - Coming-of-age         0.10323   27.9 
+#>    - In-migration         -0.04643   -12.5
 plot(result)
 ```
 
 ![](gss_homosexuality_files/figure-html/unnamed-chunk-11-1.png)
 
-The headline result is unchanged: the same ~61/39
-intraindividual-versus-turnover split as the pooled model. Conditioning
-on sex barely moves the population-weighted mean, since the sex
-composition is roughly stable across waves.
+The headline split is essentially unchanged from the pooled model (~51%
+intraindividual change, ~49% turnover): conditioning on sex barely moves
+the population-weighted mean, because the sex composition is roughly
+stable across waves.
+
+What the covariate also adds is an *attribution* of every component to
+the cells that produced it. Passing `covariate = "sex"` to
+[`print()`](https://rdrr.io/r/base/print.html) or
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) splits each row
+into the contribution of each sex to the overall change. The split is
+fully additive, so this is a genuine decomposition of the aggregate
+change.
+
+``` r
+
+print(result, detailed = FALSE, covariate = "sex")
+#>                 Component    Value Percent  female     male
+#>  At initial (modeled)      0.19732                         
+#>  At end (modeled)          0.56757                         
+#>  Total change              0.37025   100.0 0.19629 0.17396 
+#>  - Intraindividual change  0.18867   51.0  0.09976 0.08892 
+#>  - Population turnover     0.18158   49.0  0.09653 0.08504 
+#>    - Mortality             0.12478   33.7  0.01211 0.11267 
+#>    - Coming-of-age         0.10323   27.9  0.06067 0.04257 
+#>    - In-migration         -0.04643   -12.5 0.02376 -0.07020
+plot(result, covariate = "sex")
+```
+
+![](gss_homosexuality_files/figure-html/unnamed-chunk-12-1.png)
+
+Reading down the columns, women and men contribute almost equally to
+both intraindividual change (0.100 vs 0.089) and total turnover (0.097
+vs 0.085), tracking their roughly equal population shares; women
+contribute somewhat more overall (0.196 vs 0.174 of the 0.370 total
+rise).
+
+The interesting structure is *within* turnover, and it comes with a
+caveat. Almost the entire mortality contribution loads onto men (0.113
+vs 0.012 for women), offset by a large negative male in-migration term
+(−0.070 vs +0.024). This asymmetry should not be read demographically.
+Recall that on survey data each survivor cohort’s net change in size
+across waves is routed in its entirety to mortality if the cohort shrank
+or to in-migration if it grew (the decomposition never leaves a
+residual). Splitting the already-noisy survey cells by sex halves the
+counts and amplifies that sampling fluctuation, so the division of
+turnover between mortality and migration within each sex is largely an
+artifact of survey cell-size noise. This situation can be improving by
+adding a population frame.
 
 ### Adding a population frame
 
@@ -336,24 +384,55 @@ result <- decompose_aggregated(gss_all, predict_y, cells = "sex",
                                weight = "wtssall", population = pop)
 print(result, detailed = FALSE)
 #>                 Component    Value Percent
-#>  At initial (modeled)      0.19663        
-#>  At end (modeled)          0.57249        
-#>  Total change              0.37586   100.0
-#>  - Intraindividual change  0.22978   61.1 
-#>  - Population turnover     0.14608   38.9 
-#>    - Mortality             0.10116   26.9 
-#>    - Coming-of-age         0.06838   18.2 
-#>    - In-migration         -0.02347   -6.2
+#>  At initial (modeled)      0.19095        
+#>  At end (modeled)          0.56823        
+#>  Total change              0.37727   100.0
+#>  - Intraindividual change  0.18753   49.7 
+#>  - Population turnover     0.18974   50.3 
+#>    - Mortality             0.10655   28.2 
+#>    - Coming-of-age         0.10911   28.9 
+#>    - In-migration         -0.02592   -6.9
 plot(result)
 ```
 
-![](gss_homosexuality_files/figure-html/unnamed-chunk-12-1.png)
+![](gss_homosexuality_files/figure-html/unnamed-chunk-13-1.png)
 
-The intraindividual/turnover split is again about 61/39, but the
-turnover detail now reflects real demographics: coming-of-age roughly
-doubles and mortality falls, because the true US age structure has more
-young entrants than the survey implied, and net in-migration becomes a
-genuine signal of immigration rather than survey noise.
+The intraindividual/turnover split is again similar (roughly 50/50), but
+the turnover detail now reflects real demographics: mortality falls and
+the net in-migration term shrinks toward zero (from about −0.046 to
+−0.026), because the smoother true US age structure strips out much of
+the cell-size noise that the survey counts introduced, leaving net
+in-migration as a genuine signal of immigration rather than survey
+noise.
+
+The clearest payoff shows up in the per-sex breakdown, which we can
+compare directly with the survey-counts version above.
+
+``` r
+
+print(result, detailed = FALSE, covariate = "sex")
+#>                 Component    Value Percent   female      male
+#>  At initial (modeled)      0.19095                           
+#>  At end (modeled)          0.56823                           
+#>  Total change              0.37727   100.0 0.19490  0.182376 
+#>  - Intraindividual change  0.18753   49.7  0.09531  0.092217 
+#>  - Population turnover     0.18974   50.3  0.09958  0.090158 
+#>    - Mortality             0.10655   28.2  0.05568  0.050866 
+#>    - Coming-of-age         0.10911   28.9  0.06364  0.045468 
+#>    - In-migration         -0.02592   -6.9  -0.01974 -0.006175
+plot(result, covariate = "sex")
+```
+
+![](gss_homosexuality_files/figure-html/unnamed-chunk-14-1.png)
+
+The mortality contribution, which the survey cells had loaded almost
+entirely onto men (0.012 for women vs 0.113 for men), now splits roughly
+evenly (0.056 vs 0.051) once real population counts drive the events.
+The large offsetting male in-migration term collapses to a small,
+plausibly-signed net term for both sexes, although female in-migration
+still contributes significantly more compared to male in-migration. The
+stable quantities barely move, confirming that the earlier
+male-mortality / female-migration pattern was due to small cell counts.
 
 ## Further reading
 

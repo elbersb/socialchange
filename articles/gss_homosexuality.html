@@ -319,7 +319,10 @@
 <p>The <code><a href="../reference/decompose_aggregated.html">decompose_aggregated()</a></code> function separates change in the aggregate outcome into intraindividual change (attitude shifts within respondents already in the population) and population turnover (mortality and coming-of-age effects). We rename <code>year</code> and <code>homosex</code> to the column names the function expects, then pass the full dataset directly.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">gss_all</span> <span class="op">&lt;-</span> <span class="va">gss_homosex</span><span class="op">[</span>, <span class="fu">.</span><span class="op">(</span><span class="va">age</span>, period <span class="op">=</span> <span class="va">year</span>, <span class="va">sex</span>, y <span class="op">=</span> <span class="va">homosex</span>, <span class="va">wtssall</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># decompose_aggregated() requires every wave to share a common minimum age. The</span></span>
+<span><span class="co"># 2014 and 2016 waves sampled no one under 19 and 21 respectively, so we restrict</span></span>
+<span><span class="co"># to age &gt;= 21 to give all waves the same minimum age.</span></span>
+<span><span class="va">gss_all</span> <span class="op">&lt;-</span> <span class="va">gss_homosex</span><span class="op">[</span><span class="va">age</span> <span class="op">&gt;=</span> <span class="fl">21</span>, <span class="fu">.</span><span class="op">(</span><span class="va">age</span>, period <span class="op">=</span> <span class="va">year</span>, <span class="va">sex</span>, y <span class="op">=</span> <span class="va">homosex</span>, <span class="va">wtssall</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
 </div>
 <p>We fit a GAM to the individual responses to model acceptance as a smooth function of age and period.</p>
 <div class="cell">
@@ -336,17 +339,17 @@
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">gss_all</span>, <span class="va">predict_y</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component    Value Percent</span></span>
-<span><span class="co">#&gt;  At initial (modeled)     0.200317        </span></span>
-<span><span class="co">#&gt;  At end (modeled)         0.566382        </span></span>
-<span><span class="co">#&gt;  Total change             0.366065   100.0</span></span>
-<span><span class="co">#&gt;  - Intraindividual change 0.227625   62.2 </span></span>
-<span><span class="co">#&gt;  - Population turnover    0.138439   37.8 </span></span>
-<span><span class="co">#&gt;    - Mortality            0.099504   27.2 </span></span>
-<span><span class="co">#&gt;    - Coming-of-age        0.032009   8.7  </span></span>
-<span><span class="co">#&gt;    - In-migration         0.006926   1.9</span></span></code></pre></div>
+<span><span class="co">#&gt;  At initial (modeled)      0.19738        </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.56751        </span></span>
+<span><span class="co">#&gt;  Total change              0.37013   100.0</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.19236   52.0 </span></span>
+<span><span class="co">#&gt;  - Population turnover     0.17777   48.0 </span></span>
+<span><span class="co">#&gt;    - Mortality             0.09952   26.9 </span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.10297   27.8 </span></span>
+<span><span class="co">#&gt;    - In-migration         -0.02472   -6.7</span></span></code></pre></div>
 </div>
-<p>This decomposition compares cells across years, attributing shrinking cohorts to mortality and the youngest cohorts to coming-of-age. Every change in a cell’s size must be attributed to <em>some</em> demographic event — the decomposition never leaves a residual — so a survivor cohort that <em>grows</em> between two waves is credited to net in-migration. With only the survey to work from, this in-migration term is small (about +0.007, or 1.9% of the total change) and largely reflects sampling fluctuation in cell sizes across waves rather than genuine immigration. It becomes meaningful only once a true population frame is supplied (see below), where a growing cohort really does signal net immigration.</p>
-<p>Of the roughly 41 percentage point rise in acceptance between 1973 and 2018, the decomposition attributes about 62% to intraindividual change and 38% to population turnover (mortality of older, less accepting cohorts; coming-of-age of younger, more accepting ones; and a small net in-migration term). This falls within the range spanned by the CR-IC model-based methods above (37–44% turnover), closest to the AD+ estimate.</p>
+<p>This decomposition compares cells across years, attributing shrinking cohorts to mortality and the youngest cohorts to coming-of-age. Every change in a cell’s size must be attributed to <em>some</em> demographic event — the decomposition never leaves a residual — so a survivor cohort that <em>grows</em> between two waves is credited to net in-migration. With only the survey to work from, this in-migration term (about −0.025, or −7% of the total change) largely reflects sampling fluctuation in cell sizes across waves rather than genuine immigration. It becomes meaningful only once a true population frame is supplied (see below), where a growing cohort really does signal net immigration.</p>
+<p>Of the roughly 37 percentage point rise in acceptance between 1973 and 2016, the decomposition attributes about 52% to intraindividual change and 48% to population turnover (mortality of older, less accepting cohorts; coming-of-age of younger, more accepting ones; and a small net in-migration term). This is close to, though slightly above, the range spanned by the CR-IC model-based methods above (37–44% turnover).</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></code></pre></div>
@@ -361,7 +364,7 @@
 <p>One speculative reading of the early decline in intraindividual acceptance is the backlash associated with the AIDS epidemic of the 1980s. The decomposition itself cannot establish this, but it does isolate a within-person decline that is invisible in the raw trend line.</p>
 </section><section class="level3"><h3 id="adding-a-covariate">Adding a covariate<a class="anchor" aria-label="anchor" href="#adding-a-covariate"></a>
 </h3>
-<p>We can split the population into covariate cells with the <code>cells</code> argument. Adding <code>sex</code> lets the outcome model predict differently for men and women, and derives the demographic events separately within each sex cell.</p>
+<p>We can split the population into covariate cells with the <code>cells</code> argument. Adding <code>sex</code> lets the outcome model predict differently for men and women, and — more consequentially for the decomposition — derives the demographic events (mortality, coming-of-age, migration) separately within each sex cell rather than from the pooled age structure.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">mgcv</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">age</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">period</span><span class="op">)</span> <span class="op">+</span> <span class="va">sex</span>, data <span class="op">=</span> <span class="va">gss_all</span>, weights <span class="op">=</span> <span class="va">wtssall</span><span class="op">)</span></span>
@@ -370,14 +373,14 @@
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">gss_all</span>, <span class="va">predict_y</span>, cells <span class="op">=</span> <span class="st">"sex"</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component    Value Percent</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.20030        </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.56646        </span></span>
-<span><span class="co">#&gt;  Total change              0.36616   100.0</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.22339   61.0 </span></span>
-<span><span class="co">#&gt;  - Population turnover     0.14277   39.0 </span></span>
-<span><span class="co">#&gt;    - Mortality             0.12283   33.5 </span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.03215   8.8  </span></span>
-<span><span class="co">#&gt;    - In-migration         -0.01221   -3.3</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.19732        </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.56757        </span></span>
+<span><span class="co">#&gt;  Total change              0.37025   100.0</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.18867   51.0 </span></span>
+<span><span class="co">#&gt;  - Population turnover     0.18158   49.0 </span></span>
+<span><span class="co">#&gt;    - Mortality             0.12478   33.7 </span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.10323   27.9 </span></span>
+<span><span class="co">#&gt;    - In-migration         -0.04643   -12.5</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
@@ -386,13 +389,36 @@
 </div>
 </div>
 </div>
-<p>The headline result is unchanged: the same ~61/39 intraindividual-versus-turnover split as the pooled model. Conditioning on sex barely moves the population-weighted mean, since the sex composition is roughly stable across waves.</p>
+<p>The headline split is essentially unchanged from the pooled model (~51% intraindividual change, ~49% turnover): conditioning on sex barely moves the population-weighted mean, because the sex composition is roughly stable across waves.</p>
+<p>What the covariate also adds is an <em>attribution</em> of every component to the cells that produced it. Passing <code>covariate = "sex"</code> to <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> or <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> splits each row into the contribution of each sex to the overall change. The split is fully additive, so this is a genuine decomposition of the aggregate change.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                 Component    Value Percent  female     male</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.19732                         </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.56757                         </span></span>
+<span><span class="co">#&gt;  Total change              0.37025   100.0 0.19629 0.17396 </span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.18867   51.0  0.09976 0.08892 </span></span>
+<span><span class="co">#&gt;  - Population turnover     0.18158   49.0  0.09653 0.08504 </span></span>
+<span><span class="co">#&gt;    - Mortality             0.12478   33.7  0.01211 0.11267 </span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.10323   27.9  0.06067 0.04257 </span></span>
+<span><span class="co">#&gt;    - In-migration         -0.04643   -12.5 0.02376 -0.07020</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-12-1.png" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Reading down the columns, women and men contribute almost equally to both intraindividual change (0.100 vs 0.089) and total turnover (0.097 vs 0.085), tracking their roughly equal population shares; women contribute somewhat more overall (0.196 vs 0.174 of the 0.370 total rise).</p>
+<p>The interesting structure is <em>within</em> turnover, and it comes with a caveat. Almost the entire mortality contribution loads onto men (0.113 vs 0.012 for women), offset by a large negative male in-migration term (−0.070 vs +0.024). This asymmetry should not be read demographically. Recall that on survey data each survivor cohort’s net change in size across waves is routed in its entirety to mortality if the cohort shrank or to in-migration if it grew (the decomposition never leaves a residual). Splitting the already-noisy survey cells by sex halves the counts and amplifies that sampling fluctuation, so the division of turnover between mortality and migration within each sex is largely an artifact of survey cell-size noise. This situation can be improving by adding a population frame.</p>
 </section><section class="level3"><h3 id="adding-a-population-frame">Adding a population frame<a class="anchor" aria-label="anchor" href="#adding-a-population-frame"></a>
 </h3>
 <p>So far the cell counts <code>n</code> have come from the survey itself, so the demographic events are inferred from the noisy survey cell sizes across waves. When true population counts are available, the <code>population</code> argument lets the survey supply only the outcome model <code>fun_y</code>, while an external frame supplies the cell counts that drive the demographic events.</p>
 <p>The package ships <code>wpp_us</code>, US population by age and sex from the UN World Population Prospects for each survey year. Only the <em>relative</em> cell structure matters, so we rescale each wave to a tractable per-period total before passing it in.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">wpp_us</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">survey_years</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">gss_all</span><span class="op">$</span><span class="va">period</span><span class="op">)</span><span class="op">)</span></span>
@@ -405,23 +431,45 @@
 <span>                               weight <span class="op">=</span> <span class="st">"wtssall"</span>, population <span class="op">=</span> <span class="va">pop</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component    Value Percent</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.19663        </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.57249        </span></span>
-<span><span class="co">#&gt;  Total change              0.37586   100.0</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.22978   61.1 </span></span>
-<span><span class="co">#&gt;  - Population turnover     0.14608   38.9 </span></span>
-<span><span class="co">#&gt;    - Mortality             0.10116   26.9 </span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.06838   18.2 </span></span>
-<span><span class="co">#&gt;    - In-migration         -0.02347   -6.2</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.19095        </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.56823        </span></span>
+<span><span class="co">#&gt;  Total change              0.37727   100.0</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.18753   49.7 </span></span>
+<span><span class="co">#&gt;  - Population turnover     0.18974   50.3 </span></span>
+<span><span class="co">#&gt;    - Mortality             0.10655   28.2 </span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.10911   28.9 </span></span>
+<span><span class="co">#&gt;    - In-migration         -0.02592   -6.9</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
-<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-12-1.png" width="672"></p>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-13-1.png" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>The intraindividual/turnover split is again about 61/39, but the turnover detail now reflects real demographics: coming-of-age roughly doubles and mortality falls, because the true US age structure has more young entrants than the survey implied, and net in-migration becomes a genuine signal of immigration rather than survey noise.</p>
+<p>The intraindividual/turnover split is again similar (roughly 50/50), but the turnover detail now reflects real demographics: mortality falls and the net in-migration term shrinks toward zero (from about −0.046 to −0.026), because the smoother true US age structure strips out much of the cell-size noise that the survey counts introduced, leaving net in-migration as a genuine signal of immigration rather than survey noise.</p>
+<p>The clearest payoff shows up in the per-sex breakdown, which we can compare directly with the survey-counts version above.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                 Component    Value Percent   female      male</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.19095                           </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.56823                           </span></span>
+<span><span class="co">#&gt;  Total change              0.37727   100.0 0.19490  0.182376 </span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.18753   49.7  0.09531  0.092217 </span></span>
+<span><span class="co">#&gt;  - Population turnover     0.18974   50.3  0.09958  0.090158 </span></span>
+<span><span class="co">#&gt;    - Mortality             0.10655   28.2  0.05568  0.050866 </span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.10911   28.9  0.06364  0.045468 </span></span>
+<span><span class="co">#&gt;    - In-migration         -0.02592   -6.9  -0.01974 -0.006175</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></code></pre></div>
+<div class="cell-output-display">
+<div>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-14-1.png" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The mortality contribution, which the survey cells had loaded almost entirely onto men (0.012 for women vs 0.113 for men), now splits roughly evenly (0.056 vs 0.051) once real population counts drive the events. The large offsetting male in-migration term collapses to a small, plausibly-signed net term for both sexes, although female in-migration still contributes significantly more compared to male in-migration. The stable quantities barely move, confirming that the earlier male-mortality / female-migration pattern was due to small cell counts.</p>
 </section></section><section class="level2"><h2 id="further-reading">Further reading<a class="anchor" aria-label="anchor" href="#further-reading"></a>
 </h2>
 <p>For APC analysis of the same <code>gss_homosex</code> dataset, see the <a href="apc.html">APC vignette</a>.</p>

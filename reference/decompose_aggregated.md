@@ -18,7 +18,7 @@ decompose_aggregated(
 )
 
 # S3 method for class 'social_change_decomp'
-plot(x, ...)
+plot(x, covariate = NULL, ...)
 ```
 
 ## Arguments
@@ -73,15 +73,21 @@ plot(x, ...)
   survey data, as it sidesteps survey age-structure noise. `n` is
   rounded to whole counts for the microsimulation, so rescale large
   frames (e.g. raw population counts in the millions) to a tractable
-  per-period total first – only the relative cell structure matters.
-  Periods and cells need not match the survey exactly; cells absent from
-  the survey are still handled because `fun_y` can predict their
-  outcome.
+  per-period total first – only the relative cell structure matters. The
+  frame must match the survey's minimum age and the level set of each
+  `cells` column, and cover every survey period (extra periods are
+  dropped); these are compared over rows with `n > 0`.
 
 - x:
 
   A \`social_change_decomp\` object returned by
   \[decompose_aggregated()\].
+
+- covariate:
+
+  Optional name of a single cell covariate (one of the \`cells\`, or
+  \`"age"\`) by which to split the cumulative change lines. For more
+  elaborate breakdowns, aggregate \`x\$record\` directly.
 
 - ...:
 
@@ -95,7 +101,12 @@ S3 object of class `social_change_decomp` with components:
   (including the `inmigration` and `outmigration` columns; print/plot
   show a migration component only for whichever of these is non-zero)
 
-- `record`: list of detailed event records for each period transition
+- `record`: list of per-transition change tables (one per period
+  transition). Each table is tidy, with columns `component`, the cell
+  covariates (`age` and any `cells`), and `delta` – one row per
+  component per cell, holding that cell's total contribution to the
+  change for that component over the transition. Summed over cells it
+  reproduces the per-component totals in `summary`.
 
 ## Details
 
@@ -106,7 +117,10 @@ contribution to aggregate change. Unequal and multi-year gaps between
 periods are supported: when the gap exceeds one year, each entering
 cohort is assigned to the specific calendar year within the gap when it
 crosses the minimum age, so that post-entry aging is correctly
-attributed to intraindividual change rather than coming-of-age.
+attributed to intraindividual change rather than coming-of-age. All
+waves must share a common minimum age (the youngest age observed with a
+non-zero count); this single threshold separates entering cohorts from
+survivors, and a mismatch across periods is an error.
 
 By default the survey itself supplies both the cell counts and the
 outcomes. Supplying `population` decouples these: the population frame
@@ -125,13 +139,13 @@ Each cell's net change is attributed to a single event type by sign: a
 shrinking cell records only mortality (any concurrent in-migration is
 invisible) and a growing cell records only net in-migration (any
 concurrent deaths are folded in), so offsetting flows within a cell
-cannot be seen. New cohorts (below the minimum age in the earlier
-period) attribute all their growth to coming-of-age; migration among
-entering cohorts is not modeled. On noisy survey cells this strategy
-relabels sampling fluctuation as in-migration and mortality, so the
-inferred in-migration is most meaningful when `population` supplies a
-true population frame, where growing cohorts reflect genuine net
-immigration rather than survey noise.
+cannot be seen. New cohorts (below the minimum age) attribute all their
+growth to coming-of-age; migration among entering cohorts is not
+modeled. On noisy survey cells this strategy relabels sampling
+fluctuation as in-migration and mortality, so the inferred in-migration
+is most meaningful when `population` supplies a true population frame,
+where growing cohorts reflect genuine net immigration rather than survey
+noise.
 
 **Limitation**: Does not properly handle within-cell state transitions.
 Transition effects are absorbed into the intraindividual change
@@ -155,77 +169,78 @@ library(data.table)
 #> 
 #>     %notin%
 data("gss_homosex", package = "socialchange")
-stacked <- as.data.table(gss_homosex)[, .(age, period = year, y = homosex)]
+# restrict to age >= 21 so every wave shares a common minimum age
+stacked <- as.data.table(gss_homosex)[age >= 21, .(age, period = year, y = homosex)]
 model <- stats::lm(y ~ age + period, data = stacked)
 result <- decompose_aggregated(stacked, function(d) predict(model, newdata = d), tol = 0.1)
 print(result)
 #> Overview by period:
-#>  period observed_mean modeled_mean intraindividual coming_of_age mortality
-#>    1973        0.1876       0.1287              NA            NA        NA
-#>    1974        0.2092       0.1374        0.004560     0.0009304 0.0040052
-#>    1976        0.2335       0.1535        0.009119     0.0037889 0.0029460
-#>    1977        0.2187       0.1643        0.004560     0.0002757 0.0034757
-#>    1980        0.2072       0.1909        0.013679     0.0050986 0.0038653
-#>    1982        0.2085       0.2086        0.009119     0.0030527 0.0026645
-#>    1984        0.2102       0.2319        0.009119     0.0018615 0.0085626
-#>    1985        0.1970       0.2337        0.004560     0.0003676 0.0002926
-#>    1987        0.1810       0.2542        0.009119     0.0023430 0.0067125
-#>    1988        0.1820       0.2630        0.004560     0.0002361 0.0042905
-#>    1989        0.2108       0.2680        0.004560     0.0002856 0.0041283
-#>    1990        0.1845       0.2771        0.004560     0.0003085 0.0055015
-#>    1991        0.2041       0.2899        0.004560     0.0003058 0.0070991
-#>    1993        0.2841       0.3062        0.009119     0.0020286 0.0042457
-#>    1994        0.2879       0.3196        0.004560     0.0005338 0.0009168
-#>    1996        0.3407       0.3423        0.009119     0.0016655 0.0082342
-#>    1998        0.3589       0.3557        0.009119     0.0020468 0.0045996
-#>    2000        0.3579       0.3715        0.009119     0.0025720 0.0045068
-#>    2002        0.3957       0.3872        0.009119     0.0005919 0.0056089
-#>    2004        0.3681       0.4122        0.009119     0.0030458 0.0098300
-#>    2006        0.3908       0.4233        0.009119     0.0037174 0.0014697
-#>    2008        0.4371       0.4400        0.009119     0.0021395 0.0052961
-#>    2010        0.4914       0.4593        0.009119     0.0011823 0.0065167
-#>    2012        0.5004       0.4760        0.009119     0.0021721 0.0038592
-#>    2014        0.5476       0.4907        0.009119     0.0020404 0.0025305
-#>    2016        0.5724       0.5027        0.009119     0.0000000 0.0037670
-#>  period observed_mean modeled_mean intraindividual coming_of_age mortality
+#>  period observed_mean modeled_mean intraindividual coming_of_age  mortality
+#>    1973        0.1845       0.1257              NA            NA         NA
+#>    1974        0.2064       0.1348        0.004378      0.003070  0.0038321
+#>    1976        0.2285       0.1490        0.008756      0.005024  0.0024406
+#>    1977        0.2142       0.1609        0.004378      0.002362  0.0036549
+#>    1980        0.2030       0.1880        0.013134      0.009134  0.0036248
+#>    1982        0.2079       0.2060        0.008756      0.005605  0.0021687
+#>    1984        0.2082       0.2303        0.008756      0.005809  0.0084059
+#>    1985        0.1974       0.2313        0.004378      0.002114 -0.0002418
+#>    1987        0.1830       0.2523        0.008756      0.004421  0.0070308
+#>    1988        0.1826       0.2599        0.004378      0.001818  0.0032712
+#>    1989        0.2112       0.2649        0.004378      0.003036  0.0044193
+#>    1990        0.1828       0.2739        0.004378      0.001961  0.0054826
+#>    1991        0.2068       0.2885        0.004378      0.004092  0.0070642
+#>    1993        0.2821       0.3044        0.008756      0.003684  0.0044503
+#>    1994        0.2839       0.3179        0.004378      0.002122  0.0009061
+#>    1996        0.3366       0.3408        0.008756      0.003902  0.0080467
+#>    1998        0.3566       0.3541        0.008756      0.004041  0.0045272
+#>    2000        0.3508       0.3682        0.008756      0.003694  0.0041280
+#>    2002        0.3969       0.3861        0.008756      0.003428  0.0058540
+#>    2004        0.3667       0.4085        0.008756      0.003658  0.0094180
+#>    2006        0.3880       0.4211        0.008756      0.005997  0.0013902
+#>    2008        0.4324       0.4361        0.008756      0.002466  0.0046382
+#>    2010        0.4885       0.4585        0.008756      0.003184  0.0079399
+#>    2012        0.4958       0.4735        0.008756      0.004220  0.0036313
+#>    2014        0.5462       0.4882        0.008756      0.003325  0.0027515
+#>    2016        0.5724       0.5035        0.008756      0.003638  0.0038334
+#>  period observed_mean modeled_mean intraindividual coming_of_age  mortality
 #>  outmigration inmigration
 #>            NA          NA
-#>             0  -0.0007903
-#>             0   0.0002337
-#>             0   0.0025612
-#>             0   0.0039033
-#>             0   0.0028555
-#>             0   0.0037387
-#>             0  -0.0033857
-#>             0   0.0022892
-#>             0  -0.0002299
-#>             0  -0.0039697
-#>             0  -0.0012446
-#>             0   0.0007727
-#>             0   0.0009628
-#>             0   0.0073271
-#>             0   0.0037096
-#>             0  -0.0023402
-#>             0  -0.0004434
-#>             0   0.0004274
-#>             0   0.0029592
-#>             0  -0.0031891
-#>             0   0.0001766
-#>             0   0.0024441
-#>             0   0.0015531
-#>             0   0.0009673
-#>             0  -0.0008323
+#>             0  -0.0021454
+#>             0  -0.0020226
+#>             0   0.0014728
+#>             0   0.0012228
+#>             0   0.0014504
+#>             0   0.0014016
+#>             0  -0.0052631
+#>             0   0.0008072
+#>             0  -0.0019064
+#>             0  -0.0068347
+#>             0  -0.0028205
+#>             0  -0.0009099
+#>             0  -0.0010134
+#>             0   0.0061373
+#>             0   0.0021765
+#>             0  -0.0040684
+#>             0  -0.0024392
+#>             0  -0.0001393
+#>             0   0.0005537
+#>             0  -0.0035228
+#>             0  -0.0009016
+#>             0   0.0025513
+#>             0  -0.0016353
+#>             0  -0.0001252
+#>             0  -0.0008985
 #>  outmigration inmigration
 #> 
 #> Decomposition of total change:
-#>                 Component   Value Percent
-#>  At initial (modeled)     0.12867        
-#>  At end (modeled)         0.50271        
-#>  Total change             0.37404   100.0
-#>  - Intraindividual change 0.19607   52.4 
-#>  - Population turnover    0.17797   47.6 
-#>    - Mortality            0.11492   30.7 
-#>    - Coming-of-age        0.04259   11.4 
-#>    - In-migration         0.02046   5.5  
+#>                 Component    Value Percent
+#>  At initial (modeled)      0.12566        
+#>  At end (modeled)          0.50352        
+#>  Total change              0.37786   100.0
+#>  - Intraindividual change  0.18826   49.8 
+#>  - Population turnover     0.18960   50.2 
+#>    - Mortality             0.11267   29.8 
+#>    - Coming-of-age         0.09581   25.4 
+#>    - In-migration         -0.01887   -5.0 
 # }
 ```
