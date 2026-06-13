@@ -118,7 +118,7 @@ One speculative reading of the early decline in intraindividual acceptance is th
 
 ### Adding a covariate
 
-We can split the population into covariate cells with the `cells` argument. Adding `sex` lets the outcome model predict differently for men and women, and derives the demographic events separately within each sex cell.
+We can split the population into covariate cells with the `cells` argument. Adding `sex` lets the outcome model predict differently for men and women, and — more consequentially for the decomposition — derives the demographic events (mortality, coming-of-age, migration) separately within each sex cell rather than from the pooled age structure.
 
 ```{r}
 model <- mgcv::gam(y ~ s(age) + s(period) + sex, data = gss_all, weights = wtssall)
@@ -129,7 +129,18 @@ print(result, detailed = FALSE)
 plot(result)
 ```
 
-The headline result is unchanged: the same ~51/49 intraindividual-versus-turnover split as the pooled model. Conditioning on sex barely moves the population-weighted mean, since the sex composition is roughly stable across waves.
+The headline split is essentially unchanged from the pooled model (~51% intraindividual change, ~49% turnover): conditioning on sex barely moves the population-weighted mean, because the sex composition is roughly stable across waves.
+
+What the covariate also adds is an *attribution* of every component to the cells that produced it. Passing `covariate = "sex"` to `print()` or `plot()` splits each row into the contribution of each sex to the overall change. The split is fully additive, so this is a genuine decomposition of the aggregate change.
+
+```{r}
+print(result, detailed = FALSE, covariate = "sex")
+plot(result, covariate = "sex")
+```
+
+Reading down the columns, women and men contribute almost equally to both intraindividual change (0.100 vs 0.089) and total turnover (0.097 vs 0.085), tracking their roughly equal population shares; women contribute somewhat more overall (0.196 vs 0.174 of the 0.370 total rise).
+
+The interesting structure is *within* turnover, and it comes with a caveat. Almost the entire mortality contribution loads onto men (0.113 vs 0.012 for women), offset by a large negative male in-migration term (−0.070 vs +0.024). This asymmetry should not be read demographically. Recall that on survey data each survivor cohort's net change in size across waves is routed in its entirety to mortality if the cohort shrank or to in-migration if it grew (the decomposition never leaves a residual). Splitting the already-noisy survey cells by sex halves the counts and amplifies that sampling fluctuation, so the division of turnover between mortality and migration within each sex is largely an artifact of survey cell-size noise. This situation can be improving by adding a population frame.
 
 ### Adding a population frame
 
@@ -153,6 +164,15 @@ plot(result)
 ```
 
 The intraindividual/turnover split is again similar (roughly 50/50), but the turnover detail now reflects real demographics: mortality falls and the net in-migration term shrinks toward zero (from about −0.046 to −0.026), because the smoother true US age structure strips out much of the cell-size noise that the survey counts introduced, leaving net in-migration as a genuine signal of immigration rather than survey noise.
+
+The clearest payoff shows up in the per-sex breakdown, which we can compare directly with the survey-counts version above.
+
+```{r}
+print(result, detailed = FALSE, covariate = "sex")
+plot(result, covariate = "sex")
+```
+
+The mortality contribution, which the survey cells had loaded almost entirely onto men (0.012 for women vs 0.113 for men), now splits roughly evenly (0.056 vs 0.051) once real population counts drive the events. The large offsetting male in-migration term collapses to a small, plausibly-signed net term for both sexes, although female in-migration still contributes significantly more compared to male in-migration. The stable quantities barely move, confirming that the earlier male-mortality / female-migration pattern was due to small cell counts.
 
 ## Further reading
 

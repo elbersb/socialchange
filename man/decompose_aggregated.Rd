@@ -14,7 +14,7 @@ decompose_aggregated(
   population = NULL
 )
 
-\method{plot}{social_change_decomp}(x, ...)
+\method{plot}{social_change_decomp}(x, covariate = NULL, ...)
 }
 \arguments{
 \item{stacked_data}{Data frame with columns \code{age}, \code{period}, and \code{y}, plus optional cell identifiers.
@@ -49,6 +49,9 @@ dropped); these are compared over rows with \code{n > 0}.}
 
 \item{x}{A `social_change_decomp` object returned by [decompose_aggregated()].}
 
+\item{covariate}{Optional name of a single cell covariate (one of the `cells`, or `"age"`) by
+which to split the cumulative change lines. For more elaborate breakdowns, aggregate `x$record` directly.}
+
 \item{...}{Not used.}
 }
 \value{
@@ -57,7 +60,11 @@ S3 object of class \code{social_change_decomp} with components:
     \item \code{summary}: data.table with decomposition components by period (including the
       \code{inmigration} and \code{outmigration} columns; print/plot show a migration component
       only for whichever of these is non-zero)
-    \item \code{record}: list of detailed event records for each period transition
+    \item \code{record}: list of per-transition change tables (one per period transition). Each
+      table is tidy, with columns \code{component}, the cell covariates (\code{age} and any
+      \code{cells}), and \code{delta} -- one row per component per cell, holding that cell's total
+      contribution to the change for that component over the transition. Summed over cells it
+      reproduces the per-component totals in \code{summary}.
   }
 }
 \description{

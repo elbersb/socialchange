@@ -25,7 +25,7 @@ test_that("decompose_aggregated recovers Scenario 1 (perfect recovery)", {
   # ASSERT - Structure
   expect_s3_class(decomp, "social_change_decomp")
   expect_true(is.list(decomp))
-  expect_named(decomp, c("summary", "record"))
+  expect_named(decomp, c("summary", "record", "cells"))
   expect_s3_class(decomp$summary, "data.table")
   expect_true(is.list(decomp$record))
 
@@ -448,7 +448,8 @@ test_that("components fully account for total change when a survivor cohort grow
   )]
   expect_equal(all_components, total_change, tolerance = 1e-10)
 
-  # the growth must register as in-migration events, not vanish into a residual
+  # the growth must register as in-migration, not vanish into a residual: at least
+  # one cell carries an in-migration row in the tidy record
   n_inmig <- sum(vapply(decomp$record, function(r) sum(r$component == "inmigration"), integer(1)))
   expect_gt(n_inmig, 0)
   # in-migration contributes (non-zero), so print/plot display the migration component

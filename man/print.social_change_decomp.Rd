@@ -4,12 +4,17 @@
 \alias{print.social_change_decomp}
 \title{Print a social_change_decomp object}
 \usage{
-\method{print}{social_change_decomp}(x, detailed = TRUE, ...)
+\method{print}{social_change_decomp}(x, detailed = TRUE, covariate = NULL, ...)
 }
 \arguments{
 \item{x}{A `social_change_decomp` object returned by [decompose_aggregated()].}
 
 \item{detailed}{Logical; if `TRUE` (default) prints period-by-period overview before the summary.}
+
+\item{covariate}{Optional name of a single cell covariate (one of the `cells`, or `"age"`) by
+which to additionally break down the components. When supplied, one column per covariate level
+is appended to the decomposition table. For more elaborate breakdowns, aggregate
+`x$record` directly, which carries the cell covariates.}
 
 \item{...}{Not used.}
 }
