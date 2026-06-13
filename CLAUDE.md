@@ -140,6 +140,14 @@ Consequences and limits:
 
 The remaining migration work (feature (b) in the planned-features notes below) is supplying mortality/migration **inputs** (e.g. `fun_mortality`) to close the accounting identity properly rather than reading net change off cell-count differences.
 
+### Top-coding: Aging out of the top of the age window is labeled mortality
+
+**A survivor cohort that ages past the observed age range is recorded as deaths, not as window-exit.** This is a *design choice, not a code bug*: it falls out of the same `n1 - n2` accounting as everything else.
+
+- **For a survey with a top-coded or capped age range it misattributes window-exit to mortality.** Examples: GSS top-codes age at 89, so the 89→90+ cohort vanishes and is booked as deaths; an analysis restricted to an 18–65 sample sends everyone aging past 65 to mortality regardless of whether they died.
+
+**In practice**: restrict to an age range whose top is open-ended relative to the data (or use a true `population` frame - but that won't really help because population and survey need to match), or read the mortality component as "deaths + exits past the top of the window" when the range is capped.
+
 ### Aggregated Decomposition with Transitions
 
 **`decompose_aggregated()` does not properly handle within-cell transitions** (e.g., smokers becoming non-smokers). The function decomposes change into:

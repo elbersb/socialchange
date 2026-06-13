@@ -71,7 +71,9 @@ events and track their contribution to aggregate change. Unequal and multi-year 
 between periods are supported: when the gap exceeds one year, each entering cohort is
 assigned to the specific calendar year within the gap when it crosses the minimum age,
 so that post-entry aging is correctly attributed to intraindividual change rather than
-coming-of-age.
+coming-of-age. All waves must share a common minimum age (the youngest age observed with a
+non-zero count); this single threshold separates entering cohorts from survivors, and a
+mismatch across periods is an error.
 
 By default the survey itself supplies both the cell counts and the outcomes. Supplying
 \code{population} decouples these: the population frame supplies the cell counts \code{n}
@@ -87,7 +89,7 @@ so it is folded into mortality and the reported out-migration is always zero. Ea
 change is attributed to a single event type by sign: a shrinking cell records only mortality
 (any concurrent in-migration is invisible) and a growing cell records only net in-migration
 (any concurrent deaths are folded in), so offsetting flows within a cell cannot be seen. New
-cohorts (below the minimum age in the earlier period) attribute all their growth to coming-of-age;
+cohorts (below the minimum age) attribute all their growth to coming-of-age;
 migration among entering cohorts is not modeled. On noisy survey cells this strategy relabels
 sampling fluctuation as in-migration and mortality, so the inferred in-migration is most
 meaningful when \code{population} supplies a true population frame, where growing cohorts reflect

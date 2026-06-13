@@ -524,28 +524,20 @@ test_that("coming-of-age events respect their entry-year window (gap > 1)", {
   # crossed the threshold in year 1 of the gap → tick in [0, 0.5]; aligned age 18
   # (actual age 20 in period 2) crossed in year 2 → tick in [0.5, 1.0].
   # runif(n, lo, hi) is a hard constraint, so these assertions are deterministic.
+  # Tested via schedule_events() directly: isolating one cohort per decomposition
+  # would need unequal minimum ages, which decompose_aggregated() now rejects.
+  make_cell <- function(age) {
+    data.table(age = age, coming_of_age = 100, mortality = 0, inmigration = 0, outmigration = 0)
+  }
 
-  # Only year-1 entrants: period 2 has ages 21–26, no age-20.
-  # Aligned age 19 is the sole CoA cell; all CoA event times must be in [0, 0.5].
-  stacked_yr1 <- rbind(
-    data.table(age = 20:24, period = 0, y = 20:24, n = 100),
-    data.table(age = 21:26, period = 2, y = 21:26, n = 100)
-  )
-  model_yr1 <- lm(y ~ age, data = stacked_yr1)
-  decomp_yr1 <- decompose_aggregated(stacked_yr1, function(nd) predict(model_yr1, newdata = nd))
-  coa_yr1 <- decomp_yr1$record[[1]][component == "coming_of_age"]
-  expect_true(all(coa_yr1$time <= 0.5))
+  # Aligned age 19: year-1 entrants, all ticks in [0, 0.5].
+  sched_yr1 <- socialchange:::schedule_events(make_cell(19), min_age = 20, gap = 2, n_ev = 100)
+  expect_true(all(sched_yr1$ev_type == "coming_of_age"))
+  expect_true(all(sched_yr1$events_tick <= 0.5))
 
-  # Only year-2 entrants: period 2 has ages 20 and 22–27, no age-21.
-  # Aligned age 18 is the sole CoA cell; all CoA event times must be in [0.5, 1.0].
-  stacked_yr2 <- rbind(
-    data.table(age = 20:24,        period = 0, y = 20:24,        n = 100),
-    data.table(age = c(20, 22:27), period = 2, y = c(20, 22:27), n = 100)
-  )
-  model_yr2 <- lm(y ~ age, data = stacked_yr2)
-  decomp_yr2 <- decompose_aggregated(stacked_yr2, function(nd) predict(model_yr2, newdata = nd))
-  coa_yr2 <- decomp_yr2$record[[1]][component == "coming_of_age"]
-  expect_true(all(coa_yr2$time >= 0.5))
+  # Aligned age 18: year-2 entrants, all ticks in [0.5, 1.0].
+  sched_yr2 <- socialchange:::schedule_events(make_cell(18), min_age = 20, gap = 2, n_ev = 100)
+  expect_true(all(sched_yr2$events_tick >= 0.5))
 })
 
 test_that("decompose_aggregated captures all entering cohorts for gap > 1", {
@@ -649,37 +641,35 @@ test_that("decompose_aggregated errors on single-period input", {
   )
 })
 
-test_that("decompose_aggregated errors when a later wave dips below the earlier minimum age", {
-  # Period 2004 contains a 17-year-old, below period 2000's minimum of 20. Such a
-  # respondent has not crossed min_age by the later wave, so classifying them as
-  # coming-of-age would schedule their entry past the period boundary and
-  # extrapolate fun_y. The function should error instead.
-  stacked_data <- rbindlist(list(
+test_that("decompose_aggregated requires a common minimum age across waves", {
+  # The minimum age (among cells with people) must be identical in every wave: it
+  # is the single threshold separating coming-of-age cohorts from survivors and
+  # setting coming-of-age entry timing. In real data every wave shares it, so a
+  # mismatch signals a malformed/inconsistent age range and is rejected.
+
+  # Later wave dips below the earlier minimum (17 vs 20).
+  below <- rbindlist(list(
     data.table(age = 20:30, period = 2000),
     data.table(age = 17:30, period = 2004)
   ))
-  stacked_data[, y := (age - 20) / 20]
-  model <- lm(y ~ age, data = stacked_data)
-  predict_y <- function(newdata) predict(model, newdata = newdata)
-
+  below[, y := (age - 20) / 20]
+  model_below <- lm(y ~ age, data = below)
   expect_error(
-    decompose_aggregated(stacked_data, predict_y),
-    "below period 2000's minimum age"
+    decompose_aggregated(below, function(nd) predict(model_below, newdata = nd)),
+    "common minimum age"
   )
-})
 
-test_that("decompose_aggregated allows a later wave whose minimum age is above the earlier one", {
-  # The guard is one-sided: a wave that simply did not sample the youngest age
-  # (here period 2004 starts at 22, above period 2000's 20) is harmless.
-  stacked_data <- rbindlist(list(
+  # Later wave sits above the earlier minimum (22 vs 20) — also rejected.
+  above <- rbindlist(list(
     data.table(age = 20:30, period = 2000),
     data.table(age = 22:32, period = 2004)
   ))
-  stacked_data[, y := (age - 20) / 20]
-  model <- lm(y ~ age, data = stacked_data)
-  predict_y <- function(newdata) predict(model, newdata = newdata)
-
-  expect_no_error(decompose_aggregated(stacked_data, predict_y))
+  above[, y := (age - 20) / 20]
+  model_above <- lm(y ~ age, data = above)
+  expect_error(
+    decompose_aggregated(above, function(nd) predict(model_above, newdata = nd)),
+    "common minimum age"
+  )
 })
 
 test_that("decompose_aggregated handles a zero-centered outcome via the absolute fit check", {
