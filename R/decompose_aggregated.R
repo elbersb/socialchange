@@ -208,25 +208,9 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
     # decompose - main loop
     for (i_period in seq_len(length(periods) - 1)) {
         gap <- as.numeric(periods[i_period + 1] - periods[i_period])
-        vars <- c("n", cells)
-        # frame is already one row per cell per period, so a plain subset
-        # (no re-aggregation) gives the period's cell counts.
-        data1 <- frame[period == periods[i_period], c(cells, "n"), with = FALSE]
-        data2 <- frame[period == periods[i_period + 1], c(cells, "n"), with = FALSE]
-        data2[, age := age - gap]
-        for (var in vars) {
-            if (!(var %in% cells)) {
-                setnames(data1, var, paste0(var, "1"))
-                setnames(data2, var, paste0(var, "2"))
-            }
-        }
-        data <- merge(data1, data2, all = TRUE, by = cells)
-        data[, n1 := nafill(n1, fill = 0)]
-        data[, n2 := nafill(n2, fill = 0)]
-        data[, n := n1]
-        data[, period := periods[i_period]]
-        data[, y := fun_y(data)]
-        data[, cell_id := seq_len(.N)]
+
+        # Align the two waves into one per-cell table with start/end counts n1/n2.
+        data <- align_periods(frame, periods, i_period, gap, cells, fun_y)
 
         # Derive the per-cell, four-type event table. Ages below min_age are
         # cohorts that entered during the gap; all others are survivors from the prior
@@ -234,107 +218,13 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
         # is always 0 (see derive_events()).
         data <- derive_events(data, min_age)
 
-        n_ev <- data[, sum(coming_of_age) + sum(mortality) + sum(inmigration) + sum(outmigration)]
-        n_c <- nrow(data)
-        n_records <- 2L * n_ev + 1L
+        # Draw a random event schedule (the only stochastic step), then replay it
+        # deterministically to get the period-to-period change record.
+        sched <- schedule_events(data, min_age, gap)
+        change_record <- simulate_schedule(data, fun_y, gap, sched)
 
-        # Plain vectors for the change record; assembled into a data.table after the loop
-        cr_component <- character(n_records)
-        cr_time <- numeric(n_records)
-        cr_delta <- numeric(n_records)
-        cr_idx <- 1L
-
-        sched <- schedule_events(data, min_age, gap, n_ev)
-        events_tick <- sched$events_tick
-        ev_type <- sched$ev_type
-        ev_cell <- sched$ev_cell
-
-        # n_vec tracks the current population; updated as events fire
-        n_vec <- data$n
-
-        # Evaluate fun_y once on a stacked copy of data at every event time, yielding a
-        # n_c × n_ev matrix. Only age and period are updated per event-time slice; all
-        # other covariates (e.g. gender, smoking) are carried through from data as-is.
-        # This requires fun_y to not depend on n, which holds for any externally-fitted
-        # statistical model.
-        if (n_ev > 0L) {
-            idx_rep <- rep.int(seq_len(n_c), n_ev)
-            data_stack <- data[idx_rep]
-            set(
-                data_stack, NULL, "age",
-                rep.int(data$age, n_ev) + rep(events_tick * gap, each = n_c)
-            )
-            set(
-                data_stack, NULL, "period",
-                rep.int(data$period, n_ev) + rep(events_tick * gap, each = n_c)
-            )
-            y_mat <- matrix(fun_y(data_stack), nrow = n_c, ncol = n_ev)
-        }
-
-        # Maintain running weighted-sum scalars; updated in O(1) after each demographic event
-        sum_n <- sum(n_vec)
-        sum_yn <- sum(data$y * n_vec)
-        post_event_mean <- sum_yn / sum_n
-
-        for (i_ev in seq_len(n_ev)) {
-            event_tick <- events_tick[i_ev]
-            time <- i_period - 1 + event_tick
-
-            pre_mean <- post_event_mean # reuses last iteration's post_event_mean
-            y_cur <- y_mat[, i_ev]
-            sum_yn <- sum(y_cur * n_vec)
-            post_ic_mean <- sum_yn / sum_n
-
-            cr_component[cr_idx] <- "intraindividual"
-            cr_time[cr_idx] <- time
-            cr_delta[cr_idx] <- post_ic_mean - pre_mean
-            cr_idx <- cr_idx + 1L
-
-            event <- ev_type[i_ev]
-            pick_idx <- ev_cell[i_ev]
-            y_pick <- y_cur[pick_idx]
-
-            # Exits (mortality, out-migration) remove an individual from the cell;
-            # entries (coming-of-age, in-migration) add one at the cell's current y.
-            if (event == "mortality" || event == "outmigration") {
-                n_vec[pick_idx] <- n_vec[pick_idx] - 1
-                sum_yn <- sum_yn - y_pick
-                sum_n <- sum_n - 1
-            } else if (event == "coming_of_age" || event == "inmigration") {
-                n_vec[pick_idx] <- n_vec[pick_idx] + 1
-                sum_yn <- sum_yn + y_pick
-                sum_n <- sum_n + 1
-            }
-            post_event_mean <- sum_yn / sum_n
-
-            cr_component[cr_idx] <- event
-            cr_time[cr_idx] <- time
-            cr_delta[cr_idx] <- post_event_mean - post_ic_mean
-            cr_idx <- cr_idx + 1L
-        }
-
-        # Write local vectors back and advance to next period.
-        # age was not updated inside the loop (y was pre-computed instead), so add
-        # the full gap here rather than just the remaining fraction.
-        data[, `:=`(
-            n = n_vec,
-            age = age + gap, period = period + gap
-        )]
-        data[, y := fun_y(data)]
-        sum_yn <- sum(data$y * n_vec)
-        post_ic_mean <- sum_yn / sum_n
-
-        cr_component[cr_idx] <- "intraindividual"
-        cr_time[cr_idx] <- i_period
-        cr_delta[cr_idx] <- post_ic_mean - post_event_mean
-
-        # Build change_record data.table once after the loop
-        change_record <- data.table(
-            i = seq_len(n_records),
-            component = cr_component,
-            time = cr_time,
-            delta = cr_delta
-        )
+        # shift time onto the global continuous index so transition i_period spans [i_period - 1, i_period].
+        change_record[, time := time + (i_period - 1)]
 
         # summarize period change
         by_component <- change_record[, .(delta = sum(delta)), by = .(component)]
@@ -371,6 +261,28 @@ aggregate_to_cells <- function(stacked_data, cells, weight) {
     }
 }
 
+# Align the two waves of transition i_period into one per-cell table. data2 ages
+# are shifted back by `gap` so survivors line up on the cell key; the outer merge
+# pairs each cell's start count n1 with its end count n2 (0-filled where a cell is
+# absent from one wave). Carries the period-1 age/period and the predicted outcome
+# y, ready for derive_events() and the simulation loop.
+align_periods <- function(frame, periods, i_period, gap, cells, fun_y) {
+    # frame is already one row per cell per period, so a plain subset
+    # (no re-aggregation) gives the period's cell counts.
+    data1 <- frame[period == periods[i_period], c(cells, "n"), with = FALSE]
+    data2 <- frame[period == periods[i_period + 1], c(cells, "n"), with = FALSE]
+    data2[, age := age - gap]
+    setnames(data1, "n", "n1")
+    setnames(data2, "n", "n2")
+    data <- merge(data1, data2, all = TRUE, by = cells)
+    data[, n1 := nafill(n1, fill = 0)]
+    data[, n2 := nafill(n2, fill = 0)]
+    data[, n := n1]
+    data[, period := periods[i_period]]
+    data[, y := fun_y(data)]
+    data
+}
+
 # Add the four per-cell event-count columns to a period-aligned cell table
 # (columns age, n1, n2). New cohorts (age < min_age) enter via coming-of-age;
 # survivor cells reconcile n1 -> n2 via mortality (shrink) or net in-migration
@@ -403,7 +315,8 @@ derive_events <- function(data, min_age) {
 #     aligned age 18 (age 20 in period 2): lo = 0.5, hi = 1.0  (enter in year 2)
 #
 # Mortality and migration are uniformly distributed across the full gap.
-schedule_events <- function(data, min_age, gap, n_ev) {
+schedule_events <- function(data, min_age, gap) {
+    n_ev <- data[, sum(coming_of_age) + sum(mortality) + sum(inmigration) + sum(outmigration)]
     n_c <- nrow(data)
     ev_type <- character(n_ev)
     ev_cell <- integer(n_ev)
@@ -442,6 +355,111 @@ schedule_events <- function(data, min_age, gap, n_ev) {
     }
     ord <- order(ev_time)
     list(events_tick = ev_time[ord], ev_type = ev_type[ord], ev_cell = ev_cell[ord])
+}
+
+# Microsimulate one period transition by replaying a fixed event schedule from
+# schedule_events(). Deterministic: all randomness lives in the schedule, so the
+# same (data, fun_y, gap, sched) always yields the same record. Fires the events
+# in time order, attributing each step of the weighted-mean change to a component
+# (intraindividual drift between events, then the event itself). Returns the change
+# record: one row per delta, with local event times in [0, 1]. Does not mutate
+# `data`; the caller discards it and keeps the return value.
+simulate_schedule <- function(data, fun_y, gap, sched) {
+    events_tick <- sched$events_tick
+    ev_type <- sched$ev_type
+    ev_cell <- sched$ev_cell
+
+    n_ev <- length(ev_type)
+    n_cells <- nrow(data)
+    n_records <- 2L * n_ev + 1L
+
+    # Plain vectors for the change record; assembled into a data.table after the loop
+    cr_component <- character(n_records)
+    cr_time <- numeric(n_records)
+    cr_delta <- numeric(n_records)
+    cr_idx <- 1L
+
+    # n_vec tracks the current population; updated as events fire
+    n_vec <- data$n
+
+    # Evaluate fun_y once on a stacked copy of data at every event time plus the
+    # end of the period (tick = 1), yielding an n_cells × (n_ev + 1) matrix whose
+    # final column is the end-of-period outcome. Only age and period are updated per
+    # slice; all other covariates (e.g. gender, smoking) are carried through from
+    # data as-is. This requires fun_y to not depend on n, which holds for any
+    # externally-fitted statistical model.
+    eval_ticks <- c(events_tick, 1)
+    n_eval <- n_ev + 1L
+    idx_rep <- rep.int(seq_len(n_cells), n_eval)
+    data_stack <- data[idx_rep]
+    set(
+        data_stack, NULL, "age",
+        rep.int(data$age, n_eval) + rep(eval_ticks * gap, each = n_cells)
+    )
+    set(
+        data_stack, NULL, "period",
+        rep.int(data$period, n_eval) + rep(eval_ticks * gap, each = n_cells)
+    )
+    y_mat <- matrix(fun_y(data_stack), nrow = n_cells, ncol = n_eval)
+
+    # Running weighted-sum scalars. The demographic-event update is O(1) (one cell
+    # changes by one person), but the intraindividual step re-sums y_cur * n_vec each
+    # iteration because every cell's y drifts with aging, so the loop is O(n_ev * n_cells).
+    sum_n <- sum(n_vec)
+    sum_yn <- sum(data$y * n_vec)
+    post_event_mean <- sum_yn / sum_n
+
+    for (i_ev in seq_len(n_ev)) {
+        event_tick <- events_tick[i_ev]
+
+        pre_mean <- post_event_mean # reuses last iteration's post_event_mean
+        y_cur <- y_mat[, i_ev]
+        sum_yn <- sum(y_cur * n_vec)
+        post_ic_mean <- sum_yn / sum_n
+
+        cr_component[cr_idx] <- "intraindividual"
+        cr_time[cr_idx] <- event_tick
+        cr_delta[cr_idx] <- post_ic_mean - pre_mean
+        cr_idx <- cr_idx + 1L
+
+        event <- ev_type[i_ev]
+        pick_idx <- ev_cell[i_ev]
+        y_pick <- y_cur[pick_idx]
+
+        # Exits (mortality, out-migration) remove an individual from the cell;
+        # entries (coming-of-age, in-migration) add one at the cell's current y.
+        if (event == "mortality" || event == "outmigration") {
+            n_vec[pick_idx] <- n_vec[pick_idx] - 1
+            sum_yn <- sum_yn - y_pick
+            sum_n <- sum_n - 1
+        } else if (event == "coming_of_age" || event == "inmigration") {
+            n_vec[pick_idx] <- n_vec[pick_idx] + 1
+            sum_yn <- sum_yn + y_pick
+            sum_n <- sum_n + 1
+        }
+        post_event_mean <- sum_yn / sum_n
+
+        cr_component[cr_idx] <- event
+        cr_time[cr_idx] <- event_tick
+        cr_delta[cr_idx] <- post_event_mean - post_ic_mean
+        cr_idx <- cr_idx + 1L
+    }
+
+    # End-of-period outcome is the final (tick = 1) column of y_mat.
+    y_end <- y_mat[, n_eval]
+    sum_yn <- sum(y_end * n_vec)
+    post_ic_mean <- sum_yn / sum_n
+
+    cr_component[cr_idx] <- "intraindividual"
+    cr_time[cr_idx] <- 1
+    cr_delta[cr_idx] <- post_ic_mean - post_event_mean
+
+    data.table(
+        i = seq_len(n_records),
+        component = cr_component,
+        time = cr_time,
+        delta = cr_delta
+    )
 }
 
 #' Print a social_change_decomp object
