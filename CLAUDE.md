@@ -181,3 +181,30 @@ When `weight` is provided with individual-level data, weights are normalized wit
 
 **Ideal future approach**: If true population counts (e.g., from census or official statistics) are available alongside survey data, they should be used directly as `n` in pre-aggregated input, bypassing the `weight` argument entirely. The normalization approach is a practical stopgap for the common case where only survey weights are available.
 
+---
+
+# Performance profile of `decompose_aggregated()`
+
+*(Profiled on the GSS homosexuality example: 34,026 rows, 26 periods, ages 21–89. Headline: with a realistic GAM `fun_y`, ~75% of wall time is the user's model prediction, not the simulation logic. Captured ahead of a planned C++ rewrite of the hot loop.)*
+
+**Measured cost (per `decompose_aggregated()` call):**
+- GAM `fun_y` (`s(age) + s(period)`): **~1.43 s**
+- lm `fun_y` (`age + period`): **~0.35 s**
+
+So ~1.08 s of the GAM call is *prediction alone* (`predict.gam` → `PredictMat`: `matrix`/`t.default`/`.Fortran`/`.C`). The remaining ~0.35 s is the simulation machinery.
+
+**Why prediction dominates: one giant `fun_y` call per period.** `simulate_schedule()` evaluates `fun_y(data_stack)` once over an `n_cells × (n_ev + 1)` stacked frame (every event time × every cell). Across the 25 transitions of this example that is **812,140 rows predicted in 51 `fun_y` calls**, dominated by that single big per-period `data_stack` evaluation. Total runtime therefore scales as `n_cells × n_ev × cost(fun_y)` — and feature (a)'s bootstrap will multiply this by `R` draws.
+
+**Where the non-prediction time goes** (lm case, prediction made cheap):
+- `simulate_schedule` ~52% total — building `data_stack`/`y_mat` (`matrix`, `rep`, `.shallow`) and the O(`n_ev × n_cells`) inner loop that re-sums `y_cur * n_vec` every event (the demographic update is O(1), but the IC step re-sums all cells).
+- `[.data.table` ~58% total / `forderv` ~18% — the per-period `order(ev_time)` in `schedule_events()` plus data.table grouping/subsetting (`gforce`).
+
+**Optimization leverage (for the eventual C++ rewrite or before it):**
+1. **Cheaper prediction** — reuse a `predict.gam(type = "lpmatrix")` basis instead of letting `PredictMat` rebuild the spline basis on all ~800k rows.
+2. **Fewer prediction rows** — `y` depends only on `(age, period, cells)` and aging is linear in tick, so the `n_ev + 1` slices collapse to far fewer distinct rows; predict on unique rows and reindex. (Touches the SE/bootstrap seam, since feature (a) multiplies this cost by `R`.)
+3. **C++ hot loop** — the `simulate_schedule()` inner loop (the O(`n_ev × n_cells`) running-sum replay) and `schedule_events()` ordering are the natural targets once prediction is no longer the bottleneck. The schedule/simulate split already isolates the deterministic replay (no RNG) as the unit to port.
+
+**Parallelism: the period loop is embarrassingly parallel, but it's the wrong axis.** Each iteration of the main `for (i_period ...)` loop reads only shared read-only state (`frame`, `periods`, `cells`, `min_age`, `fun_y` — the per-period `observed_mean`/`modeled_mean` are computed *before* the loop) and writes only to disjoint slots (`record[[i_period]]`, `summary` row `i_period + 1`). Transition `i_period` depends solely on the frame rows for `periods[i_period]` and `periods[i_period+1]`; there is no carry-over between iterations. So it could be an `mclapply`/`future_lapply` over `i_period`, collecting a list and assembling `record`/`summary` afterward. Two caveats, and a recommendation against doing it here:
+- **RNG reproducibility breaks.** `schedule_events()` is the package's only randomness (`runif()`), and a single `set.seed()` currently feeds all periods in sequence. Parallel workers can't share that stream, so it needs parallel-safe RNG (L'Ecuyer streams via `parallel::clusterSetRNGStream`, or per-period deterministic seeds derived from a base seed + `i_period`). Either way results change bit-for-bit → the golden master (`ref-decompose_aggregated_golden.rds`) must be regenerated.
+- **It's the lowest-leverage axis.** Only ~25 transitions, and the dominant cost is `fun_y`. Parallelizing periods spreads the predictions across cores (ceiling ~`min(cores, n_periods)`, minus the serial setup), but the bigger wins are single-threaded: attack the per-period prediction cost first (optimizations 1–2 above), which also shrinks every future bootstrap draw. And for feature (a)'s bootstrap the natural parallel axis is the `R` draws — coarser units, each draw one full sequential run with its own seed, no within-call RNG entanglement. Parallelize there, not here; nesting both rarely pays.
+
