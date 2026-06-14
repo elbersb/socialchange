@@ -7,7 +7,7 @@
 \usage{
 decompose_aggregated(
   stacked_data,
-  fun_y,
+  model,
   cells = c(),
   tol = 0.05,
   weight = NULL,
@@ -21,12 +21,14 @@ decompose_aggregated(
 If a column \code{n} is present the data is treated as already aggregated to cells; otherwise individual-level
 rows are aggregated internally using \code{weight}.}
 
-\item{fun_y}{Prediction function taking \code{(newdata)} and returning predicted outcome values}
+\item{model}{A fitted model object (\code{lm}, \code{glm}, or \code{gam}) predicting the outcome
+from \code{age}, \code{period}, and any \code{cells}. Predictions are taken on the response scale
+via \code{predict()}.}
 
 \item{cells}{Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")}
 
 \item{tol}{Maximum tolerated absolute deviation between observed and modeled period means, in the
-outcome's own units (default 0.05). Checks that \code{fun_y} reproduces the observed period means;
+outcome's own units (default 0.05). Checks that \code{model} reproduces the observed period means;
 if the largest deviation exceeds \code{tol}, the function errors. The default suits outcomes on a
 roughly unit scale (e.g. proportions in [0, 1]); set \code{tol} to match outcomes on another scale.}
 
@@ -38,7 +40,7 @@ use true population counts, which are generally unavailable from survey data alo
 
 \item{population}{Optional data frame of true cell counts \code{n} per cell and period (columns \code{period},
 \code{age}, the \code{cells} identifiers, and \code{n}). When supplied, these counts replace the survey-derived
-cell counts as the population frame: they drive event derivation and weight the modeled mean, while \code{fun_y}
+cell counts as the population frame: they drive event derivation and weight the modeled mean, while \code{model}
 continues to supply every cell's outcome and \code{stacked_data} is used only for the observed-mean / model-fit
 diagnostic. This is the preferred input when true population counts (e.g. from a census or official statistics)
 are available alongside survey data, as it sidesteps survey age-structure noise. \code{n} is rounded to whole
@@ -69,8 +71,8 @@ S3 object of class \code{social_change_decomp} with components:
 }
 \description{
 Decomposes aggregate-level change into intraindividual change and population turnover
-components using microsimulation on stacked cross-sectional data. Requires a prediction
-function that models the outcome as a function of age, period, and covariates.
+components using microsimulation on stacked cross-sectional data. Requires a fitted model
+that predicts the outcome as a function of age, period, and covariates.
 }
 \details{
 The function estimates mortality, coming-of-age, and net in-migration from period-to-period
@@ -85,7 +87,7 @@ mismatch across periods is an error.
 
 By default the survey itself supplies both the cell counts and the outcomes. Supplying
 \code{population} decouples these: the population frame supplies the cell counts \code{n}
-(and hence the inferred demographic events), while \code{fun_y} supplies the outcomes. The
+(and hence the inferred demographic events), while \code{model} supplies the outcomes. The
 reported \code{modeled_mean} is then weighted by the population frame, whereas
 \code{observed_mean} remains the survey's own observed mean, so the two lines may diverge
 when the survey and population age structures differ.
@@ -113,7 +115,7 @@ data("gss_homosex", package = "socialchange")
 # restrict to age >= 21 so every wave shares a common minimum age
 stacked <- as.data.table(gss_homosex)[age >= 21, .(age, period = year, y = homosex)]
 model <- stats::lm(y ~ age + period, data = stacked)
-result <- decompose_aggregated(stacked, function(d) predict(model, newdata = d), tol = 0.1)
+result <- decompose_aggregated(stacked, model, tol = 0.1)
 print(result)
 }
 

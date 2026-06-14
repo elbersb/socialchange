@@ -15,9 +15,9 @@ knitr:
 The scenarios below were first constructed using `sim_social_change()` to establish known ground truth — see the [simulation vignette](simulate.html) for a detailed walkthrough of each scenario. The classical alternative, cohort replacement vs. intracohort change (CR-IC) decomposition, is covered in the [Replications: Firebaugh](replicating_firebaugh.html) vignette.
 
 To use the event-based decomposition, we assume you have some kind of aggregated data that measures the same outcome across several points in time. This could for instance be data from the General Social Survey, which asks the same population (but not necessarily the same people) the same question every year. The idea of the event-based decomposition is based on the idea that we can follow a group of similar people over time, which are assumed to have similar characteristics. For instance, we can observe the number of white women, age 35, in year 1, and then compare that number to the number of white women, age 36, in year 2. If we assume that individuals don't move across cells and ignore migration, it must be true that (Number of white women, age 36 in year 2) = (Number of white women, age 35 in year 1) - (Mortality between year 1 and year 2 within this cell). Mortality counts are thus directly estimable from the data. (This might be noisy when dealing with survey data with smaller sample sizes. Preprocessing might therefore be required.)
-If we continue to ignore migration, the only other input that is required is a function that predicts the outcome for a given cell. This function can be as complex or simple as needed, it just needs to fulfill a number of requirements:
+If we continue to ignore migration, the only other input that is required is a fitted model (an `lm`, `glm`, or `gam`) that predicts the outcome for a given cell. Predictions are taken on the response scale. This model can be as complex or simple as needed, it just needs to fulfill a number of requirements:
 
-- Takes as inputs the defined cells (such as age and gender), plus current period. It is not necessary that these are all used for the model's predictions, though.
+- Predicts from the defined cells (such as age and gender) and the period. It is not necessary that all of these enter the model, though.
 - Needs to support fully continuous periods (e.g., for a survey it needs to provide a prediction not only for 2010 and 2011, but also for 2010.75 - three quarters of a year into 2010). This is required to estimate outcomes throughout the year as individuals leave and enter the population.
 - Needs to be complex enough to fully model the observed means in each period. The decomposition fully acts on the modeled outcomes, not on the observed outcomes, so if these means don't match the decomposition results will deviate from the observed data.
 
@@ -59,9 +59,8 @@ We now feed the simulated data into the event-based decomposition:
 stacked_data <- rbindlist(simresult$snapshot)
 # we know that y depends only on age here
 model <- lm(y ~ age, data = stacked_data)
-predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
-decompresult <- decompose_aggregated(stacked_data, predict_y)
+decompresult <- decompose_aggregated(stacked_data, model)
 print(decompresult, detailed = FALSE)
 ```
 
@@ -105,9 +104,8 @@ For the event-based decomposition, we first try a misspecified model that ignore
 stacked_data <- rbindlist(simresult$snapshot)
 model_no_gender <- lm(y ~ age + period, data = stacked_data)
 cor(stacked_data$y, predict(model_no_gender))
-predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y)
+decomp <- decompose_aggregated(stacked_data, model_no_gender)
 print(decomp, detailed = FALSE)
 ```
 
@@ -116,9 +114,8 @@ And here are the results for the fully-specified model:
 ```{r}
 model_gender <- lm(y ~ age * gender, data = stacked_data)
 cor(stacked_data$y, predict(model_gender))
-predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+decomp <- decompose_aggregated(stacked_data, model_gender, "gender")
 print(decomp, detailed = FALSE)
 ```
 
@@ -145,9 +142,8 @@ Again, we first try a misspecified model that ignores gender entirely. Again, th
 stacked_data <- rbindlist(simresult$snapshot)
 model_no_gender <- lm(y ~ age + period, data = stacked_data)
 cor(stacked_data$y, predict(model_no_gender))
-predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y)
+decomp <- decompose_aggregated(stacked_data, model_no_gender)
 print(decomp, detailed = FALSE)
 ```
 
@@ -156,9 +152,8 @@ And here are the results for the fully-specified model:
 ```{r}
 model_gender <- lm(y ~ age + period + gender, data = stacked_data)
 cor(stacked_data$y, predict(model_gender))
-predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+decomp <- decompose_aggregated(stacked_data, model_gender, "gender")
 print(decomp, detailed = FALSE)
 ```
 
@@ -185,9 +180,8 @@ Again, we first try a misspecified model that ignores gender entirely. Again, th
 stacked_data <- rbindlist(simresult$snapshot)
 model_no_gender <- lm(y ~ age + period, data = stacked_data)
 cor(stacked_data$y, predict(model_no_gender))
-predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y)
+decomp <- decompose_aggregated(stacked_data, model_no_gender)
 print(decomp, detailed = FALSE)
 ```
 
@@ -196,9 +190,8 @@ And here are the results for the fully-specified model:
 ```{r}
 model_gender <- lm(y ~ age + period + gender, data = stacked_data)
 cor(stacked_data$y, predict(model_gender))
-predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+decomp <- decompose_aggregated(stacked_data, model_gender, "gender")
 print(decomp, detailed = FALSE)
 ```
 
@@ -245,9 +238,8 @@ Compare to decomposition:
 stacked_data <- rbindlist(smoking1$snapshot)
 model <- lm(y ~ age + period + smoking, data = stacked_data)
 cor(stacked_data$y, predict(model))
-predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+decomp <- decompose_aggregated(stacked_data, model, "smoking")
 print(decomp, detailed = FALSE)
 ```
 
@@ -274,9 +266,8 @@ Compare to decomposition:
 stacked_data <- rbindlist(smoking2$snapshot)
 model <- lm(y ~ age + period * smoking, data = stacked_data)
 cor(stacked_data$y, predict(model))
-predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+decomp <- decompose_aggregated(stacked_data, model, "smoking")
 print(decomp, detailed = FALSE)
 ```
 
@@ -303,8 +294,7 @@ Compare to decomposition:
 stacked_data <- rbindlist(smoking3$snapshot)
 model <- lm(y ~ age + period * smoking, data = stacked_data)
 cor(stacked_data$y, predict(model))
-predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+decomp <- decompose_aggregated(stacked_data, model, "smoking")
 print(decomp, detailed = FALSE)
 ```

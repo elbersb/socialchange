@@ -17,10 +17,9 @@ test_that("decompose_aggregated recovers Scenario 1 (perfect recovery)", {
   # Stack the data and fit model
   stacked_data <- rbindlist(simresult$snapshot)
   model <- lm(y ~ age, data = stacked_data)
-  predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y)
+  decomp <- decompose_aggregated(stacked_data, model)
 
   # ASSERT - Structure
   expect_s3_class(decomp, "social_change_decomp")
@@ -70,10 +69,9 @@ test_that("decompose_aggregated handles Scenario 2 (gender, misspecified model)"
   # Stack the data and fit MISSPECIFIED model (ignores gender)
   stacked_data <- rbindlist(simresult$snapshot)
   model_no_gender <- lm(y ~ age + period, data = stacked_data)
-  predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y)
+  decomp <- decompose_aggregated(stacked_data, model_no_gender)
 
   # ASSERT - Should still approximate the true decomposition
   sim_ic <- simresult$summary[period > 0, sum(intraindividual)]
@@ -104,10 +102,9 @@ test_that("decompose_aggregated handles Scenario 2 (gender, correct model)", {
   # Stack the data and fit CORRECT model (includes gender interaction)
   stacked_data <- rbindlist(simresult$snapshot)
   model_gender <- lm(y ~ age * gender, data = stacked_data)
-  predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+  decomp <- decompose_aggregated(stacked_data, model_gender, "gender")
 
   # ASSERT - Should recover the simulation (more lenient due to stochasticity)
   sim_ic <- simresult$summary[period > 0, sum(intraindividual)]
@@ -144,10 +141,9 @@ test_that("decompose_aggregated handles Scenario 3 (pure IC, misspecified)", {
   # Stack the data and fit MISSPECIFIED model
   stacked_data <- rbindlist(simresult$snapshot)
   model_no_gender <- lm(y ~ age + period, data = stacked_data)
-  predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y)
+  decomp <- decompose_aggregated(stacked_data, model_no_gender)
 
   # ASSERT - PT should be ~0 (pure IC scenario)
   decomp_pt <- decomp$summary[period > 0, sum(mortality + coming_of_age)]
@@ -178,10 +174,9 @@ test_that("decompose_aggregated handles Scenario 3 (pure IC, correct model)", {
   # Stack the data and fit CORRECT model
   stacked_data <- rbindlist(simresult$snapshot)
   model_gender <- lm(y ~ age + period + gender, data = stacked_data)
-  predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+  decomp <- decompose_aggregated(stacked_data, model_gender, "gender")
 
   # ASSERT - Should exactly recover simulation
   sim_ic <- simresult$summary[period > 0, sum(intraindividual)]
@@ -218,10 +213,9 @@ test_that("decompose_aggregated handles Scenario 4 (pure PT, misspecified)", {
   # Stack the data and fit MISSPECIFIED model
   stacked_data <- rbindlist(simresult$snapshot)
   model_no_gender <- lm(y ~ age + period, data = stacked_data)
-  predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y)
+  decomp <- decompose_aggregated(stacked_data, model_no_gender)
 
   # ASSERT - IC should be ~0 (pure PT scenario)
   decomp_ic <- decomp$summary[period > 0, sum(intraindividual)]
@@ -252,10 +246,9 @@ test_that("decompose_aggregated handles Scenario 4 (pure PT, correct model)", {
   # Stack the data and fit CORRECT model
   stacked_data <- rbindlist(simresult$snapshot)
   model_gender <- lm(y ~ age + period + gender, data = stacked_data)
-  predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+  decomp <- decompose_aggregated(stacked_data, model_gender, "gender")
 
   # ASSERT - Should exactly recover simulation
   sim_ic <- simresult$summary[period > 0, sum(intraindividual)]
@@ -292,10 +285,9 @@ test_that("decompose_aggregated handles Scenario 5a (smoking, static)", {
   # Stack the data and fit model
   stacked_data <- rbindlist(simresult$snapshot)
   model <- lm(y ~ age + period + smoking, data = stacked_data)
-  predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+  decomp <- decompose_aggregated(stacked_data, model, "smoking")
 
   # ASSERT - Should recover simulation
   sim_ic <- simresult$summary[period > 0, sum(intraindividual)]
@@ -330,10 +322,9 @@ test_that("decompose_aggregated handles Scenario 5b (smoking, IC)", {
   # Stack the data and fit model (with interaction for time effect)
   stacked_data <- rbindlist(simresult$snapshot)
   model <- lm(y ~ age + period * smoking, data = stacked_data)
-  predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+  decomp <- decompose_aggregated(stacked_data, model, "smoking")
 
   # ASSERT - Should recover simulation
   sim_ic <- simresult$summary[period > 0, sum(intraindividual)]
@@ -374,10 +365,9 @@ test_that("decompose_aggregated handles Scenario 5c (smoking, varying coming-of-
   # Stack the data and fit model
   stacked_data <- rbindlist(simresult$snapshot)
   model <- lm(y ~ age + period * smoking, data = stacked_data)
-  predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+  decomp <- decompose_aggregated(stacked_data, model, "smoking")
 
   # ASSERT - Should recover simulation
   sim_ic <- simresult$summary[period > 0, sum(intraindividual)]
@@ -411,8 +401,7 @@ test_that("decompose_aggregated print method works", {
 
   stacked_data <- rbindlist(simresult$snapshot)
   model <- lm(y ~ age, data = stacked_data)
-  predict_y <- function(newdata) { predict(model, newdata = newdata) }
-  decomp <- decompose_aggregated(stacked_data, predict_y)
+  decomp <- decompose_aggregated(stacked_data, model)
 
   # ACT & ASSERT
   expect_output(print(decomp), "Overview by period")
@@ -435,12 +424,13 @@ test_that("components fully account for total change when a survivor cohort grow
       100, 130,  90, # period 2: age-21 cohort grew 100 -> 130 (in-migration)
       100, 150, 110  # period 3: age-21 cohort grew 130 -> 150 (in-migration)
     ),
-    y = rep(c(0, 0.05, 0.1), times = 3) # outcome rises with age; matches fun_y
+    y = rep(c(0, 0.05, 0.1), times = 3) # outcome rises with age; matches model
   )
-  fun_y <- function(nd) (nd$age - 20) / 20
+  # y already equals (age - 20) / 20 exactly for ages 20-22, so this lm reproduces it
+  model <- lm(y ~ age, data = stacked)
 
   set.seed(1)
-  decomp <- decompose_aggregated(stacked, fun_y)
+  decomp <- decompose_aggregated(stacked, model)
 
   total_change <- decomp$summary[.N, modeled_mean] - decomp$summary[1, modeled_mean]
   all_components <- decomp$summary[period > min(period), sum(
@@ -463,9 +453,11 @@ test_that("decompose_aggregated validates input", {
     "missing"
   )
 
-  # Invalid data should error (missing required columns)
+  # Invalid data should error (missing required columns). The stacked_data subset
+  # assert fires before any prediction, so a placeholder model is fine here.
+  placeholder <- lm(y ~ age, data = data.frame(y = 1:5, age = 1:5))
   expect_error(
-    decompose_aggregated(data.frame(x = 1:5), function(x) x),
+    decompose_aggregated(data.frame(x = 1:5), placeholder),
     "subset"
   )
 })
@@ -477,8 +469,10 @@ test_that("decompose_aggregated errors on fractional directly-supplied n", {
     data.table(age = 20:24, period = 0, y = 20:24, n = 100.4),
     data.table(age = 20:24, period = 1, y = 21:25, n = 100)
   )
+  # the integerish n assert fires before prediction
+  model <- lm(y ~ age, data = stacked_data)
   expect_error(
-    decompose_aggregated(stacked_data, function(d) d$age),
+    decompose_aggregated(stacked_data, model),
     "integerish|n"
   )
 })
@@ -495,10 +489,9 @@ test_that("decompose_aggregated handles non-annual data (gap = 2)", {
 
   stacked_gap2 <- rbindlist(simresult$snapshot[c(1, 3, 5)])  # periods 0, 2, 4
   model <- lm(y ~ age, data = stacked_gap2)
-  predict_y <- function(newdata) predict(model, newdata = newdata)
 
   # ACT
-  decomp <- decompose_aggregated(stacked_gap2, predict_y)
+  decomp <- decompose_aggregated(stacked_gap2, model)
 
   # ASSERT - Total IC and PT should match the full 4-year simulation
   expect_equal(
@@ -553,11 +546,10 @@ test_that("decompose_aggregated captures all entering cohorts for gap > 1", {
 
   stacked <- rbindlist(simresult$snapshot)
   model <- lm(y ~ age, data = stacked)
-  predict_y <- function(newdata) predict(model, newdata = newdata)
 
   # ACT
-  decomp_gap1 <- decompose_aggregated(rbindlist(simresult$snapshot[1:2]), predict_y)
-  decomp_gap2 <- decompose_aggregated(rbindlist(simresult$snapshot[c(1, 3)]), predict_y)
+  decomp_gap1 <- decompose_aggregated(rbindlist(simresult$snapshot[1:2]), model)
+  decomp_gap2 <- decompose_aggregated(rbindlist(simresult$snapshot[c(1, 3)]), model)
 
   coa_gap1 <- decomp_gap1$summary[period > 0, sum(coming_of_age)]
   coa_gap2 <- decomp_gap2$summary[period > 0, sum(coming_of_age)]
@@ -578,10 +570,9 @@ test_that("decompose_aggregated handles unequal gaps between periods", {
 
   stacked_mixed <- rbindlist(simresult$snapshot[c(1, 2, 4)])  # periods 0, 1, 3
   model <- lm(y ~ age, data = stacked_mixed)
-  predict_y <- function(newdata) predict(model, newdata = newdata)
 
   # ACT
-  decomp <- decompose_aggregated(stacked_mixed, predict_y)
+  decomp <- decompose_aggregated(stacked_mixed, model)
 
   # ASSERT - Total IC and PT should match the full 3-year simulation
   expect_equal(
@@ -612,16 +603,15 @@ test_that("decompose_aggregated is invariant to input row order (period sorting)
   )
   stacked_data <- rbindlist(simresult$snapshot)
   model <- lm(y ~ age, data = stacked_data)
-  predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
   set.seed(999)
-  decomp_ordered <- decompose_aggregated(stacked_data, predict_y)
+  decomp_ordered <- decompose_aggregated(stacked_data, model)
 
   # shuffle the period blocks (and rows within) into a non-chronological order
   set.seed(7)
   shuffled <- stacked_data[sample(.N)]
   set.seed(999)
-  decomp_shuffled <- decompose_aggregated(shuffled, predict_y)
+  decomp_shuffled <- decompose_aggregated(shuffled, model)
 
   expect_equal(decomp_shuffled$summary, decomp_ordered$summary)
   expect_equal(decomp_shuffled$record, decomp_ordered$record)
@@ -634,10 +624,9 @@ test_that("decompose_aggregated errors on single-period input", {
     y = c(0.1, 0.2, 0.3, 0.4)
   )
   model <- lm(y ~ age, data = stacked_data)
-  predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
   expect_error(
-    decompose_aggregated(stacked_data, predict_y),
+    decompose_aggregated(stacked_data, model),
     "at least 2 distinct periods"
   )
 })
@@ -656,7 +645,7 @@ test_that("decompose_aggregated requires a common minimum age across waves", {
   below[, y := (age - 20) / 20]
   model_below <- lm(y ~ age, data = below)
   expect_error(
-    decompose_aggregated(below, function(nd) predict(model_below, newdata = nd)),
+    decompose_aggregated(below, model_below),
     "common minimum age"
   )
 
@@ -668,7 +657,7 @@ test_that("decompose_aggregated requires a common minimum age across waves", {
   above[, y := (age - 20) / 20]
   model_above <- lm(y ~ age, data = above)
   expect_error(
-    decompose_aggregated(above, function(nd) predict(model_above, newdata = nd)),
+    decompose_aggregated(above, model_above),
     "common minimum age"
   )
 })
@@ -686,9 +675,10 @@ test_that("decompose_aggregated handles a zero-centered outcome via the absolute
   ))
   # symmetric +/-1 with equal cell counts => weighted period mean is exactly 0
   stacked_data[, y := fifelse(age == 20, -1, 1)]
-  predict_y <- function(d) fifelse(d$age == 20, -1, 1)
+  # two ages => saturated lm predicts -1/+1 exactly
+  model <- lm(y ~ age, data = stacked_data)
 
-  expect_no_error(decomp <- decompose_aggregated(stacked_data, predict_y))
+  expect_no_error(decomp <- decompose_aggregated(stacked_data, model))
   expect_equal(decomp$summary[, modeled_mean], c(0, 0), tolerance = 1e-12)
 
   # Near-zero (not exactly zero) period means: an lm fit leaves tiny float drift,
@@ -700,22 +690,21 @@ test_that("decompose_aggregated handles a zero-centered outcome via the absolute
   ))
   stacked2[, y := age - 29.5]  # zero-centered within each wave
   model <- lm(y ~ age, data = stacked2)
-  predict2 <- function(newdata) predict(model, newdata = newdata)
-  expect_no_error(decompose_aggregated(stacked2, predict2))
+  expect_no_error(decompose_aggregated(stacked2, model))
 })
 
 test_that("decompose_aggregated errors when the model badly misfits the period means", {
   # A model that cannot reproduce the observed period means should halt rather
-  # than silently decompose a divergent modeled trajectory. fun_y here returns a
-  # constant far from the observed means.
+  # than silently decompose a divergent modeled trajectory. bad_model here is fit
+  # on zeroed data, so it predicts ~0 while the observed mean is 0.5.
   stacked_data <- rbindlist(list(
     data.table(age = 20:39, period = 2000),
     data.table(age = 20:39, period = 2004)
   ))
   stacked_data[, y := 0.5]
-  predict_y <- function(d) rep(0.0, nrow(d))  # off by 0.5, well above default tol
+  bad_model <- lm(y ~ age, data = data.frame(y = 0, age = 20:39))  # predicts ~0, off by 0.5
 
-  expect_error(decompose_aggregated(stacked_data, predict_y), "deviate from observed")
+  expect_error(decompose_aggregated(stacked_data, bad_model), "deviate from observed")
   # ...unless the caller deliberately loosens tol
-  expect_no_error(decompose_aggregated(stacked_data, predict_y, tol = 1))
+  expect_no_error(decompose_aggregated(stacked_data, bad_model, tol = 1))
 })

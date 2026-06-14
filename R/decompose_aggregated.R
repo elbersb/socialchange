@@ -1,16 +1,18 @@
 #' Decompose social change from aggregated data
 #'
 #' Decomposes aggregate-level change into intraindividual change and population turnover
-#' components using microsimulation on stacked cross-sectional data. Requires a prediction
-#' function that models the outcome as a function of age, period, and covariates.
+#' components using microsimulation on stacked cross-sectional data. Requires a fitted model
+#' that predicts the outcome as a function of age, period, and covariates.
 #'
 #' @param stacked_data Data frame with columns \code{age}, \code{period}, and \code{y}, plus optional cell identifiers.
 #'   If a column \code{n} is present the data is treated as already aggregated to cells; otherwise individual-level
 #'   rows are aggregated internally using \code{weight}.
-#' @param fun_y Prediction function taking \code{(newdata)} and returning predicted outcome values
+#' @param model A fitted model object (\code{lm}, \code{glm}, or \code{gam}) predicting the outcome
+#'   from \code{age}, \code{period}, and any \code{cells}. Predictions are taken on the response scale
+#'   via \code{predict()}.
 #' @param cells Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")
 #' @param tol Maximum tolerated absolute deviation between observed and modeled period means, in the
-#'   outcome's own units (default 0.05). Checks that \code{fun_y} reproduces the observed period means;
+#'   outcome's own units (default 0.05). Checks that \code{model} reproduces the observed period means;
 #'   if the largest deviation exceeds \code{tol}, the function errors. The default suits outcomes on a
 #'   roughly unit scale (e.g. proportions in [0, 1]); set \code{tol} to match outcomes on another scale.
 #' @param weight Name of the weight column used when aggregating individual-level data (ignored if \code{n} is present).
@@ -20,7 +22,7 @@
 #'   use true population counts, which are generally unavailable from survey data alone.
 #' @param population Optional data frame of true cell counts \code{n} per cell and period (columns \code{period},
 #'   \code{age}, the \code{cells} identifiers, and \code{n}). When supplied, these counts replace the survey-derived
-#'   cell counts as the population frame: they drive event derivation and weight the modeled mean, while \code{fun_y}
+#'   cell counts as the population frame: they drive event derivation and weight the modeled mean, while \code{model}
 #'   continues to supply every cell's outcome and \code{stacked_data} is used only for the observed-mean / model-fit
 #'   diagnostic. This is the preferred input when true population counts (e.g. from a census or official statistics)
 #'   are available alongside survey data, as it sidesteps survey age-structure noise. \code{n} is rounded to whole
@@ -54,7 +56,7 @@
 #'
 #' By default the survey itself supplies both the cell counts and the outcomes. Supplying
 #' \code{population} decouples these: the population frame supplies the cell counts \code{n}
-#' (and hence the inferred demographic events), while \code{fun_y} supplies the outcomes. The
+#' (and hence the inferred demographic events), while \code{model} supplies the outcomes. The
 #' reported \code{modeled_mean} is then weighted by the population frame, whereas
 #' \code{observed_mean} remains the survey's own observed mean, so the two lines may diverge
 #' when the survey and population age structures differ.
@@ -82,7 +84,7 @@
 #' # restrict to age >= 21 so every wave shares a common minimum age
 #' stacked <- as.data.table(gss_homosex)[age >= 21, .(age, period = year, y = homosex)]
 #' model <- stats::lm(y ~ age + period, data = stacked)
-#' result <- decompose_aggregated(stacked, function(d) predict(model, newdata = d), tol = 0.1)
+#' result <- decompose_aggregated(stacked, model, tol = 0.1)
 #' print(result)
 #' }
 #'
@@ -91,14 +93,13 @@
 #'   Vignette: \code{vignette("decompose_aggregated", package = "socialchange")}.
 #' @import data.table
 #' @export
-decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, weight = NULL, population = NULL) {
+decompose_aggregated <- function(stacked_data, model, cells = c(), tol = 0.05, weight = NULL, population = NULL) {
     checkmate::assert_data_frame(stacked_data)
     checkmate::assert_subset(c("age", "period", "y", cells), names(stacked_data))
     # NAs here would otherwise crash deep in the simulation or silently drop a wave.
     checkmate::assert_numeric(stacked_data$age, any.missing = FALSE, .var.name = "age")
     checkmate::assert_numeric(stacked_data$y, any.missing = FALSE, .var.name = "y")
     checkmate::assert_atomic_vector(stacked_data$period, any.missing = FALSE, .var.name = "period")
-    checkmate::assert_function(fun_y, nargs = 1)
     checkmate::assert_character(cells, any.missing = FALSE, null.ok = TRUE)
     checkmate::assert_number(tol, lower = 0)
     checkmate::assert_string(weight, null.ok = TRUE)
@@ -121,12 +122,12 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
         # counts would be silently truncated by runif()/indexing.
         checkmate::assert_integerish(stacked_data$n, lower = 0, any.missing = FALSE, .var.name = "n")
     }
-    stacked_data[, y_pred := fun_y(.SD)]
+    stacked_data[, y_pred := predict_y(model, .SD)]
 
     # The population frame supplies the cell counts n that drive event derivation
     # and weight the modeled mean. By default it is the survey itself. When a
     # `population` table is supplied it replaces the survey counts: the survey
-    # then only supplies fun_y, while n comes from the external frame.
+    # then only supplies the model, while n comes from the external frame.
     if (is.null(population)) {
         frame <- stacked_data
     } else {
@@ -170,7 +171,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
 
         # counts must be whole numbers for the integer-based microsimulation
         population[, n := round(n)]
-        population[, y_pred := fun_y(.SD)]
+        population[, y_pred := predict_y(model, .SD)]
         frame <- population
     }
 
@@ -181,7 +182,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
     cells <- c(cells, "age")
 
     # Collapse to one row per cell per period. y_pred is constant within a
-    # cell (fun_y depends only on the grouping columns)
+    # cell (the model depends only on the grouping columns)
     frame <- frame[, .(n = sum(n), y_pred = y_pred[1L]), by = c("period", cells)]
     frame <- frame[n > 0]
 
@@ -214,7 +215,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
     # Model-fit diagnostic, always computed on the survey's own structure, so it stays
     # a meaningful check even when an external frame is used.
     survey_means <- stacked_data[, .(observed = stats::weighted.mean(y, n), modeled = stats::weighted.mean(y_pred, n)), by = .(period)]
-    # Does fun_y reproduce each period mean to within `tol`, measured as
+    # Does the model reproduce each period mean to within `tol`, measured as
     # an absolute deviation in the outcome's own units?
     survey_means[, deviation := abs(observed - modeled)]
     max_dev <- survey_means[, max(deviation)]
@@ -233,7 +234,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
         means <- survey_means
     } else {
         # observed_mean stays the survey's observed mean (a reference line);
-        # modeled_mean is fun_y weighted by the population frame, which is what
+        # modeled_mean is the model weighted by the population frame, which is what
         # the decomposition components below sum to.
         means <- merge(
             survey_means[, .(period, observed)],
@@ -248,7 +249,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
         gap <- as.numeric(periods[i_period + 1] - periods[i_period])
 
         # Align the two waves into one per-cell table with start/end counts n1/n2.
-        data <- align_periods(frame, periods, i_period, gap, cells, fun_y)
+        data <- align_periods(frame, periods, i_period, gap, cells, model)
 
         # Derive the per-cell, four-type event table. Ages below min_age are
         # cohorts that entered during the gap; all others are survivors from the prior
@@ -259,7 +260,7 @@ decompose_aggregated <- function(stacked_data, fun_y, cells = c(), tol = 0.05, w
         # Draw a random event schedule (the only stochastic step), then replay it
         # deterministically to get the period-to-period change record.
         sched <- schedule_events(data, min_age, gap)
-        change_record <- simulate_schedule(data, fun_y, gap, sched)
+        change_record <- simulate_schedule(data, model, gap, sched)
 
         # Tag each record row with its cell's covariates (age and any user cells)
         # `cell` is an internal row index into the per-period `data`
@@ -308,7 +309,7 @@ aggregate_to_cells <- function(stacked_data, cells, weight) {
 # pairs each cell's start count n1 with its end count n2 (0-filled where a cell is
 # absent from one wave). Carries the period-1 age/period and the predicted outcome
 # y, ready for derive_events() and the simulation loop.
-align_periods <- function(frame, periods, i_period, gap, cells, fun_y) {
+align_periods <- function(frame, periods, i_period, gap, cells, model) {
     # frame is already one row per cell per period, so a plain subset
     # (no re-aggregation) gives the period's cell counts.
     data1 <- frame[period == periods[i_period], c(cells, "n"), with = FALSE]
@@ -321,7 +322,7 @@ align_periods <- function(frame, periods, i_period, gap, cells, fun_y) {
     data[, n2 := nafill(n2, fill = 0)]
     data[, n := n1]
     data[, period := periods[i_period]]
-    data[, y := fun_y(data)]
+    data[, y := predict_y(model, data)]
     data
 }
 
@@ -401,14 +402,14 @@ schedule_events <- function(data, min_age, gap) {
 
 # Microsimulate one period transition by replaying a fixed event schedule from
 # schedule_events(). Deterministic: all randomness lives in the schedule, so the
-# same (data, fun_y, gap, sched) always yields the same record. Fires the events
+# same (data, model, gap, sched) always yields the same record. Fires the events
 # in time order, attributing the weighted-mean change to a component: intraindividual
 # drift between events, then the event itself. Returns a tidy per-(component, cell)
 # table of summed deltas -- one row per component per cell that the component touched
 # (every cell for intraindividual change; the cells where events fired for the
 # turnover components). Does not mutate `data`; the caller attaches covariates via
 # `cell` and keeps the return value.
-simulate_schedule <- function(data, fun_y, gap, sched) {
+simulate_schedule <- function(data, model, gap, sched) {
     events_tick <- sched$events_tick
     ev_type <- sched$ev_type
     ev_cell <- sched$ev_cell
@@ -432,11 +433,11 @@ simulate_schedule <- function(data, fun_y, gap, sched) {
     ic_by_cell <- numeric(n_cells)
     y_prev <- data$y
 
-    # Evaluate fun_y once on a stacked copy of data at every event time plus the
+    # Evaluate the model once on a stacked copy of data at every event time plus the
     # end of the period (tick = 1), yielding an n_cells × (n_ev + 1) matrix whose
     # final column is the end-of-period outcome. Only age and period are updated per
     # slice; all other covariates (e.g. gender, smoking) are carried through from
-    # data as-is. This requires fun_y to not depend on n, which holds for any
+    # data as-is. This requires the model to not depend on n, which holds for any
     # externally-fitted statistical model.
     eval_ticks <- c(events_tick, 1)
     n_eval <- n_ev + 1L
@@ -450,7 +451,7 @@ simulate_schedule <- function(data, fun_y, gap, sched) {
         data_stack, NULL, "period",
         rep.int(data$period, n_eval) + rep(eval_ticks * gap, each = n_cells)
     )
-    y_mat <- matrix(fun_y(data_stack), nrow = n_cells, ncol = n_eval)
+    y_mat <- matrix(predict_y(model, data_stack), nrow = n_cells, ncol = n_eval)
 
     # Running weighted-sum scalars. The demographic-event update is O(1) (one cell
     # changes by one person), but the intraindividual step re-sums y_cur * n_vec each

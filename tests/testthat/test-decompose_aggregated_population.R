@@ -1,6 +1,6 @@
 # Tests for the `population` argument of decompose_aggregated(): an external
 # cell x period count table that replaces the survey-derived cell counts as the
-# population frame, while fun_y still supplies the outcomes.
+# population frame, while the model still supplies the outcomes.
 
 # Build a survey-like stacked data set + a fitted model once for reuse.
 build_population_fixture <- function() {
@@ -11,7 +11,7 @@ build_population_fixture <- function() {
     fun_coming_of_age = make_stable_coming_of_age_simple())
   stacked <- rbindlist(sim$snapshot)
   model <- lm(y ~ age, data = stacked)
-  list(stacked = stacked, fun_y = function(nd) predict(model, newdata = nd))
+  list(stacked = stacked, model = model)
 }
 
 test_that("supplying the survey's own cell counts as population reproduces the default", {
@@ -21,9 +21,9 @@ test_that("supplying the survey's own cell counts as population reproduces the d
   pop <- fx$stacked[, .(n = sum(n)), by = .(age, period)]
 
   set.seed(999)
-  default <- decompose_aggregated(fx$stacked, fx$fun_y)
+  default <- decompose_aggregated(fx$stacked, fx$model)
   set.seed(999)
-  with_pop <- decompose_aggregated(fx$stacked, fx$fun_y, population = pop)
+  with_pop <- decompose_aggregated(fx$stacked, fx$model, population = pop)
 
   # frame counts are identical, so events, RNG draws and means all match
   expect_equal(with_pop$summary, default$summary)
@@ -38,15 +38,15 @@ test_that("an external population frame drives the modeled mean and event counts
   pop[age == min(age), n := n * 2]
 
   set.seed(999)
-  default <- decompose_aggregated(fx$stacked, fx$fun_y)
+  default <- decompose_aggregated(fx$stacked, fx$model)
   set.seed(999)
-  with_pop <- decompose_aggregated(fx$stacked, fx$fun_y, population = pop)
+  with_pop <- decompose_aggregated(fx$stacked, fx$model, population = pop)
 
   # modeled mean is now weighted by the population frame, not the survey
   expect_true(any(with_pop$summary$modeled_mean != default$summary$modeled_mean))
 
   # and it matches a direct population-weighted prediction
-  pop[, y_pred := fx$fun_y(.SD)]
+  pop[, y_pred := predict(fx$model, newdata = .SD)]
   expected_modeled <- pop[, .(m = weighted.mean(y_pred, n)), by = period][order(period)]
   got <- with_pop$summary[order(period)]
   expect_equal(got$modeled_mean, expected_modeled$m)
@@ -62,7 +62,7 @@ test_that("decomposition components sum to the total modeled change with a popul
   pop[age == min(age), n := n * 2]
 
   set.seed(999)
-  res <- decompose_aggregated(fx$stacked, fx$fun_y, population = pop)
+  res <- decompose_aggregated(fx$stacked, fx$model, population = pop)
 
   total <- res$summary[.N, modeled_mean] - res$summary[1, modeled_mean]
   components <- res$summary[2:.N, sum(
@@ -83,9 +83,9 @@ test_that("zero-count young cells in the population frame do not affect classifi
   pop_padded <- rbind(pop, padding)
 
   set.seed(999)
-  unpadded <- decompose_aggregated(fx$stacked, fx$fun_y, population = pop)
+  unpadded <- decompose_aggregated(fx$stacked, fx$model, population = pop)
   set.seed(999)
-  padded <- decompose_aggregated(fx$stacked, fx$fun_y, population = pop_padded)
+  padded <- decompose_aggregated(fx$stacked, fx$model, population = pop_padded)
 
   # zero-count rows are inert: events, RNG draws and means are bit-for-bit equal
   expect_equal(padded$summary, unpadded$summary)
@@ -103,7 +103,7 @@ test_that("population frame must share the survey's minimum age", {
   # drop the youngest survivors from the survey so its min age rises above pop's
   survey_high <- fx$stacked[age > min(age) + 1]
   expect_error(
-    decompose_aggregated(survey_high, fx$fun_y, population = pop),
+    decompose_aggregated(survey_high, fx$model, population = pop),
     "minimum age"
   )
 })
@@ -116,12 +116,11 @@ test_that("population frame must share each cell column's level set", {
     fun_coming_of_age = make_stable_coming_of_age_gendered())
   stacked <- rbindlist(sim$snapshot)
   model <- lm(y ~ age, data = stacked)
-  fun_y <- function(nd) predict(model, newdata = nd)
 
   pop <- stacked[, .(n = sum(n)), by = .(age, period, gender)]
   pop_one_gender <- pop[gender == pop$gender[1]]
   expect_error(
-    decompose_aggregated(stacked, fun_y, cells = "gender", population = pop_one_gender),
+    decompose_aggregated(stacked, model, cells = "gender", population = pop_one_gender),
     "levels of cell column 'gender'"
   )
 })
@@ -134,7 +133,7 @@ test_that("population frame must cover every survey period, but may have more", 
   # missing a survey period is an error
   pop_missing <- pop[period != max(survey_periods)]
   expect_error(
-    decompose_aggregated(fx$stacked, fx$fun_y, population = pop_missing),
+    decompose_aggregated(fx$stacked, fx$model, population = pop_missing),
     "missing survey period"
   )
 
@@ -143,9 +142,9 @@ test_that("population frame must cover every survey period, but may have more", 
   pop_extra <- rbind(pop, extra)
 
   set.seed(999)
-  base <- decompose_aggregated(fx$stacked, fx$fun_y, population = pop)
+  base <- decompose_aggregated(fx$stacked, fx$model, population = pop)
   set.seed(999)
-  with_extra <- decompose_aggregated(fx$stacked, fx$fun_y, population = pop_extra)
+  with_extra <- decompose_aggregated(fx$stacked, fx$model, population = pop_extra)
   expect_equal(with_extra$summary, base$summary)
   expect_equal(with_extra$record, base$record)
 })
@@ -156,13 +155,13 @@ test_that("population accepts a plain data.frame and validates required columns"
 
   # plain data.frame is coerced internally
   set.seed(999)
-  expect_no_error(decompose_aggregated(fx$stacked, fx$fun_y,
+  expect_no_error(decompose_aggregated(fx$stacked, fx$model,
     population = as.data.frame(pop)))
 
   # missing required column (n) is rejected
   set.seed(999)
   expect_error(
-    decompose_aggregated(fx$stacked, fx$fun_y, population = pop[, .(age, period)]),
+    decompose_aggregated(fx$stacked, fx$model, population = pop[, .(age, period)]),
     "n"
   )
 })

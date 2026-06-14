@@ -17,10 +17,9 @@ test_that("Full pipeline: simulate → decompose (Scenario 1)", {
   # Extract snapshots, fit model, decompose
   stacked_data <- rbindlist(simresult$snapshot)
   model <- lm(y ~ age, data = stacked_data)
-  predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y)
+  decomp <- decompose_aggregated(stacked_data, model)
 
   # ASSERT - Decomposition recovers simulation within tight tolerance
   # IC component
@@ -63,10 +62,9 @@ test_that("Full pipeline: simulate → decompose (Scenario 3, pure IC)", {
   # Extract snapshots, fit model, decompose
   stacked_data <- rbindlist(simresult$snapshot)
   model <- lm(y ~ age + period + gender, data = stacked_data)
-  predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+  decomp <- decompose_aggregated(stacked_data, model, "gender")
 
   # ASSERT - Verify pure IC is detected
   decomp_ic <- decomp$summary[period > 0, sum(intraindividual)]
@@ -101,10 +99,9 @@ test_that("Full pipeline: simulate → decompose (Scenario 4, pure PT)", {
   # Extract snapshots, fit model, decompose
   stacked_data <- rbindlist(simresult$snapshot)
   model <- lm(y ~ age + period + gender, data = stacked_data)
-  predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+  decomp <- decompose_aggregated(stacked_data, model, "gender")
 
   # ASSERT - Verify pure PT is detected
   decomp_ic <- decomp$summary[period > 0, sum(intraindividual)]
@@ -146,10 +143,9 @@ test_that("Full pipeline: smoking scenario with transitions", {
   # Extract snapshots, fit model, decompose
   stacked_data <- rbindlist(simresult$snapshot)
   model <- lm(y ~ age + period * smoking, data = stacked_data)
-  predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
   # ACT
-  decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+  decomp <- decompose_aggregated(stacked_data, model, "smoking")
 
   # ASSERT - Verify decomposition is internally consistent
   # NOTE: Looser tolerance because transitions aren't separately identified
@@ -187,8 +183,7 @@ test_that("Print methods work for all S3 classes", {
 
   stacked_data <- rbindlist(simresult$snapshot)
   model <- lm(y ~ age, data = stacked_data)
-  predict_y <- function(newdata) { predict(model, newdata = newdata) }
-  decomp <- decompose_aggregated(stacked_data, predict_y)
+  decomp <- decompose_aggregated(stacked_data, model)
 
   # ACT & ASSERT - No errors when printing
   expect_silent(capture.output(print(simresult)))
@@ -239,12 +234,10 @@ test_that("Decomposition is additive across components", {
     stacked_data <- rbindlist(simresult$snapshot)
     if ("gender" %in% names(stacked_data)) {
       model <- lm(y ~ age * gender, data = stacked_data)
-      predict_y <- function(newdata) { predict(model, newdata = newdata) }
-      decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+      decomp <- decompose_aggregated(stacked_data, model, "gender")
     } else {
       model <- lm(y ~ age, data = stacked_data)
-      predict_y <- function(newdata) { predict(model, newdata = newdata) }
-      decomp <- decompose_aggregated(stacked_data, predict_y)
+      decomp <- decompose_aggregated(stacked_data, model)
     }
 
     # ASSERT - Components sum to total change
@@ -281,13 +274,11 @@ test_that("Robustness to model specification", {
 
   # Correct model
   model_correct <- lm(y ~ age * gender, data = stacked_data)
-  predict_correct <- function(newdata) { predict(model_correct, newdata = newdata) }
-  decomp_correct <- decompose_aggregated(stacked_data, predict_correct, "gender")
+  decomp_correct <- decompose_aggregated(stacked_data, model_correct, "gender")
 
   # Misspecified model (missing gender)
   model_misspec <- lm(y ~ age + period, data = stacked_data)
-  predict_misspec <- function(newdata) { predict(model_misspec, newdata = newdata) }
-  decomp_misspec <- decompose_aggregated(stacked_data, predict_misspec)
+  decomp_misspec <- decompose_aggregated(stacked_data, model_misspec)
 
   # ACT - Extract components
   correct_ic <- decomp_correct$summary[-1, sum(intraindividual)]

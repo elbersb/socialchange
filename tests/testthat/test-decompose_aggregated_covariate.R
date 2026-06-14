@@ -13,7 +13,7 @@ make_gendered_decomp <- function() {
   stacked <- rbindlist(sim$snapshot)
   model <- lm(y ~ age * gender, data = stacked)
   set.seed(2024)
-  decompose_aggregated(stacked, function(nd) predict(model, newdata = nd), "gender")
+  decompose_aggregated(stacked, model, "gender")
 }
 
 test_that("record is a tidy per-(component, cell) table carrying covariates", {

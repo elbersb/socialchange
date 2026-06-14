@@ -92,7 +92,6 @@ We fit a GAM to the individual responses to model acceptance as a smooth functio
 ```{r}
 set.seed(42)
 model <- mgcv::gam(y ~ s(age) + s(period), data = gss_all, weights = wtssall)
-predict_y <- function(newdata) as.vector(mgcv::predict.gam(model, newdata = newdata))
 ```
 
 ### The simplest decomposition
@@ -100,7 +99,7 @@ predict_y <- function(newdata) as.vector(mgcv::predict.gam(model, newdata = newd
 We can run the simplest case of the event decomposition with the following commmand:
 
 ```{r}
-result <- decompose_aggregated(gss_all, predict_y, weight = "wtssall")
+result <- decompose_aggregated(gss_all, model, weight = "wtssall")
 print(result, detailed = FALSE)
 ```
 
@@ -122,9 +121,8 @@ We can split the population into covariate cells with the `cells` argument. Addi
 
 ```{r}
 model <- mgcv::gam(y ~ s(age) + s(period) + sex, data = gss_all, weights = wtssall)
-predict_y <- function(newdata) as.vector(mgcv::predict.gam(model, newdata = newdata))
 set.seed(42)
-result <- decompose_aggregated(gss_all, predict_y, cells = "sex", weight = "wtssall")
+result <- decompose_aggregated(gss_all, model, cells = "sex", weight = "wtssall")
 print(result, detailed = FALSE)
 plot(result)
 ```
@@ -144,7 +142,7 @@ The interesting structure is *within* turnover, and it comes with a caveat. Almo
 
 ### Adding a population frame
 
-So far the cell counts `n` have come from the survey itself, so the demographic events are inferred from the noisy survey cell sizes across waves. When true population counts are available, the `population` argument lets the survey supply only the outcome model `fun_y`, while an external frame supplies the cell counts that drive the demographic events.
+So far the cell counts `n` have come from the survey itself, so the demographic events are inferred from the noisy survey cell sizes across waves. When true population counts are available, the `population` argument lets the survey supply only the outcome `model`, while an external frame supplies the cell counts that drive the demographic events.
 
 The package ships `wpp_us`, US population by age and sex from the UN World Population Prospects for each survey year. Only the *relative* cell structure matters, so we rescale each wave to a tractable per-period total before passing it in.
 
@@ -157,7 +155,7 @@ scale_total <- round(mean(gss_all[, .N, by = period]$N))
 pop[, n := n / sum(n) * scale_total, by = period]
 
 set.seed(42)
-result <- decompose_aggregated(gss_all, predict_y, cells = "sex",
+result <- decompose_aggregated(gss_all, model, cells = "sex",
                                weight = "wtssall", population = pop)
 print(result, detailed = FALSE)
 plot(result)
