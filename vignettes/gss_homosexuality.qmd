@@ -172,6 +172,17 @@ plot(result, covariate = "sex")
 
 The mortality contribution, which the survey cells had loaded almost entirely onto men (0.012 for women vs 0.113 for men), now splits roughly evenly (0.056 vs 0.051) once real population counts drive the events. The large offsetting male in-migration term collapses to a small, plausibly-signed net term for both sexes, although female in-migration still contributes significantly more compared to male in-migration. The stable quantities barely move, confirming that the earlier male-mortality / female-migration pattern was due to small cell counts.
 
+### Standard errors
+
+```{r}
+result <- decompose_aggregated(gss_all, model, cells = "sex",
+                               weight = "wtssall", population = pop, R = 100)
+print(result, detailed = FALSE)
+plot(result)
+print(result, detailed = FALSE, covariate = "sex")
+plot(result, covariate = "sex")
+```
+
 ## Further reading
 
 For APC analysis of the same `gss_homosex` dataset, see the [APC vignette](apc.html).

@@ -9,9 +9,11 @@ decompose_aggregated(
   stacked_data,
   model,
   cells = c(),
+  R = 0,
   tol = 0.05,
   weight = NULL,
-  population = NULL
+  population = NULL,
+  seed = NULL
 )
 
 \method{plot}{social_change_decomp}(x, covariate = NULL, ...)
@@ -26,6 +28,14 @@ from \code{age}, \code{period}, and any \code{cells}. Predictions are taken on t
 via \code{predict()}.}
 
 \item{cells}{Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")}
+
+\item{R}{Number of Dirichlet-bootstrap replicates used to attach standard errors capturing
+\code{model} uncertainty (default 0, point estimate only). When \code{R > 0}, \code{model} is
+refit \code{R} times on Dirichlet-reweighted copies of its training data; the spread of the
+resulting decompositions (under common random numbers, so event-ordering noise is differenced
+out) gives per-component standard errors and cumulative confidence bands. This captures model
+uncertainty only -- the dominant source -- not demographic uncertainty in the cell counts. For
+\code{gam} models each replicate is a full refit plus prediction, so large \code{R} can be slow.}
 
 \item{tol}{Maximum tolerated absolute deviation between observed and modeled period means, in the
 outcome's own units (default 0.05). Checks that \code{model} reproduces the observed period means;
@@ -49,6 +59,10 @@ tractable per-period total first -- only the relative cell structure matters. Th
 minimum age and the level set of each \code{cells} column, and cover every survey period (extra periods are
 dropped); these are compared over rows with \code{n > 0}.}
 
+\item{seed}{Optional integer seed for reproducible bootstrap replicates (default \code{NULL}).
+The Dirichlet draw is always isolated from the global RNG stream, so passing \code{R > 0} never
+changes the point estimate relative to \code{R = 0} under the same outer seed.}
+
 \item{x}{A `social_change_decomp` object returned by [decompose_aggregated()].}
 
 \item{covariate}{Optional name of a single cell covariate (one of the `cells`, or `"age"`) by
@@ -61,12 +75,16 @@ S3 object of class \code{social_change_decomp} with components:
   \itemize{
     \item \code{summary}: data.table with decomposition components by period (including the
       \code{inmigration} and \code{outmigration} columns; print/plot show a migration component
-      only for whichever of these is non-zero)
+      only for whichever of these is non-zero).
     \item \code{record}: list of per-transition change tables (one per period transition). Each
       table is tidy, with columns \code{component}, the cell covariates (\code{age} and any
       \code{cells}), and \code{delta} -- one row per component per cell, holding that cell's total
       contribution to the change for that component over the transition. Summed over cells it
       reproduces the per-component totals in \code{summary}.
+    \item \code{draws}: when \code{R > 0}, a long data.table of per-(draw, period, cell)
+      component deltas (columns \code{draw}, \code{period}, \code{component}, \code{delta}, and
+      the cell covariates) from which any aggregate's confidence band can be computed; \code{NULL}
+      when \code{R = 0}.
   }
 }
 \description{

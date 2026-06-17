@@ -24,7 +24,8 @@ test_that("decompose_aggregated recovers Scenario 1 (perfect recovery)", {
   # ASSERT - Structure
   expect_s3_class(decomp, "social_change_decomp")
   expect_true(is.list(decomp))
-  expect_named(decomp, c("summary", "record", "cells"))
+  expect_named(decomp, c("summary", "record", "draws", "cells"))
+  expect_null(decomp$draws) # NULL without bootstrap (R = 0)
   expect_s3_class(decomp$summary, "data.table")
   expect_true(is.list(decomp$record))
 
@@ -691,6 +692,83 @@ test_that("decompose_aggregated handles a zero-centered outcome via the absolute
   stacked2[, y := age - 29.5]  # zero-centered within each wave
   model <- lm(y ~ age, data = stacked2)
   expect_no_error(decompose_aggregated(stacked2, model))
+})
+
+# cumulative_series() backs both the print table and the plot. The -se.R file already
+# covers its CI-path structure (pseudo-types, level split, band non-additivity); these
+# two cover the point-path arithmetic it does not: the components are additive, and a
+# covariate split partitions them. The modeled-mean identity is asserted on `summary`
+# in the scenario tests above, so it is not repeated here.
+
+test_that("cumulative_series is additive on the point path (overall and split)", {
+  set.seed(202)
+  n <- 6000
+  d <- data.table(
+    age = sample(25:50, n, TRUE),
+    period = sample(c(2000, 2004, 2008), n, TRUE),
+    gender = sample(c("f", "m"), n, TRUE)
+  )
+  d[, y := 0.01 * age + 0.004 * (period - 2000) + 0.1 * (gender == "m") +
+    stats::rnorm(n, 0, 0.3)]
+  model <- stats::lm(y ~ age + period + gender, data = d)
+  set.seed(7)
+  decomp <- decompose_aggregated(d, model, cells = "gender", tol = 0.2)
+
+  ci <- cumulative_series(decomp)
+  last <- max(ci$period)
+  val <- function(ty) {
+    v <- ci[type == ty & period == last, value]
+    if (length(v)) v else 0
+  }
+  # Total change = intraindividual + population turnover = the sum of the leaf turnover
+  # components -- the builder's aggregate pseudo-types reconcile with their parts.
+  turnover_leaves <- c("Mortality", "Out-migration", "Coming-of-age", "In-migration")
+  expect_equal(
+    val("Total change"),
+    val("Intraindividual change") + val("Population turnover"),
+    tolerance = 1e-9
+  )
+  expect_equal(
+    val("Population turnover"),
+    ci[type %in% turnover_leaves & period == last, sum(value)],
+    tolerance = 1e-9
+  )
+
+  # A covariate split partitions the cells, so per-level cumulative values sum back to
+  # the overall (level-NA) series for every type and period.
+  split <- cumulative_series(decomp, "gender")
+  expect_setequal(unique(split$level), c("f", "m"))
+  summed <- split[, .(value = sum(value)), by = .(type, period)]
+  m <- merge(summed, ci[, .(type, period, value)], by = c("type", "period"))
+  expect_equal(nrow(m), nrow(ci)) # split covers exactly the overall (type, period) set
+  expect_equal(m$value.x, m$value.y, tolerance = 1e-9)
+})
+
+test_that("cumulative_series completes every series across all periods (zero-fill)", {
+  # In-migration fires only in the second transition here, never the first, so its
+  # delta is absent from record[[1]]. Grid completion must still emit an In-migration
+  # row at every period, cumulating from 0 -- otherwise the plot/CI would have a
+  # ragged series starting mid-range. Age 20 is present in every wave (common minimum
+  # age); the age-21 survivor cohort grows only in the second transition (80 -> 120).
+  stacked <- data.table(
+    period = c(rep(1, 3), rep(2, 4), rep(3, 5)),
+    age = c(20, 21, 22, 20, 21, 22, 23, 20, 21, 22, 23, 24),
+    n = c(100, 100, 100, 100, 80, 80, 80, 100, 80, 120, 80, 80)
+  )
+  stacked[, y := (age - 20) / 20] # linear in age, so lm(y ~ age) reproduces it exactly
+  model <- lm(y ~ age, data = stacked)
+  set.seed(1)
+  decomp <- decompose_aggregated(stacked, model)
+
+  # In-migration appears only in the second transition's record...
+  expect_equal(sum(decomp$record[[1]]$component == "inmigration"), 0)
+  expect_gt(sum(decomp$record[[2]]$component == "inmigration"), 0)
+
+  # ...yet the completed series spans all three periods and starts cumulating at 0.
+  periods <- decomp$summary$period
+  inmig <- cumulative_series(decomp)[type == "In-migration"]
+  expect_setequal(inmig$period, periods)
+  expect_equal(inmig[period == min(period), value], 0)
 })
 
 test_that("decompose_aggregated errors when the model badly misfits the period means", {

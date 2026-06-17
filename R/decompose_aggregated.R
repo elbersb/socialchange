@@ -11,6 +11,16 @@
 #'   from \code{age}, \code{period}, and any \code{cells}. Predictions are taken on the response scale
 #'   via \code{predict()}.
 #' @param cells Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")
+#' @param R Number of Dirichlet-bootstrap replicates used to attach standard errors capturing
+#'   \code{model} uncertainty (default 0, point estimate only). When \code{R > 0}, \code{model} is
+#'   refit \code{R} times on Dirichlet-reweighted copies of its training data; the spread of the
+#'   resulting decompositions (under common random numbers, so event-ordering noise is differenced
+#'   out) gives per-component standard errors and cumulative confidence bands. This captures model
+#'   uncertainty only -- the dominant source -- not demographic uncertainty in the cell counts. For
+#'   \code{gam} models each replicate is a full refit plus prediction, so large \code{R} can be slow.
+#' @param seed Optional integer seed for reproducible bootstrap replicates (default \code{NULL}).
+#'   The Dirichlet draw is always isolated from the global RNG stream, so passing \code{R > 0} never
+#'   changes the point estimate relative to \code{R = 0} under the same outer seed.
 #' @param tol Maximum tolerated absolute deviation between observed and modeled period means, in the
 #'   outcome's own units (default 0.05). Checks that \code{model} reproduces the observed period means;
 #'   if the largest deviation exceeds \code{tol}, the function errors. The default suits outcomes on a
@@ -35,12 +45,16 @@
 #'   \itemize{
 #'     \item \code{summary}: data.table with decomposition components by period (including the
 #'       \code{inmigration} and \code{outmigration} columns; print/plot show a migration component
-#'       only for whichever of these is non-zero)
+#'       only for whichever of these is non-zero).
 #'     \item \code{record}: list of per-transition change tables (one per period transition). Each
 #'       table is tidy, with columns \code{component}, the cell covariates (\code{age} and any
 #'       \code{cells}), and \code{delta} -- one row per component per cell, holding that cell's total
 #'       contribution to the change for that component over the transition. Summed over cells it
 #'       reproduces the per-component totals in \code{summary}.
+#'     \item \code{draws}: when \code{R > 0}, a long data.table of per-(draw, period, cell)
+#'       component deltas (columns \code{draw}, \code{period}, \code{component}, \code{delta}, and
+#'       the cell covariates) from which any aggregate's confidence band can be computed; \code{NULL}
+#'       when \code{R = 0}.
 #'   }
 #'
 #' @details
@@ -93,8 +107,11 @@
 #'   Vignette: \code{vignette("decompose_aggregated", package = "socialchange")}.
 #' @import data.table
 #' @export
-decompose_aggregated <- function(stacked_data, model, cells = c(), tol = 0.05, weight = NULL, population = NULL) {
+decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
+                                 tol = 0.05, weight = NULL, population = NULL, seed = NULL) {
     checkmate::assert_data_frame(stacked_data)
+    checkmate::assert_int(R, lower = 0)
+    checkmate::assert_int(seed, null.ok = TRUE)
     checkmate::assert_subset(c("age", "period", "y", cells), names(stacked_data))
     # NAs here would otherwise crash deep in the simulation or silently drop a wave.
     checkmate::assert_numeric(stacked_data$age, any.missing = FALSE, .var.name = "age")
@@ -201,6 +218,11 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), tol = 0.05, w
     }
     min_age <- min_ages$min_age[1L]
 
+    # Bootstrap replicates for model-uncertainty SEs.
+    if (R > 0L) message("Computing ", R, " bootstrap replicate(s); this can take a while for gam models.")
+    reps <- if (R > 0L) y_replicates(model, R, seed) else list()
+    draws_record <- if (R > 0L) vector("list", length(periods) - 1L) else NULL
+
     record <- vector("list", length(periods) - 1)
     summary <- data.table(
         period = periods,
@@ -257,22 +279,20 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), tol = 0.05, w
         # is always 0 (see derive_events()).
         data <- derive_events(data, min_age)
 
-        # Draw a random event schedule (the only stochastic step), then replay it
-        # deterministically to get the period-to-period change record.
+        # The schedule is the only stochastic step; replicates replay the same one
+        # (common random numbers), so cross-draw spread is model uncertainty alone.
         sched <- schedule_events(data, min_age, gap)
-        change_record <- simulate_schedule(data, model, gap, sched)
+        sim <- simulate_schedule(data, model, reps, gap, sched)
 
-        # Tag each record row with its cell's covariates (age and any user cells)
-        # `cell` is an internal row index into the per-period `data`
-        for (col in cells) {
-            set(change_record, j = col, value = data[[col]][change_record$cell])
+        change_record <- tag_cells(sim$point, data, cells)
+        if (!is.null(sim$draws)) {
+            draws_record[[i_period]] <- tag_cells(sim$draws, data, cells)
         }
-        change_record[, cell := NULL]
 
         # summarize period change
         by_component <- change_record[, .(delta = sum(delta)), by = .(component)]
         record[[i_period]] <- change_record
-        for (comp in c("intraindividual", "mortality", "outmigration", "coming_of_age", "inmigration")) {
+        for (comp in names(component_labels)) {
             delta <- by_component[component == comp, "delta"][[1]]
             if (length(delta) == 1) {
                 summary[i_period + 1, (comp) := delta]
@@ -282,7 +302,9 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), tol = 0.05, w
         }
     } # i_period loop
 
-    ret <- list(summary = summary, record = record, cells = cells)
+    draws_long <- if (!is.null(draws_record)) build_draws_long(draws_record, periods) else NULL
+
+    ret <- list(summary = summary, record = record, draws = draws_long, cells = cells)
     class(ret) <- c("social_change_decomp", "list")
     ret
 }
@@ -400,47 +422,11 @@ schedule_events <- function(data, min_age, gap) {
     list(events_tick = ev_time[ord], ev_type = ev_type[ord], ev_cell = ev_cell[ord])
 }
 
-# Microsimulate one period transition by replaying a fixed event schedule from
-# schedule_events(). Deterministic: all randomness lives in the schedule, so the
-# same (data, model, gap, sched) always yields the same record. Fires the events
-# in time order, attributing the weighted-mean change to a component: intraindividual
-# drift between events, then the event itself. Returns a tidy per-(component, cell)
-# table of summed deltas -- one row per component per cell that the component touched
-# (every cell for intraindividual change; the cells where events fired for the
-# turnover components). Does not mutate `data`; the caller attaches covariates via
-# `cell` and keeps the return value.
-simulate_schedule <- function(data, model, gap, sched) {
-    events_tick <- sched$events_tick
-    ev_type <- sched$ev_type
-    ev_cell <- sched$ev_cell
-
-    n_ev <- length(ev_type)
+# One prediction slice per evaluation tick: stack `data`, advancing only age and period
+# by tick * gap (other covariates carried through). n_cells * length(eval_ticks) rows.
+build_event_stack <- function(data, gap, eval_ticks) {
     n_cells <- nrow(data)
-
-    # Per-event deltas, accumulated then aggregated to (component, cell) at the end.
-    # cr_cell records which cell each event fired in (a row index into `data`); the
-    # caller uses it to attach covariates.
-    cr_component <- character(n_ev)
-    cr_delta <- numeric(n_ev)
-    cr_cell <- integer(n_ev)
-
-    # n_vec tracks the current population; updated as events fire
-    n_vec <- data$n
-
-    # Per-cell intraindividual change, accumulated over the transition. At each tick
-    # the scalar IC delta is sum_c (y_cur[c] - y_prev[c]) * n_vec[c] / sum_n, an exact
-    # split across cells (it sums back to that scalar).
-    ic_by_cell <- numeric(n_cells)
-    y_prev <- data$y
-
-    # Evaluate the model once on a stacked copy of data at every event time plus the
-    # end of the period (tick = 1), yielding an n_cells × (n_ev + 1) matrix whose
-    # final column is the end-of-period outcome. Only age and period are updated per
-    # slice; all other covariates (e.g. gender, smoking) are carried through from
-    # data as-is. This requires the model to not depend on n, which holds for any
-    # externally-fitted statistical model.
-    eval_ticks <- c(events_tick, 1)
-    n_eval <- n_ev + 1L
+    n_eval <- length(eval_ticks)
     idx_rep <- rep.int(seq_len(n_cells), n_eval)
     data_stack <- data[idx_rep]
     set(
@@ -451,13 +437,43 @@ simulate_schedule <- function(data, model, gap, sched) {
         data_stack, NULL, "period",
         rep.int(data$period, n_eval) + rep(eval_ticks * gap, each = n_cells)
     )
-    y_mat <- matrix(predict_y(model, data_stack), nrow = n_cells, ncol = n_eval)
+    data_stack
+}
+
+# Deterministic replay of a fixed schedule against a precomputed outcome surface (no
+# model call, no RNG), so the same (schedule, y) always yields the same record. Fires
+# events in time order, attributing the weighted-mean change to a component: intra-
+# individual drift between events, then the event itself. Inputs:
+#   n_vec  - per-cell period-start counts (data$n)
+#   y_prev - per-cell tick-0 outcome
+#   y_mat  - n_cells x (n_ev + 1) per-cell outcomes per event tick, final column tick 1
+# Returns one row per (component, cell) the component touched: every cell for intra-
+# individual change, the firing cells for turnover.
+replay_schedule <- function(n_vec, y_prev, y_mat, sched) {
+    ev_type <- sched$ev_type
+    ev_cell <- sched$ev_cell
+
+    n_ev <- length(ev_type)
+    n_cells <- length(n_vec)
+    n_eval <- n_ev + 1L
+
+    # Per-event deltas, accumulated then aggregated to (component, cell) at the end.
+    # cr_cell records which cell each event fired in (a row index into `data`); the
+    # caller uses it to attach covariates.
+    cr_component <- character(n_ev)
+    cr_delta <- numeric(n_ev)
+    cr_cell <- integer(n_ev)
+
+    # Per-cell intraindividual change, accumulated over the transition. At each tick
+    # the scalar IC delta is sum_c (y_cur[c] - y_prev[c]) * n_vec[c] / sum_n, an exact
+    # split across cells (it sums back to that scalar).
+    ic_by_cell <- numeric(n_cells)
 
     # Running weighted-sum scalars. The demographic-event update is O(1) (one cell
     # changes by one person), but the intraindividual step re-sums y_cur * n_vec each
     # iteration because every cell's y drifts with aging, so the loop is O(n_ev * n_cells).
     sum_n <- sum(n_vec)
-    sum_yn <- sum(data$y * n_vec)
+    sum_yn <- sum(y_prev * n_vec)
     post_event_mean <- sum_yn / sum_n
 
     for (i_ev in seq_len(n_ev)) {
@@ -512,6 +528,60 @@ simulate_schedule <- function(data, model, gap, sched) {
     out[]
 }
 
+# Attach each cell's covariates by its `cell` row-index into `data`, then drop the index.
+tag_cells <- function(dt, data, cells) {
+    for (col in cells) set(dt, j = col, value = data[[col]][dt$cell])
+    dt[, cell := NULL][]
+}
+
+# Build the outcome surface once, replay the shared schedule for the point estimate and
+# every replicate. Returns list(point, draws) (draws NULL when reps is empty).
+#
+# align_periods() set data$y = predict_y(model, data) at tick 0, and nothing since has
+# touched age/period/y (derive_events only adds event-count columns the model ignores), so
+# data$y is an *exact* cache of the point model's tick-0 surface -- the point path reuses it
+# rather than re-predicting. Replicates have no such cache, so they predict tick 0 (y_start).
+# The replicate prediction (replicate_predict) is reached only when reps is non-empty, so the
+# R = 0 path makes exactly one model call (the point surface) and allocates no draw machinery.
+simulate_schedule <- function(data, model, reps, gap, sched) {
+    n_cells <- nrow(data)
+    eval_ticks <- c(sched$events_tick, 1)
+    n_eval <- length(eval_ticks)
+    stack <- build_event_stack(data, gap, eval_ticks)
+
+    point <- replay_schedule(
+        data$n, data$y,
+        matrix(predict_y(model, stack), n_cells, n_eval), sched
+    )
+
+    draws <- NULL
+    if (length(reps) > 0L) {
+        surface <- replicate_predict(reps, stack) # (n_cells * n_eval) x R
+        y_start <- replicate_predict(reps, data) # n_cells x R, replicate tick-0 outcomes
+        tabs <- lapply(seq_along(reps), function(r) {
+            dt <- replay_schedule(
+                data$n, y_start[, r],
+                matrix(surface[, r], n_cells, n_eval), sched
+            )
+            set(dt, j = "draw", value = r)
+        })
+        draws <- rbindlist(tabs)
+    }
+    list(point = point, draws = draws)
+}
+
+# Stack the per-transition draw records into one long per-(draw, period, cell) delta table
+# (draws_record[[i]] is the transition into period[i + 1]). All bootstrap summaries -- the
+# cumulative CI band in print/plot -- are derived from this table on demand by
+# cumulative_series(); nothing is precomputed onto `summary`.
+build_draws_long <- function(draws_record, periods) {
+    draws_long <- rbindlist(draws_record, idcol = "i")
+    draws_long[, period := periods[i + 1L]]
+    draws_long[, i := NULL]
+    setcolorder(draws_long, c("draw", "period", "component", "delta"))
+    draws_long[]
+}
+
 #' Print a social_change_decomp object
 #'
 #' @param x A `social_change_decomp` object returned by [decompose_aggregated()].
@@ -533,103 +603,76 @@ print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, ...
         print(x$summary, row.names = FALSE, class = FALSE, na.print = "")
     }
 
-    # Grand totals per component
-    overall <- component_deltas(x)[, .(delta = round(sum(delta), 6)), by = type]
-    tot <- function(ty) {
-        v <- overall[type == ty, delta]
-        if (length(v) == 0L) 0 else v
+    ov <- cumulative_series(x)[period == max(period)]
+    val <- function(ty) {
+        v <- ov[type == ty, value]
+        round(if (length(v)) v else 0, 6)
     }
-    intraindividual <- tot("Intraindividual change")
-    mortality <- tot("Mortality")
-    outmigration <- tot("Out-migration")
-    coming_of_age <- tot("Coming-of-age")
-    inmigration <- tot("In-migration")
-
-    pt <- mortality + outmigration + coming_of_age + inmigration
-
     mean0 <- round(x$summary[1][["modeled_mean"]], 6)
     meanN <- round(x$summary[.N][["modeled_mean"]], 6)
-
-    if (detailed) {
-        cat("\nDecomposition of total change:\n")
-    }
     total_change <- meanN - mean0
+
+    # `type` keys each row to its cumulative_series() component (NA for header rows); all
+    # value/percent/CI/per-level columns join on it, never row position. Dropped before print.
     decomp <- data.table(
         Component = c(
-            "At initial (modeled)",
-            "At end (modeled)",
-            "Total change",
-            "- Intraindividual change",
-            "- Population turnover",
-            "  - Mortality",
-            "  - Out-migration",
-            "  - Coming-of-age",
-            "  - In-migration"
+            "At initial (modeled)", "At end (modeled)", "Total change",
+            "- Intraindividual change", "- Population turnover",
+            "  - Mortality", "  - Out-migration", "  - Coming-of-age", "  - In-migration"
         ),
-        Value = c(
-            mean0,
-            meanN,
-            total_change,
-            intraindividual,
-            pt,
-            mortality,
-            outmigration,
-            coming_of_age,
-            inmigration
-        ),
-        Percent = c(
-            "", "", if (total_change == 0) "" else "100.0",
-            # Percentages are undefined when total change is zero (components may
-            # still net to zero from offsetting flows), so leave them blank.
-            if (total_change == 0) {
-                rep("", 6)
-            } else {
-                sprintf("%.1f", round(100 * c(
-                    intraindividual, pt, mortality,
-                    outmigration, coming_of_age, inmigration
-                ) / total_change, 1))
-            }
+        type = c(
+            NA, NA, "Total change", "Intraindividual change", "Population turnover",
+            "Mortality", "Out-migration", "Coming-of-age", "In-migration"
         )
     )
-    # Append one column per covariate level (after Percent), splitting every
-    # component -- total change, intraindividual change, and each turnover component --
-    # across levels. The "at initial"/"at end" rows stay blank. Columns are formatted
-    # character (like Percent) so the blanks print cleanly.
+    component <- !is.na(decomp$type) & decomp$type != "Total change"
+    decomp[, Value := fcase(
+        Component == "At initial (modeled)", mean0,
+        Component == "At end (modeled)", meanN,
+        Component == "Total change", total_change,
+        default = vapply(type, val, numeric(1), USE.NAMES = FALSE)
+    )]
+    # Percentages are undefined when total change is zero, so leave them blank.
+    pct <- if (total_change == 0) rep("", nrow(decomp)) else sprintf("%.1f", round(100 * decomp$Value / total_change, 1))
+    decomp[, Percent := fifelse(
+        component, pct,
+        fifelse(Component == "Total change" & total_change != 0, "100.0", "")
+    )]
+
+    if (detailed) cat("\nDecomposition of total change:\n")
+
+    # One character column per covariate level, holding that level's cumulative value.
     if (!is.null(covariate)) {
-        per_level <- component_deltas(x, covariate)[, .(delta = sum(delta)), by = .(type, level)]
-        level_cols <- sort(unique(per_level$level))
-        cval <- function(label, L) {
-            v <- per_level[type == label & level == L, delta]
-            if (length(v) == 0L) 0 else v
-        }
+        lv <- cumulative_series(x, covariate)[period == max(period)]
         fmtcol <- function(v) {
             out <- format(round(v, 6), trim = TRUE, scientific = FALSE)
             out[is.na(v)] <- ""
             out
         }
-        for (L in level_cols) {
-            ic_L <- cval("Intraindividual change", L)
-            pt_L <- cval("Mortality", L) + cval("Out-migration", L) +
-                cval("Coming-of-age", L) + cval("In-migration", L)
-            decomp[, (L) := fmtcol(c(
-                NA_real_, NA_real_,
-                ic_L + pt_L,
-                ic_L,
-                pt_L,
-                cval("Mortality", L),
-                cval("Out-migration", L),
-                cval("Coming-of-age", L),
-                cval("In-migration", L)
-            ))]
+        for (L in sort(unique(lv$level))) {
+            decomp[, (L) := fmtcol(lv[level == L][decomp, on = "type", x.value])]
+        }
+    }
+
+    if (!is.null(x$draws)) {
+        ci_col <- function(band) {
+            band[decomp, on = "type"][, fifelse(is.na(lci), "", sprintf("[%.4f, %.4f]", lci, uci))]
+        }
+        if (is.null(covariate)) {
+            decomp[, `95% CI` := ci_col(ov)]
+        } else {
+            for (L in sort(unique(lv$level))) {
+                decomp[, (paste(L, "95% CI")) := ci_col(lv[level == L])]
+            }
         }
     }
 
     # Show a migration row only for whichever migration type was actually inferred.
-    # In-migration is derived as a residual from cell growth; out-migration is always
-    # zero under the current strategy, so its row is dropped here.
-    if (inmigration == 0) decomp <- decomp[Component != "  - In-migration"]
-    if (outmigration == 0) decomp <- decomp[Component != "  - Out-migration"]
+    # In-migration is a residual from cell growth; out-migration is always zero here.
+    if (val("In-migration") == 0) decomp <- decomp[Component != "  - In-migration"]
+    if (val("Out-migration") == 0) decomp <- decomp[Component != "  - Out-migration"]
 
+    decomp[, type := NULL]
     print(decomp, row.names = FALSE, class = FALSE, justify = "left", na.print = "")
     invisible(x)
 }
@@ -663,26 +706,25 @@ plot.social_change_decomp <- function(x, covariate = NULL, ...) {
         level = NA_character_, value, panel = "Mean outcome"
     )]
 
-    # Cumulative per-component change, optionally split by covariate level. The two
-    # cases differ only in whether component_deltas() adds a level grouping; the
-    # cumulate / period-completion / drop-empty tail below is shared.
-    periods <- summary$period
-    decomp <- component_deltas(x, covariate)
-    # Complete each (type, level) series across all periods so it starts at 0 and a
-    # transition absent for a level counts as 0 before cumulating.
-    grid <- unique(decomp[, .(type, level)])[, .(period = periods), by = .(type, level)]
-    decomp <- decomp[grid, on = .(type, level, period)]
-    decomp[is.na(delta), delta := 0]
-    setorder(decomp, type, level, period)
-    decomp[, value := cumsum(delta), by = .(type, level)]
-    # Always draw intraindividual change, mortality, and coming-of-age; draw a
-    # migration series only where it actually moves (out-migration is always 0).
+    # Drop the aggregate pseudo-types cumulative_series() carries; keep only leaves. Always
+    # draw IC/mortality/coming-of-age, plus a migration series only where it actually moves.
+    series <- cumulative_series(x, covariate)
+    leaves <- unname(component_labels)
     base <- c("Intraindividual change", "Mortality", "Coming-of-age")
-    decomp[, keep := as.character(type) %in% base | any(value != 0), by = .(type, level)]
-    decomp_part <- decomp[keep == TRUE, .(period,
-        type = as.character(type),
-        level, value, panel = "Cumulative change"
+    series[, keep := type %in% leaves & (type %in% base | any(value != 0)), by = .(type, level)]
+    decomp_part <- series[keep == TRUE, .(period, type, level,
+        value,
+        panel = "Cumulative change"
     )]
+
+    # CI ribbon for exactly the drawn lines (NA-band series drop out via the lci filter).
+    ribbon_part <- NULL
+    if (!is.null(x$draws)) {
+        drawn <- unique(decomp_part[, .(type, level)])
+        ribbon_part <- series[drawn, on = .(type, level), nomatch = 0L][
+            !is.na(lci), .(period, type, level, lci, uci, panel = "Cumulative change")
+        ]
+    }
 
     # Component colours are fixed across both paths; with a covariate, levels are
     # instead distinguished by line type (see scale_linetype_manual below).
@@ -699,11 +741,25 @@ plot.social_change_decomp <- function(x, covariate = NULL, ...) {
     combine <- rbindlist(list(means_part, decomp_part), use.names = TRUE)
     combine[, type := factor(type, names(color_map))]
     combine[, panel := factor(panel, c("Mean outcome", "Cumulative change"))]
+    if (!is.null(ribbon_part)) {
+        ribbon_part[, type := factor(type, names(color_map))]
+        ribbon_part[, panel := factor(panel, c("Mean outcome", "Cumulative change"))]
+    }
 
     if (is.null(covariate)) {
         p <- ggplot(combine, aes(x = period, y = value, color = type))
     } else {
         p <- ggplot(combine, aes(x = period, y = value, color = type, linetype = level))
+    }
+    # Ribbon first so the component lines draw on top of their bands.
+    if (!is.null(ribbon_part)) {
+        p <- p + geom_ribbon(
+            data = ribbon_part,
+            # paste() not interaction(): interaction(type, NA) is NA, merging all ribbons.
+            aes(x = period, ymin = lci, ymax = uci, fill = type, group = paste(type, level)),
+            inherit.aes = FALSE, alpha = 0.2
+        ) +
+            scale_fill_manual(values = color_map, guide = "none")
     }
     p <- p +
         facet_wrap("panel", nrow = 1, scales = "free_y") +
@@ -738,6 +794,14 @@ component_labels <- c(
     coming_of_age = "Coming-of-age", inmigration = "In-migration"
 )
 
+# Tag long component rows with display `type` (factor in print/plot order) and the
+# optional covariate `level` (NA for the unsplit, one-series-per-component case).
+# Shared by the point and draw delta builders below.
+tag_components <- function(dt, covariate) {
+    dt[, type := factor(component_labels[component], levels = component_labels)]
+    dt[, level := if (is.null(covariate)) NA_character_ else as.character(get(covariate))][]
+}
+
 # Per-transition component deltas from x$record, long with columns period, type
 # (display label, factor in print/plot order), level, and delta. record[[i]] holds
 # the change into period[i + 1]. `covariate` (one of x$cells) splits each component
@@ -747,8 +811,62 @@ component_deltas <- function(x, covariate = NULL) {
     if (!is.null(covariate)) checkmate::assert_choice(covariate, x$cells)
     periods <- x$summary$period
     dt <- rbindlist(x$record, idcol = "i")
-    dt[, type := factor(component_labels[component], levels = component_labels)]
-    dt[, level := if (is.null(covariate)) NA_character_ else as.character(get(covariate))]
     dt[, period := periods[i + 1L]]
+    dt <- tag_components(dt, covariate)
     dt[, .(delta = sum(delta)), by = .(type, level, period)]
+}
+
+# Per-(draw, period) component deltas, long. Draws analogue of component_deltas().
+draw_component_deltas <- function(x, covariate = NULL) {
+    if (!is.null(covariate)) checkmate::assert_choice(covariate, x$cells)
+    dt <- tag_components(copy(x$draws), covariate)
+    dt[, .(delta = sum(delta)), by = .(draw, type, level, period)]
+}
+
+# Worker for cumulative_series: append the "Population turnover"/"Total change" aggregate
+# pseudo-types, complete every series across all `periods` (missing transition = 0), and
+# return per-series running totals in `cum`. `extra` carries extra grouping keys ("draw"
+# for the per-draw path, none for the point estimate).
+#
+# Aggregates must be summed across components BEFORE cumulating: neither cumulation nor the
+# downstream quantiles are additive across components, so an aggregate band can't be summed
+# from the per-component bands.
+cumulate_with_aggregates <- function(dt, periods, extra = character()) {
+    turnover_types <- setdiff(component_labels, "Intraindividual change")
+    by_pl <- c(extra, "level", "period")
+    agg <- function(types, label) {
+        dt[type %in% types, .(type = label, delta = sum(delta)), by = by_pl]
+    }
+    leaf_cols <- c(extra, "type", "level", "period", "delta")
+    long <- rbindlist(list(
+        dt[, ..leaf_cols][, type := as.character(type)],
+        agg(turnover_types, "Population turnover"),
+        agg(component_labels, "Total change")
+    ), use.names = TRUE)
+    by_tl <- c(extra, "type", "level")
+    grid <- unique(long[, ..by_tl])[, .(period = periods), by = by_tl]
+    long <- long[grid, on = c(by_tl, "period")]
+    long[is.na(delta), delta := 0]
+    setorderv(long, c(by_tl, "period"))
+    long[, cum := cumsum(delta), by = by_tl]
+    long[]
+}
+
+# Cumulative change per (type, level, period): point estimate in `value`, bootstrap bounds
+# in `lci`/`uci` (NA when x has no draws). `type` spans the leaves plus the aggregate
+# pseudo-types. Single source for both print's final-period totals/CI and plot's
+# lines/ribbons; point and CI paths cumulate identically, differing only in the quantile.
+cumulative_series <- function(x, covariate = NULL, probs = c(0.025, 0.975)) {
+    periods <- x$summary$period
+    pt <- cumulate_with_aggregates(component_deltas(x, covariate), periods)
+    out <- pt[, .(type, level, period, value = cum)]
+    if (is.null(x$draws)) {
+        out[, c("lci", "uci") := NA_real_]
+        return(out[])
+    }
+    dd <- cumulate_with_aggregates(draw_component_deltas(x, covariate), periods, extra = "draw")
+    band <- dd[, .(lci = stats::quantile(cum, probs[1]), uci = stats::quantile(cum, probs[2])),
+        by = .(type, level, period)
+    ]
+    out[band, on = .(type, level, period)]
 }
