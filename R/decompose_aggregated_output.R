@@ -6,13 +6,14 @@
 #'   which to additionally break down the components. When supplied, one column per covariate level
 #'   is appended to the decomposition table. For more elaborate breakdowns, aggregate
 #'   `x$record` directly, which carries the cell covariates.
+#' @param digits Number of digits to print.
 #' @param ... Not used.
 #' @return `x`, invisibly.
 #' @import data.table
 #' @export
-print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, ...) {
+print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, digits = 3, ...) {
     checkmate::assert_string(covariate, null.ok = TRUE)
-    old <- options(digits = 4, scipen = 999)
+    old <- options(digits = digits, scipen = 999)
     on.exit(options(old))
     if (detailed) {
         cat("Overview by period:\n")
@@ -22,10 +23,10 @@ print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, ...
     ov <- cumulative_series(x)[period == max(period)]
     val <- function(ty) {
         v <- ov[type == ty, value]
-        round(if (length(v)) v else 0, 6)
+        if (length(v)) v else 0
     }
-    mean0 <- round(x$summary[1][["modeled_mean"]], 6)
-    meanN <- round(x$summary[.N][["modeled_mean"]], 6)
+    mean0 <- x$summary[1][["modeled_mean"]]
+    meanN <- x$summary[.N][["modeled_mean"]]
     total_change <- meanN - mean0
 
     # `type` keys each row to its cumulative_series() component (NA for header rows); all
@@ -49,11 +50,12 @@ print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, ...
         default = vapply(type, val, numeric(1), USE.NAMES = FALSE)
     )]
     # Percentages are undefined when total change is zero, so leave them blank.
-    pct <- if (total_change == 0) rep("", nrow(decomp)) else sprintf("%.1f", round(100 * decomp$Value / total_change, 1))
+    pct <- if (total_change == 0) rep("", nrow(decomp)) else formatC(100 * decomp$Value / total_change, format = "f", digits = 1, width = 5)
     decomp[, Percent := fifelse(
         component, pct,
         fifelse(Component == "Total change" & total_change != 0, "100.0", "")
     )]
+    decomp[, Value := formatC(Value, format = "f", digits = digits, width = digits + 3)]
 
     if (detailed) cat("\nDecomposition of total change:\n")
 
@@ -61,7 +63,7 @@ print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, ...
     if (!is.null(covariate)) {
         lv <- cumulative_series(x, covariate)[period == max(period)]
         fmtcol <- function(v) {
-            out <- format(round(v, 6), trim = TRUE, scientific = FALSE)
+            out <- formatC(v, format = "f", digits = digits, width = digits + 3)
             out[is.na(v)] <- ""
             out
         }
@@ -72,7 +74,7 @@ print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, ...
 
     if (!is.null(x$draws)) {
         ci_col <- function(band) {
-            band[decomp, on = "type"][, fifelse(is.na(lci), "", sprintf("[%.4f, %.4f]", lci, uci))]
+            band[decomp, on = "type"][, fifelse(is.na(lci), "", fmt_ci(lci, uci, digits))]
         }
         if (is.null(covariate)) {
             decomp[, `95% CI` := ci_col(ov)]
@@ -201,6 +203,20 @@ plot.social_change_decomp <- function(x, covariate = NULL, ...) {
         )
     }
     p
+}
+
+# Fixed width CI formatting with central comma
+fmt_ci <- function(lower, upper, digits = 3) {
+    lo <- sprintf(paste0("%.", digits, "f"), lower)
+    hi <- sprintf(paste0("%.", digits, "f"), upper)
+
+    w_lo <- max(nchar(lo))
+    w_hi <- max(nchar(hi))
+
+    sprintf(
+        paste0("[%", w_lo, "s, %-", w_hi, "s]"),
+        lo, hi
+    )
 }
 
 # Maps the internal component names to display labels, in print/plot order.
