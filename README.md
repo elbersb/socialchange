@@ -31,7 +31,7 @@ You can install the development version of socialchange from
 pak::pak("elbersb/socialchange")
 ```
 
-## Example
+## Example: Direct decomposition of events
 
 As a basic example, we look at a decomposition of EU membership, and
 whether population growth in the EU is due to intracountry changes in
@@ -146,3 +146,31 @@ plot(ev)
 ```
 
 <img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
+
+## Example: Decompose aggregated data
+
+In this example we decompose survey data, based on the U.S. General
+Social Survey. More details on this example can be found in the
+[vignette](https://elbersb.github.io/socialchange/articles/gss_homosexuality.html#event-based-decomposition).
+
+``` r
+data(gss_homosex)
+
+gss_all <- gss_homosex[age >= 21, .(age, period = year, sex, y = homosex, wtssall)]
+model <- mgcv::gam(y ~ s(age) + s(period), data = gss_all, weights = wtssall)
+result <- decompose_aggregated(gss_all, model, cells = "sex", weight = "wtssall", R = 100)
+#> Computing 100 bootstrap replicate(s); this can take a while for gam models.
+print(result, detailed = FALSE)
+#>                 Component    Value Percent             95% CI
+#>  At initial (modeled)      0.19709                           
+#>  At end (modeled)          0.56741                           
+#>  Total change              0.37032   100.0 [0.3487, 0.3959]  
+#>  - Intraindividual change  0.19215   51.9  [0.1597, 0.2244]  
+#>  - Population turnover     0.17817   48.1  [0.1516, 0.1981]  
+#>    - Mortality             0.11958   32.3  [0.1126, 0.1256]  
+#>    - Coming-of-age         0.10317   27.9  [0.0768, 0.1247]  
+#>    - In-migration         -0.04457   -12.0 [-0.0472, -0.0412]
+plot(result)
+```
+
+<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
