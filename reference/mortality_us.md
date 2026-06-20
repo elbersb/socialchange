@@ -1,7 +1,7 @@
 # US mortality rates, 1933–2019
 
 Mortality rates by sex and age. Used in examples for
-[`decompose_events`](https://elbersb.github.io/socialchange/reference/decompose_events.md).
+[`decompose_aggregated`](https://elbersb.github.io/socialchange/reference/decompose_aggregated.md).
 
 ## Usage
 
@@ -25,9 +25,10 @@ A data frame with 15,660 rows and 4 variables:
 
   Sex, either 'male' or 'female'.
 
-- prob_death:
+- death_rate:
 
-  Year-over-year mortality probability.
+  Central death rate m(x): deaths divided by exposure (HMD \`Mx_1x1\`).
+  Not a probability – it can exceed 1 at the oldest ages.
 
 ## Source
 
