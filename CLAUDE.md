@@ -26,7 +26,7 @@ pkgdown::build_site()     # build docs website
 Three main decomposition approaches, all using `data.table`, formula interfaces (`Outcome ~ Unit + Time`), and S3 classes with custom `print()`/`plot()`:
 
 1. **Event-based** (`R/decompose_events.R`) — `decompose_events()`: units enter/exit at discrete times. Two datasets (events + outcomes). Separates "change" (within-unit) from "replacement" (turnover) with counterfactuals. → class `decompose_events`
-2. **Aggregated** (`R/decompose_aggregated.R`) — `decompose_aggregated()`: data aggregated by age + covariates. Microsimulation randomly orders demographic events. Needs stacked panel data (age, period, cell counts) and a fitted `model` (`lm`/`glm`/`gam`) predicting outcome from age/period/cells. Decomposes into intraindividual change, coming-of-age, mortality, net in-migration. Optional `population` arg supplies a true cell × period count frame (overrides survey counts). `R > 0` adds model-uncertainty SEs via Dirichlet bootstrap. → class `social_change_decomp`
+2. **Aggregated** (`R/decompose_aggregated.R`) — `decompose_aggregated()`: data aggregated by age + covariates. Microsimulation randomly orders demographic events. Needs stacked panel data (age, period, cell counts) and a fitted `model` (`lm`/`glm`/`gam`) predicting outcome from age/period/cells. Decomposes into intraindividual change, coming-of-age, mortality, net in-migration. Optional `population` arg supplies a true cell × period count frame (overrides survey counts). `R > 0` adds model-uncertainty SEs via Dirichlet bootstrap. → class `social_change_decomp`. `print` and `plot` methods live in `R/decompose_aggregated_output.R`.
 3. **Simulation** (`R/simulate.R`) — `sim_social_change()`: forward simulation. User supplies functions for outcome (`fun_y`), mortality, coming-of-age, migration, state transitions. Returns event-by-event records. → class `social_change_sim`
 
 Additional methods:
@@ -45,6 +45,7 @@ Functions rename input columns to standardized names internally; period columns 
 - `gss_homosex.rda` — GSS attitudes toward homosexual sex (1973–2018)
 - `eu_membership.rda` — EU entry/exit dates
 - `wpp_data.rda` — UN World Population Prospects (1950+)
+- `mortality_us.rda` — US mortality rates (1933-2019)
 
 ## Vignettes (`vignettes/`)
 
