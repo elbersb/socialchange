@@ -220,7 +220,7 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
 
     # Bootstrap replicates for model-uncertainty SEs.
     if (R > 0L) message("Computing ", R, " bootstrap replicate(s); this can take a while for gam models.")
-    reps <- if (R > 0L) y_replicates(model, R, seed) else list()
+    reps <- if (R > 0L) y_replicates(model, R, seed) else NULL
     draws_record <- if (R > 0L) vector("list", length(periods) - 1L) else NULL
 
     record <- vector("list", length(periods) - 1)
@@ -440,54 +440,60 @@ build_event_stack <- function(data, gap, eval_ticks) {
     data_stack
 }
 
-# Deterministic replay of a fixed schedule against a precomputed outcome surface (no
-# model call, no RNG), so the same (schedule, y) always yields the same record. Fires
-# events in time order, attributing the weighted-mean change to a component: intra-
-# individual drift between events, then the event itself. Inputs:
-#   n_vec  - per-cell period-start counts (data$n)
-#   y_prev - per-cell tick-0 outcome
-#   y_mat  - n_cells x (n_ev + 1) per-cell outcomes per event tick, final column tick 1
-# Returns one row per (component, cell) the component touched: every cell for intra-
+# Deterministic replay of a fixed schedule against precomputed outcome surfaces, vectorized
+# across R outcome draws (R = 1 for the point estimate, R = #replicates for the bootstrap). No
+# model call, no RNG, so the same (schedule, surface) always yields the same record. The
+# demographic trajectory (n_vec, sum_n) is fixed by the schedule alone, so it is shared across
+# draws; only the y-dependent quantities carry the draw axis as a matrix column -- one R-level
+# pass replaces the per-replicate loop. Fires events in time order, attributing the
+# weighted-mean change to a component: intraindividual drift between events, then the event.
+# Inputs:
+#   n_vec   - per-cell period-start counts (data$n)
+#   y_start - n_cells x R per-cell tick-0 outcomes (one column per draw)
+#   surface - (n_cells * n_eval) x R per-cell outcomes stacked by eval tick then draw; tick
+#             slice i is rows ((i-1)*n_cells + 1):(i*n_cells), with n_eval = n_ev + 1 and the
+#             final tick (1) last.
+# Returns one row per (draw, component, cell) the component touched: every cell for intra-
 # individual change, the firing cells for turnover.
-replay_schedule <- function(n_vec, y_prev, y_mat, sched) {
+replay_schedule <- function(n_vec, y_start, surface, sched) {
     ev_type <- sched$ev_type
     ev_cell <- sched$ev_cell
 
     n_ev <- length(ev_type)
     n_cells <- length(n_vec)
-    n_eval <- n_ev + 1L
+    R <- ncol(surface)
 
-    # Per-event deltas, accumulated then aggregated to (component, cell) at the end.
-    # cr_cell records which cell each event fired in (a row index into `data`); the
-    # caller uses it to attach covariates.
+    # Per-event turnover deltas (n_ev x R) and per-cell intraindividual deltas (n_cells x R),
+    # accumulated then aggregated to (draw, component, cell). cr_cell records which cell each
+    # event fired in (a row index into `data`); the caller uses it to attach covariates. The
+    # per-cell IC delta at each tick is sum_c (y_cur[c] - y_prev[c]) * n_vec[c] / sum_n, an
+    # exact split across cells (its column sum is the scalar IC delta).
     cr_component <- character(n_ev)
-    cr_delta <- numeric(n_ev)
     cr_cell <- integer(n_ev)
+    cr_delta <- matrix(0, n_ev, R)
+    ic_by_cell <- matrix(0, n_cells, R)
 
-    # Per-cell intraindividual change, accumulated over the transition. At each tick
-    # the scalar IC delta is sum_c (y_cur[c] - y_prev[c]) * n_vec[c] / sum_n, an exact
-    # split across cells (it sums back to that scalar).
-    ic_by_cell <- numeric(n_cells)
-
-    # Running weighted-sum scalars. The demographic-event update is O(1) (one cell
-    # changes by one person), but the intraindividual step re-sums y_cur * n_vec each
-    # iteration because every cell's y drifts with aging, so the loop is O(n_ev * n_cells).
+    # Running weighted sums. n_vec / sum_n are shared scalars (the schedule fixes the demography
+    # across draws); sum_yn is a length-R vector. The demographic-event update is O(1) (one cell
+    # changes by one person), but the intraindividual step re-sums y_cur * n_vec each iteration
+    # because every cell's y drifts with aging, so the loop is O(n_ev * n_cells * R).
     sum_n <- sum(n_vec)
-    sum_yn <- sum(y_prev * n_vec)
-    post_event_mean <- sum_yn / sum_n
+    y_prev <- y_start
+    sum_yn <- colSums(y_prev * n_vec)
 
     for (i_ev in seq_len(n_ev)) {
-        # Intraindividual drift since the previous tick, accumulated per cell. Its
-        # column sum is the scalar IC delta (post_ic_mean - the prior post_event_mean).
-        y_cur <- y_mat[, i_ev]
+        # Intraindividual drift since the previous tick, accumulated per cell (n_vec recycles
+        # down the matrix columns). Its column sum is the scalar IC delta per draw.
+        rows <- ((i_ev - 1L) * n_cells + 1L):(i_ev * n_cells)
+        y_cur <- surface[rows, , drop = FALSE]
         ic_by_cell <- ic_by_cell + (y_cur - y_prev) * n_vec / sum_n
         y_prev <- y_cur
-        sum_yn <- sum(y_cur * n_vec)
+        sum_yn <- colSums(y_cur * n_vec)
         post_ic_mean <- sum_yn / sum_n
 
         event <- ev_type[i_ev]
         pick_idx <- ev_cell[i_ev]
-        y_pick <- y_cur[pick_idx]
+        y_pick <- y_cur[pick_idx, ] # length-R draw vector
 
         # Exits (mortality, out-migration) remove an individual from the cell;
         # entries (coming-of-age, in-migration) add one at the cell's current y.
@@ -500,31 +506,34 @@ replay_schedule <- function(n_vec, y_prev, y_mat, sched) {
             sum_yn <- sum_yn + y_pick
             sum_n <- sum_n + 1
         }
-        post_event_mean <- sum_yn / sum_n
 
         cr_component[i_ev] <- event
-        cr_delta[i_ev] <- post_event_mean - post_ic_mean
         cr_cell[i_ev] <- pick_idx
+        cr_delta[i_ev, ] <- sum_yn / sum_n - post_ic_mean
     }
 
-    # Final intraindividual drift to the end of the period (tick = 1).
-    y_cur <- y_mat[, n_eval]
+    # Final intraindividual drift to the end of the period (tick = 1, the last surface slice).
+    rows <- (n_ev * n_cells + 1L):((n_ev + 1L) * n_cells)
+    y_cur <- surface[rows, , drop = FALSE]
     ic_by_cell <- ic_by_cell + (y_cur - y_prev) * n_vec / sum_n
 
-    # Combine the per-cell intraindividual deltas with the per-event turnover deltas
-    # and aggregate to one row per (component, cell). Sorted for stable row order.
-    ic_dt <- data.table(
-        component = "intraindividual",
-        delta = ic_by_cell,
-        cell = seq_len(n_cells)
-    )
+    # Combine the per-cell intraindividual deltas with the per-event turnover deltas and
+    # aggregate to one row per (draw, component, cell). as.vector() unrolls each matrix
+    # column-major (cell/event fastest, draw outer), matching draw = rep(seq_len(R), each = .).
     ev_dt <- data.table(
-        component = cr_component,
-        delta = cr_delta,
-        cell = cr_cell
+        draw = rep(seq_len(R), each = n_ev),
+        component = rep(cr_component, R),
+        cell = rep(cr_cell, R),
+        delta = as.vector(cr_delta)
     )
-    out <- rbind(ev_dt, ic_dt)[, .(delta = sum(delta)), by = .(component, cell)]
-    setorder(out, component, cell)
+    ic_dt <- data.table(
+        draw = rep(seq_len(R), each = n_cells),
+        component = "intraindividual",
+        cell = rep(seq_len(n_cells), R),
+        delta = as.vector(ic_by_cell)
+    )
+    out <- rbind(ev_dt, ic_dt)[, .(delta = sum(delta)), by = .(draw, component, cell)]
+    setorder(out, draw, component, cell)
     out[]
 }
 
@@ -535,37 +544,31 @@ tag_cells <- function(dt, data, cells) {
 }
 
 # Build the outcome surface once, replay the shared schedule for the point estimate and
-# every replicate. Returns list(point, draws) (draws NULL when reps is empty).
+# every replicate. Returns list(point, draws) (draws NULL when reps is NULL, i.e. R = 0).
 #
 # align_periods() set data$y = predict_y(model, data) at tick 0, and nothing since has
 # touched age/period/y (derive_events only adds event-count columns the model ignores), so
 # data$y is an *exact* cache of the point model's tick-0 surface -- the point path reuses it
 # rather than re-predicting. Replicates have no such cache, so they predict tick 0 (y_start).
-# The replicate prediction (replicate_predict) is reached only when reps is non-empty, so the
+# The replicate prediction (replicate_predict) is reached only when reps is non-NULL, so the
 # R = 0 path makes exactly one model call (the point surface) and allocates no draw machinery.
 simulate_schedule <- function(data, model, reps, gap, sched) {
-    n_cells <- nrow(data)
     eval_ticks <- c(sched$events_tick, 1)
-    n_eval <- length(eval_ticks)
     stack <- build_event_stack(data, gap, eval_ticks)
 
+    # The point estimate is the R = 1 case: tick-0 outcomes from data$y, the surface from the
+    # model's own predict(). Its single draw column is dropped after replay.
     point <- replay_schedule(
-        data$n, data$y,
-        matrix(predict_y(model, stack), n_cells, n_eval), sched
+        data$n, matrix(data$y, ncol = 1L),
+        matrix(predict_y(model, stack), ncol = 1L), sched
     )
+    point[, draw := NULL]
 
     draws <- NULL
-    if (length(reps) > 0L) {
+    if (!is.null(reps)) {
         surface <- replicate_predict(reps, stack) # (n_cells * n_eval) x R
         y_start <- replicate_predict(reps, data) # n_cells x R, replicate tick-0 outcomes
-        tabs <- lapply(seq_along(reps), function(r) {
-            dt <- replay_schedule(
-                data$n, y_start[, r],
-                matrix(surface[, r], n_cells, n_eval), sched
-            )
-            set(dt, j = "draw", value = r)
-        })
-        draws <- rbindlist(tabs)
+        draws <- replay_schedule(data$n, y_start, surface, sched)
     }
     list(point = point, draws = draws)
 }
@@ -600,7 +603,7 @@ print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, ...
     on.exit(options(old))
     if (detailed) {
         cat("Overview by period:\n")
-        print(x$summary, row.names = FALSE, class = FALSE, na.print = "")
+        print(x$summary[], row.names = FALSE, class = FALSE, na.print = "")
     }
 
     ov <- cumulative_series(x)[period == max(period)]
@@ -673,7 +676,7 @@ print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, ...
     if (val("Out-migration") == 0) decomp <- decomp[Component != "  - Out-migration"]
 
     decomp[, type := NULL]
-    print(decomp, row.names = FALSE, class = FALSE, justify = "left", na.print = "")
+    print(decomp[], row.names = FALSE, class = FALSE, justify = "left", na.print = "")
     invisible(x)
 }
 

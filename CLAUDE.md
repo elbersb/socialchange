@@ -63,19 +63,7 @@ Events are derived from cell-count differences ("never a residual"): for survivo
 
 Profiled on GSS homosexuality (34,026 rows, 26 periods, ages 21–89). **With a GAM `fun_y` (`s(age)+s(period)`) ~75% of wall time is the user's model prediction, not simulation logic:** GAM call ~1.43 s (of which ~1.08 s is `predict.gam`/`PredictMat`), lm call ~0.35 s; simulation machinery ~0.35 s. `simulate_schedule()` evaluates `fun_y` once over an `n_cells × (n_ev+1)` stacked frame, so cost scales `n_cells × n_ev × cost(fun_y)` — and the bootstrap multiplies by `R`.
 
-Optimization leverage (for an eventual C++ rewrite):
-1. Cheaper prediction — reuse a `predict.gam(type="lpmatrix")` basis instead of rebuilding the spline basis on ~800k rows.
-2. Fewer prediction rows — `y` depends only on `(age, period, cells)` and aging is linear in tick, so the `n_ev+1` slices collapse to far fewer distinct rows; predict on unique rows and reindex.
-3. C++ hot loop — `simulate_schedule()`'s running-sum replay and `schedule_events()` ordering, once prediction is cheap. The schedule/simulate split isolates the deterministic (no-RNG) replay as the port unit.
-
-The period loop is embarrassingly parallel but the wrong axis (breaks RNG reproducibility, lowest leverage); for the bootstrap, parallelize over `R` draws instead.
-
-**Bootstrap quick wins (`R > 0`, unimplemented).** Cost on the GSS GAM: R=0 1.7 s, R=10 15.6 s, R=50 67 s (~1.3 s/replicate; R=100 ≈ 2.2 min). Behind the `predict_y()`/`y_replicates()` seam, in priority order:
-1. **Reuse the basis across replicates** (the big one, provably exact here). Prediction is `g⁻¹(Xβ)`; the Dirichlet bootstrap reweights rows (doesn't resample), so `X` is identical across replicates and weight-independent for default `tp`/`cr` smooths. Build `X` once (`gam`: `predict(model, stack, type="lpmatrix")`; `lm`/`glm`: `model.matrix(delete.response(terms(model)), stack)`), make each replicate a matmul `X %*% coef(fit_r)` + inverse link. *Not* posterior sim — refits stay honest Dirichlet refits. **Guard:** fall back to per-replicate `predict_y()` for data-dependent terms (`poly()`, `scale()`, `bs()`/`ns()` with computed knots).
-2. **Predict on unique rows** — pairs with (1), also speeds the point path.
-3. **Optionally fix `sp` across refits** (`gam(..., sp=model$sp)`) — skips per-refit REML selection. Drops smoothness-selection variability from SEs, so a conscious methodological choice; off by default.
-
-Projected (1)+(2): R=100 ≈ 2.2 min → ~30–40 s.
+Remaining leverage: the `O(n_ev × n_cells × R)` replay loop in `replay_schedule()`. The R-level wins (lpmatrix basis reuse across replicates, draw-vectorized replay) are spent; the deterministic (no-RNG) replay is the natural unit for a C++ port. The period loop is embarrassingly parallel but the wrong axis (breaks RNG reproducibility, lowest leverage); for the bootstrap, parallelize over `R` draws instead.
 
 ## Planned features for `decompose_aggregated()`
 
@@ -99,7 +87,7 @@ Reference (untested, may have bugs): `old_scripts/functions/functions_clean.R` �
 2. **Simulation uncertainty** — Monte Carlo noise from random ordering; averaged out via common random numbers, not reported.
 3. **Demographic uncertainty — unimplemented.** Sampling error in `n1`/`n2` and supplied mortality/migration. With `population`, the bootstrap reweights only the survey, so external counts carry no uncertainty.
 
-Deferred limitations of the bootstrap: survey design ignored (reweights rows not PSUs); refit reads original data by name (`getCall()$data`), breaks if out of scope; holds `R` bulky gam refits in memory.
+Deferred limitations of the bootstrap: survey design ignored (reweights rows not PSUs); refit reads original data by name (`getCall()$data`), breaks if out of scope; refitting transiently holds all `R` refits at once (the predictor itself keeps only their coefficients); replicates reuse one design matrix, so a model whose prediction isn't a fixed `linkinv(Xβ)` (a weight-dependent basis) errors rather than falling back to per-replicate prediction.
 
 **Feature (b): Migration estimation.** Per cell the identity is `n2 = n1 + coming_of_age + inmigration − deaths − outmigration`. For survivors that's 1 equation, 3 unknowns — only *net* migration is identified. User closes the system by which inputs they supply:
 - Default (current): net change → coming-of-age / mortality (shrinking) / net in-migration (growing); out-migration = 0.

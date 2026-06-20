@@ -20,29 +20,38 @@ make_se_data <- function() {
 
 make_se_model <- function(d) stats::lm(y ~ age + period + gender, data = d)
 
-test_that("y_replicates returns R fitted models, reproducible, and supports lm/glm/gam", {
+test_that("y_replicates returns an R-column predictor, reproducible, and supports lm/glm/gam", {
   d <- make_se_data()
   m <- make_se_model(d)
 
+  # The refits are folded into a predictor (make_X / beta / linkinv); only the R coefficient
+  # columns survive, not the fitted model objects.
   reps <- y_replicates(m, 5, seed = 1)
-  expect_length(reps, 5)
-  expect_true(all(vapply(reps, inherits, logical(1), "lm")))
+  expect_named(reps, c("make_X", "beta", "linkinv"))
+  expect_equal(ncol(reps$beta), 5L)
+  expect_equal(nrow(reps$beta), length(coef(m)))
 
   # Reproducible with seed.
   reps2 <- y_replicates(m, 5, seed = 1)
-  expect_equal(coef(reps[[3]]), coef(reps2[[3]]))
+  expect_equal(reps$beta, reps2$beta)
+
+  # The fast matmul path reproduces predict_y() for each refit; check against an honest refit.
+  set.seed(1)
+  W <- rudirichlet(5, nrow(d))
+  refit3 <- refit_weighted(m, W[3, ])
+  expect_equal(replicate_predict(reps, d)[, 3], predict_y(refit3, d), ignore_attr = TRUE)
 
   # Unsupported class errors with the supported-list message.
   expect_error(y_replicates(structure(list(), class = "foo"), 2),
     "supported: lm, glm, gam")
 
-  # glm (binomial) dispatches through the lm method. Dirichlet weights are non-integer,
-  # so binomial glm warns about non-integer successes -- expected, suppress it.
+  # glm (binomial) dispatches through the lm method, carrying its (non-identity) link. Dirichlet
+  # weights are non-integer, so binomial glm warns about non-integer successes -- suppress it.
   d[, pos := as.integer(y > stats::median(y))]
   mg <- stats::glm(pos ~ age + period, data = d, family = stats::binomial())
   rg <- suppressWarnings(y_replicates(mg, 3, seed = 1))
-  expect_length(rg, 3)
-  expect_true(all(vapply(rg, inherits, logical(1), "glm")))
+  expect_equal(ncol(rg$beta), 3L)
+  expect_equal(rg$linkinv, stats::binomial()$linkinv)
 
   # gam: mgcv resets the formula environment to the global env, so the refit's by-name
   # data lookup needs the data there (the documented "data must be in scope" contract,
@@ -52,8 +61,7 @@ test_that("y_replicates returns R fitted models, reproducible, and supports lm/g
   ma <- mgcv::gam(y ~ s(age) + period, data = .d_se_gam)
   ra <- y_replicates(ma, 2, seed = 1) # reads .d_se_gam via the gam's (global) formula env
   rm(".d_se_gam", envir = globalenv())
-  expect_length(ra, 2)
-  expect_true(all(vapply(ra, inherits, logical(1), "gam")))
+  expect_equal(ncol(ra$beta), 2L)
 })
 
 test_that("y_replicates always restores the caller's RNG stream (seeded and unseeded)", {
@@ -225,8 +233,11 @@ test_that("gam bootstrap refits preserve effective df (no oversmoothing bias)", 
   edf <- function(mod) sum(summary(mod)$edf)
   orig_edf <- edf(m)
 
-  reps <- y_replicates(m, 10, seed = 1)
-  mean_refit_edf <- mean(vapply(reps, edf, numeric(1)))
+  # y_replicates() discards the refit objects (keeping only coefficients), so probe the edf at
+  # the refit layer that produced the bug: the same mean-1 Dirichlet draw + weighted refit.
+  set.seed(1)
+  W <- rudirichlet(10, nrow(gss_edf_dat))
+  mean_refit_edf <- mean(vapply(seq_len(10), function(r) edf(refit_weighted(m, W[r, ])), numeric(1)))
 
   # Refits must keep roughly the original flexibility. Pre-fix this collapsed to about
   # half the original edf; the corrected mean-1 weighting holds it close.
