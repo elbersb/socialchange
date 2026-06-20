@@ -40,223 +40,97 @@
       <small class="dont-index">Source: <a href="https://github.com/elbersb/socialchange/blob/main/CLAUDE.md" class="external-link"><code>CLAUDE.md</code></a></small>
     </div>
 
-
 <div id="claudemd" class="section level1">
 
-<p>This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.</p>
+<p>Guidance for Claude Code working in this repository.</p>
 <div class="section level2">
 <h2 id="package-overview">Package Overview<a class="anchor" aria-label="anchor" href="#package-overview"></a></h2>
-<p><code>socialchange</code> is an R package for decomposing social change into components of intraindividual change and population turnover. The package implements multiple decomposition methods for analyzing how aggregate-level outcomes change over time due to: - Intraindividual/within-unit changes (e.g., people changing their attitudes) - Population turnover (cohort replacement, mortality, migration, coming-of-age) - Event-driven changes (e.g., countries joining/leaving the EU)</p>
+<p><code>socialchange</code> is an R package for decomposing social change into intraindividual change vs. population turnover. It separates aggregate-level change over time into: - Intraindividual/within-unit change (people changing their attitudes) - Population turnover (cohort replacement, mortality, migration, coming-of-age) - Event-driven change (countries joining/leaving the EU)</p>
+<p><strong>Intellectual positioning:</strong> (1) A critique of APC methods — they suffer the identification problem (age = period − cohort) and need untestable assumptions; this package offers more directly interpretable decomposition alternatives. (2) An improvement on Firebaugh’s algebraic/linear CR-IC decomposition (which mishandles entering/exiting cohorts, non-linearities, and leaves residuals) via model-based counterfactuals (<code><a href="reference/cr_ic.html">cr_ic()</a></code>) and simulation-based individual-level decomposition (<code><a href="reference/sim_social_change.html">sim_social_change()</a></code>, <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code>) that tracks demographic events directly.</p>
 </div>
-<div class="section level2">
-<h2 id="intellectual-positioning">Intellectual Positioning<a class="anchor" aria-label="anchor" href="#intellectual-positioning"></a></h2>
-<p>The package has two main intellectual motivations:</p>
-<ol style="list-style-type: decimal"><li><p><strong>Skepticism of APC models</strong>: The package is partly a critique of Age-Period-Cohort (APC) methods. APC models suffer from the identification problem (age = period − cohort) and require untestable assumptions to resolve it. The package offers decomposition-based alternatives that are more directly interpretable. (This critique will be developed further in future vignettes/papers.)</p></li>
-<li><p><strong>Improving on Firebaugh’s CR-IC decomposition</strong>: Firebaugh’s algebraic and linear CR-IC decompositions are the classical approach to separating cohort replacement from intracohort change, but they have known limitations (treatment of entering/exiting cohorts, inability to handle non-linearities, residuals in the linear method). This package improves on those methods via model-based counterfactuals (AD+, Model methods in <code><a href="reference/cr_ic.html">cr_ic()</a></code>) and, more fundamentally, via the simulation-based individual-level decomposition (<code><a href="reference/sim_social_change.html">sim_social_change()</a></code>, <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code>), which tracks demographic events directly rather than inferring them algebraically.</p></li>
-</ol></div>
 <div class="section level2">
 <h2 id="key-commands">Key Commands<a class="anchor" aria-label="anchor" href="#key-commands"></a></h2>
-<div class="section level3">
-<h3 id="package-development">Package Development<a class="anchor" aria-label="anchor" href="#package-development"></a></h3>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Load package for development</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">load_all</span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Build documentation (uses roxygen2)</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">document</span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Check package</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">check</span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Install package locally</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="building-documentation-website">Building Documentation Website<a class="anchor" aria-label="anchor" href="#building-documentation-website"></a></h3>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Build pkgdown site</span></span>
-<span><span class="fu">pkgdown</span><span class="fu">::</span><span class="fu"><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">build_site</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="running-examples">Running Examples<a class="anchor" aria-label="anchor" href="#running-examples"></a></h3>
-<p>See vignettes in <code>vignettes/</code> for detailed examples: - <code>vignettes/gss_homosexuality.qmd</code> - Applied example using GSS attitudes toward homosexuality **KEY VIGNETTE* - <code>vignettes/decompose_aggregated.qmd</code> - Decomposition of aggregated data - <code>vignettes/simulate.qmd</code> - Simulation examples - <code>vignettes/apc.qmd</code> - APC model examples - <code>vignettes/replicating_firebaugh.qmd</code> - Replicating and improving on Firebaugh’s CR-IC decomposition</p>
-</div>
+<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">load_all</span><span class="op">(</span><span class="op">)</span>      <span class="co"># load for development</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">document</span><span class="op">(</span><span class="op">)</span>      <span class="co"># rebuild roxygen2 docs</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">check</span><span class="op">(</span><span class="op">)</span>         <span class="co"># check package</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install</span><span class="op">(</span><span class="op">)</span>       <span class="co"># install locally</span></span>
+<span><span class="fu">pkgdown</span><span class="fu">::</span><span class="fu"><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">build_site</a></span><span class="op">(</span><span class="op">)</span>     <span class="co"># build docs website</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="architecture">Architecture<a class="anchor" aria-label="anchor" href="#architecture"></a></h2>
-<div class="section level3">
-<h3 id="core-decomposition-functions">Core Decomposition Functions<a class="anchor" aria-label="anchor" href="#core-decomposition-functions"></a></h3>
-<p>The package implements three main decomposition approaches:</p>
+<p>Three main decomposition approaches, all using <code>data.table</code>, formula interfaces (<code>Outcome ~ Unit + Time</code>), and S3 classes with custom <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>/<code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>:</p>
 <ol style="list-style-type: decimal"><li>
-<strong>Event-based decomposition</strong> (<code>R/decompose_events.R</code>)
-<ul><li>
-<code><a href="reference/decompose_events.html">decompose_events()</a></code>: Decomposes change when units enter/exit a population at discrete time points</li>
-<li>Works with two datasets: events data (entry/exit dates) and outcomes data (values at each time point)</li>
-<li>Formula interface: <code>Outcome ~ Unit + Time</code>
+<strong>Event-based</strong> (<code>R/decompose_events.R</code>) — <code><a href="reference/decompose_events.html">decompose_events()</a></code>: units enter/exit at discrete times. Two datasets (events + outcomes). Separates “change” (within-unit) from “replacement” (turnover) with counterfactuals. → class <code>decompose_events</code>
 </li>
-<li>Separates change into “change” (within-unit) and “replacement” (turnover) components</li>
-<li>Computes counterfactuals showing what would happen with only change or only replacement</li>
-</ul></li>
 <li>
-<strong>Aggregated data decomposition</strong> (<code>R/decompose_aggregated.R</code>)
-<ul><li>
-<code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code>: For data aggregated by age and other covariates</li>
-<li>Uses microsimulation approach to randomly order demographic events</li>
-<li>Requires: stacked panel data with age, period, and cell counts</li>
-<li>Requires: <code>fun_y</code> function that computes the outcome from data</li>
-<li>Decomposes into: intraindividual change, coming-of-age, mortality, and net in-migration (the last derived as a residual from cell-count growth; see Known Limitations → Migration)</li>
-<li>Optional <code>population</code> argument supplies a true cell × period count frame, overriding survey counts for the population frame and event derivation</li>
-</ul></li>
-</ol><p>To generate scenarios, there is <code>R/simulate.R</code>: - <code><a href="reference/sim_social_change.html">sim_social_change()</a></code>: Forward simulation of social change dynamics - User provides functions for: outcome (<code>fun_y</code>), mortality, coming-of-age, migration, and state transitions - Returns detailed event-by-event records showing exact contribution of each component</p>
-</div>
-<div class="section level3">
-<h3 id="additional-methods">Additional Methods<a class="anchor" aria-label="anchor" href="#additional-methods"></a></h3>
-<ul><li>
-<strong>CR-IC decomposition</strong> (<code>R/cr_ic.R</code>): Classical cohort replacement vs. intraindividual change decomposition using algebraic, linear, and model-based approaches</li>
+<strong>Aggregated</strong> (<code>R/decompose_aggregated.R</code>) — <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code>: data aggregated by age + covariates. Microsimulation randomly orders demographic events. Needs stacked panel data (age, period, cell counts) and a fitted <code>model</code> (<code>lm</code>/<code>glm</code>/<code>gam</code>) predicting outcome from age/period/cells. Decomposes into intraindividual change, coming-of-age, mortality, net in-migration. Optional <code>population</code> arg supplies a true cell × period count frame (overrides survey counts). <code>R &gt; 0</code> adds model-uncertainty SEs via Dirichlet bootstrap. → class <code>social_change_decomp</code>
+</li>
 <li>
-<strong>APC models</strong> (<code>R/apc.R</code>): Age-Period-Cohort models using orthogonal polynomial contrasts to handle identification issues. Also includes <code><a href="reference/plot_gam_surface.html">plot_gam_surface()</a></code> for visualizing GAM smooths as 2D surfaces.</li>
-</ul></div>
-<div class="section level3">
-<h3 id="data-structure-conventions">Data Structure Conventions<a class="anchor" aria-label="anchor" href="#data-structure-conventions"></a></h3>
-<p>All three main approaches use <code>data.table</code> extensively: - Input data should be data frames or data.tables - Formula interfaces follow R conventions: <code>Outcome ~ Unit + Time</code> - Functions internally rename columns to standardized names (unit, index, outcome, etc.) - Time/period columns are coerced to numeric for calculations - All functions return S3 objects with class attributes for custom print/plot methods</p>
-</div>
-<div class="section level3">
-<h3 id="return-objects">Return Objects<a class="anchor" aria-label="anchor" href="#return-objects"></a></h3>
-<p>All main functions return list objects with custom S3 classes: - <code>decompose_events</code> → class <code>decompose_events</code> - <code>decompose_aggregated</code> → class <code>social_change_decomp</code> - <code>sim_social_change</code> → class <code>social_change_sim</code> - <code>cr_ic</code> → class <code>cr_ic_decomposition</code> - <code>apc</code> → class <code>apc_model</code></p>
-<p>Each has custom <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> and <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> methods defined (all five classes have both).</p>
-</div>
+<strong>Simulation</strong> (<code>R/simulate.R</code>) — <code><a href="reference/sim_social_change.html">sim_social_change()</a></code>: forward simulation. User supplies functions for outcome (<code>fun_y</code>), mortality, coming-of-age, migration, state transitions. Returns event-by-event records. → class <code>social_change_sim</code>
+</li>
+</ol><p>Additional methods: - <strong>CR-IC</strong> (<code>R/cr_ic.R</code>) — classical cohort-replacement vs. intraindividual change (algebraic, linear, model-based). → class <code>cr_ic_decomposition</code> - <strong>APC</strong> (<code>R/apc.R</code>) — APC models via orthogonal polynomial contrasts; includes <code><a href="reference/plot_gam_surface.html">plot_gam_surface()</a></code>. → class <code>apc_model</code></p>
+<p>Functions rename input columns to standardized names internally; period columns are coerced to numeric.</p>
 </div>
 <div class="section level2">
 <h2 id="dependencies">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies"></a></h2>
-<p>Key dependencies: - <code>data.table</code>: All data manipulation (imported) - <code>ggplot2</code>: Plotting (imported) - <code>checkmate</code>: Input validation - <code>weightedcontrasts</code>: Custom package for APC models (from GitHub: elbersb/weightedcontrasts)</p>
+<p><code>data.table</code> (all data manipulation), <code>ggplot2</code> (plotting), <code>checkmate</code> (validation), <code>weightedcontrasts</code> (APC, from GitHub elbersb/weightedcontrasts). roxygen2 8.0.0; S3 methods registered with <code>S3method()</code> in NAMESPACE.</p>
 </div>
 <div class="section level2">
-<h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a></h2>
-<ul><li>All exported functions use roxygen2 documentation</li>
-<li>Documentation is in the same files as functions</li>
-<li>roxygen2 version 8.0.0 (see DESCRIPTION)</li>
-<li>Use <code>@import data.table</code> and <code>@import ggplot2</code> directives</li>
-<li>Use <code>@export</code> for exported functions</li>
-<li>S3 methods are exported with <code>@export</code> and registered with <code>S3method()</code> in NAMESPACE</li>
+<h2 id="datasets-data-docs-in-rdatar-prep-in-data-raw">Datasets (<code>data/</code>, docs in <code>R/data.R</code>, prep in <code>data-raw/</code>)<a class="anchor" aria-label="anchor" href="#datasets-data-docs-in-rdatar-prep-in-data-raw"></a></h2>
+<ul><li>
+<code>gss_rac.rda</code> — GSS racial attitudes, white Americans (1972–1984)</li>
+<li>
+<code>gss_homosex.rda</code> — GSS attitudes toward homosexual sex (1973–2018)</li>
+<li>
+<code>eu_membership.rda</code> — EU entry/exit dates</li>
+<li>
+<code>wpp_data.rda</code> — UN World Population Prospects (1950+)</li>
 </ul></div>
 <div class="section level2">
-<h2 id="included-datasets">Included Datasets<a class="anchor" aria-label="anchor" href="#included-datasets"></a></h2>
-<p>Located in <code>data/</code>: - <code>gss_rac.rda</code>: General Social Survey data on racial attitudes of white Americans (1972, 1976, 1980, 1984) - <code>gss_homosex.rda</code>: General Social Survey data on attitudes toward homosexual sex (1973–2018) - <code>eu_membership.rda</code>: EU country entry/exit dates - <code>wpp_data.rda</code>: UN World Population Prospects data (1950+)</p>
-<p>Dataset documentation is in <code>R/data.R</code> and <code>man/*.Rd</code> files. Data preparation scripts are in <code>data-raw/</code>.</p>
+<h2 id="vignettes-vignettes">Vignettes (<code>vignettes/</code>)<a class="anchor" aria-label="anchor" href="#vignettes-vignettes"></a></h2>
+<p><code>gss_homosexuality.qmd</code> (<strong>KEY</strong>), <code>decompose_aggregated.qmd</code>, <code>simulate.qmd</code>, <code>apc.qmd</code>, <code>replicating_firebaugh.qmd</code>.</p>
 </div>
 <div class="section level2">
-<h2 id="known-limitations">Known Limitations<a class="anchor" aria-label="anchor" href="#known-limitations"></a></h2>
-<div class="section level3">
-<h3 id="migration">Migration<a class="anchor" aria-label="anchor" href="#migration"></a></h3>
-<p><strong>Only net in-migration is recovered, and only as a residual from cell-count growth.</strong> Per the “never a residual” principle, every change in a cell’s size between waves is attributed to a demographic event: a survivor cohort that <em>shrinks</em> is credited to mortality, one that <em>grows</em> to net in-migration (<code>derive_events()</code>). This is always-on (not gated on a population frame, no toggle); print/plot show a migration component only for whichever of in/out is non-zero.</p>
-<p>Consequences and limits: - <strong>Out-migration is never separately identified.</strong> Gross out-migration is not separable from deaths (a survivor loss could be either), so it is folded into mortality and the reported <code>outmigration</code> is always <code>0</code>. - <strong>On survey data the in-migration term is mostly noise.</strong> Run on raw survey cells, a “growing” cohort usually reflects sampling fluctuation across waves rather than genuine immigration (e.g. ~1.9% / +0.007 on the GSS homosexuality example) — honest accounting of where the cell-count change went, not a demographic estimate. It becomes meaningful only when <code>population</code> supplies a true frame. - Migration among coming-of-age cohorts is not modeled (new cohorts get all their growth as coming-of-age).</p>
-<p>The remaining migration work (feature (b) below) is supplying mortality/migration <strong>inputs</strong> (e.g. <code>fun_mortality</code>) to close the accounting identity properly rather than reading net change off cell-count differences.</p>
-</div>
-<div class="section level3">
-<h3 id="top-coding-aging-out-of-the-top-of-the-age-window-is-labeled-mortality">Top-coding: Aging out of the top of the age window is labeled mortality<a class="anchor" aria-label="anchor" href="#top-coding-aging-out-of-the-top-of-the-age-window-is-labeled-mortality"></a></h3>
-<p><strong>A survivor cohort that ages past the observed age range is recorded as deaths, not as window-exit.</strong> This is a <em>design choice, not a code bug</em>: it falls out of the same <code>n1 - n2</code> accounting as everything else.</p>
+<h2 id="known-limitations-of-decompose_aggregated">Known Limitations of <code>decompose_aggregated()</code>
+<a class="anchor" aria-label="anchor" href="#known-limitations-of-decompose_aggregated"></a></h2>
+<p>Events are derived from cell-count differences (“never a residual”): for survivors <code>mortality = pmax(0, n1 - n2)</code>, <code>inmigration = pmax(0, n2 - n1)</code>; for new cohorts <code>coming_of_age = pmax(0, n2 - n1)</code>. Consequences:</p>
 <ul><li>
-<strong>For a survey with a top-coded or capped age range it misattributes window-exit to mortality.</strong> Examples: GSS top-codes age at 89, so the 89→90+ cohort vanishes and is booked as deaths; an analysis restricted to an 18–65 sample sends everyone aging past 65 to mortality regardless of whether they died.</li>
-</ul><p><strong>In practice</strong>: restrict to an age range whose top is open-ended relative to the data (or use a true <code>population</code> frame - but that won’t really help because population and survey need to match), or read the mortality component as “deaths + exits past the top of the window” when the range is capped.</p>
-</div>
-<div class="section level3">
-<h3 id="aggregated-decomposition-with-transitions">Aggregated Decomposition with Transitions<a class="anchor" aria-label="anchor" href="#aggregated-decomposition-with-transitions"></a></h3>
-<p><strong><code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code> does not properly handle within-cell transitions</strong> (e.g., smokers becoming non-smokers). The function decomposes change into: - Intraindividual change - Mortality - Coming-of-age - Net in-migration (residual from cell-count growth; see above)</p>
-<p>When the input data includes transitions between cells, these transition effects are <strong>not separately identified</strong> and instead get absorbed into the intraindividual change component. Additionally:</p>
-<ul><li>Mortality, coming-of-age, and net in-migration are estimated from simple population differences between periods: for survivors <code>mortality = pmax(0, n1 - n2)</code> and <code>inmigration = pmax(0, n2 - n1)</code>; for new cohorts <code>coming_of_age = pmax(0, n2 - n1)</code>
-</li>
-<li>When transitions occur, these differences no longer accurately reflect demographic events</li>
-<li>The <code>pmax(0, ...)</code> guard routes each cell’s net change to exactly one of mortality / in-migration depending on its sign, which masks any offsetting flows</li>
-<li>Cells with net inflow from transitions will show 0 mortality even if deaths occurred (the inflow is labeled in-migration instead)</li>
-</ul><p><strong>Workaround</strong>: This is a fundamental limitation of the aggregated decomposition approach. The simulation function <code><a href="reference/sim_social_change.html">sim_social_change()</a></code> properly tracks transitions as a separate component, but <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code> cannot recover this from already-aggregated data.</p>
-<p><strong>In practice</strong>: Use <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code> only for data without significant within-cell transitions, or be aware that transition effects will be misattributed to intraindividual change.</p>
-</div>
-<div class="section level3">
-<h3 id="survey-weights-in-decompose_aggregated">Survey Weights in <code>decompose_aggregated()</code>
-<a class="anchor" aria-label="anchor" href="#survey-weights-in-decompose_aggregated"></a></h3>
-<p><strong>The current weight normalization is an approximation that should be revisited.</strong></p>
-<p>When <code>weight</code> is provided with individual-level data, weights are normalized within each period to sum to the period sample size (<code>.N</code>), then cells get <code>n = round(sum(normalized_weight))</code>. This approach:</p>
-<ul><li>Correctly adjusts <strong>relative</strong> population structure across cells (e.g., oversampled subgroups get their proper share)</li>
-<li>Keeps event counts (mortality, coming-of-age) tractable for the simulation loop</li>
-<li>Avoids the problem of population-scaled weights (e.g., inverse probability weights summing to millions) making the simulation intractable</li>
-</ul><p><strong>What it gets wrong</strong>: The ideal would use true population counts per cell per period to estimate demographic event magnitudes. Normalized survey weights approximate relative structure but don’t recover absolute population sizes. Additionally, rounding introduces small errors, especially for cells with few respondents.</p>
-<p><strong>Ideal future approach</strong>: If true population counts (e.g., from census or official statistics) are available alongside survey data, they should be used directly as <code>n</code> in pre-aggregated input, bypassing the <code>weight</code> argument entirely. The normalization approach is a practical stopgap for the common case where only survey weights are available.</p>
-<hr></div>
-</div>
-</div>
-<div class="section level1">
-<h1 id="performance-profile-of-decompose_aggregated">Performance profile of <code>decompose_aggregated()</code>
-<a class="anchor" aria-label="anchor" href="#performance-profile-of-decompose_aggregated"></a></h1>
-<p><em>(Profiled on the GSS homosexuality example: 34,026 rows, 26 periods, ages 21–89. Headline: with a realistic GAM <code>fun_y</code>, ~75% of wall time is the user’s model prediction, not the simulation logic. Captured ahead of a planned C++ rewrite of the hot loop.)</em></p>
-<p><strong>Measured cost (per <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code> call):</strong> - GAM <code>fun_y</code> (<code>s(age) + s(period)</code>): <strong>~1.43 s</strong> - lm <code>fun_y</code> (<code>age + period</code>): <strong>~0.35 s</strong></p>
-<p>So ~1.08 s of the GAM call is <em>prediction alone</em> (<code>predict.gam</code> → <code>PredictMat</code>: <code>matrix</code>/<code>t.default</code>/<code>.Fortran</code>/<code>.C</code>). The remaining ~0.35 s is the simulation machinery.</p>
-<p><strong>Why prediction dominates: one giant <code>fun_y</code> call per period.</strong> <code>simulate_schedule()</code> evaluates <code>fun_y(data_stack)</code> once over an <code>n_cells × (n_ev + 1)</code> stacked frame (every event time × every cell). Runtime scales as <code>n_cells × n_ev × cost(fun_y)</code> — and feature (a)’s bootstrap will multiply this by <code>R</code> draws. The remaining non-prediction time splits between <code>simulate_schedule</code> (the O(<code>n_ev × n_cells</code>) inner loop re-summing <code>y_cur * n_vec</code> every event) and data.table ordering/grouping in <code>schedule_events()</code>.</p>
-<p><strong>Optimization leverage (for the eventual C++ rewrite or before it):</strong> 1. <strong>Cheaper prediction</strong> — reuse a <code>predict.gam(type = "lpmatrix")</code> basis instead of letting <code>PredictMat</code> rebuild the spline basis on all ~800k rows. 2. <strong>Fewer prediction rows</strong> — <code>y</code> depends only on <code>(age, period, cells)</code> and aging is linear in tick, so the <code>n_ev + 1</code> slices collapse to far fewer distinct rows; predict on unique rows and reindex. 3. <strong>C++ hot loop</strong> — the <code>simulate_schedule()</code> running-sum replay and <code>schedule_events()</code> ordering are the natural targets once prediction is cheap. The schedule/simulate split already isolates the deterministic replay (no RNG) as the unit to port.</p>
-<p><strong>Parallelism: the period loop is embarrassingly parallel, but it’s the wrong axis.</strong> Each main-loop iteration reads only shared read-only state and writes disjoint output slots, so it could be an <code>mclapply</code>/<code>future_lapply</code> over <code>i_period</code>. But: (i) it breaks RNG reproducibility (<code>schedule_events()</code>’s sequential <code><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif()</a></code> stream needs parallel-safe RNG, regenerating the golden master); and (ii) it’s the lowest-leverage axis (~25 transitions; <code>fun_y</code> dominates). The bigger single-threaded win is the per-period prediction cost (1–2 above). For feature (a)’s bootstrap, parallelize over the <code>R</code> draws instead — coarser units, each one full sequential run with its own seed.</p>
-<hr></div>
-<div class="section level1">
-<h1 id="planned-features-for-decompose_aggregated">Planned Features for <code>decompose_aggregated()</code>
-<a class="anchor" aria-label="anchor" href="#planned-features-for-decompose_aggregated"></a></h1>
-<p>What remains: (a) standard errors and the rest of (b) migration estimation.</p>
+<strong>Migration: only net in-migration, as a residual.</strong> Out-migration is never separately identified (a survivor loss could be death or exit, so it’s folded into mortality; reported <code>outmigration</code> is always 0). On raw survey cells the in-migration term is mostly sampling noise (~1.9% on the GSS homosexuality example); meaningful only with a true <code>population</code> frame. Migration among coming-of-age cohorts is not modeled.</li>
+<li>
+<strong>Top-coding → mortality.</strong> A survivor cohort aging past the observed age range is booked as deaths (GSS top-codes age at 89; an 18–65 sample sends everyone aging past 65 to mortality). Design choice, not a bug — same <code>n1 - n2</code> accounting. <em>In practice:</em> use an open-ended top age, or read mortality as “deaths + exits past the window top”.</li>
+<li>
+<strong>Transitions misattributed.</strong> Within-cell transitions (e.g. smokers → non-smokers) are not separately identified and get absorbed into intraindividual change; the <code>pmax(0, …)</code> guard masks offsetting flows (a cell with net transition inflow shows 0 mortality even if deaths occurred). Use only on data without significant transitions. <code><a href="reference/sim_social_change.html">sim_social_change()</a></code> tracks transitions properly but can’t recover them from aggregated data.</li>
+<li>
+<strong>Survey weights are an approximation.</strong> With individual-level <code>weight</code>, weights are normalized within period to sum to <code>.N</code>, then <code>n = round(sum(normalized_weight))</code>. Adjusts <em>relative</em> structure correctly and keeps event counts tractable, but doesn’t recover absolute population sizes; rounding adds small errors. Prefer supplying true <code>population</code> counts when available.</li>
+</ul></div>
 <div class="section level2">
-<h2 id="design-vision-keep-the-three-inputs-decoupled">Design vision: keep the three inputs decoupled<a class="anchor" aria-label="anchor" href="#design-vision-keep-the-three-inputs-decoupled"></a></h2>
-<p>The architecture keeps three logically-separate inputs decoupled, with a pluggable event generator between the population frame and the simulation core. The remaining features each attach to one seam of this pipeline:</p>
-<pre><code>[survey data] --fun_y--&gt;  Y(cell, time)                         &lt;- feature (a) perturbs this (model draws)
-[population frame]        n per cell per period                 &lt;- `population` arg supplies (shipped); (a) perturbs (demographic draws)
-        |
+<h2 id="performance-profile-of-decompose_aggregated">Performance profile of <code>decompose_aggregated()</code>
+<a class="anchor" aria-label="anchor" href="#performance-profile-of-decompose_aggregated"></a></h2>
+<p>Profiled on GSS homosexuality (34,026 rows, 26 periods, ages 21–89). <strong>With a GAM <code>fun_y</code> (<code>s(age)+s(period)</code>) ~75% of wall time is the user’s model prediction, not simulation logic:</strong> GAM call ~1.43 s (of which ~1.08 s is <code>predict.gam</code>/<code>PredictMat</code>), lm call ~0.35 s; simulation machinery ~0.35 s. <code>simulate_schedule()</code> evaluates <code>fun_y</code> once over an <code>n_cells × (n_ev+1)</code> stacked frame, so cost scales <code>n_cells × n_ev × cost(fun_y)</code> — and the bootstrap multiplies by <code>R</code>.</p>
+<p>Remaining leverage: the <code>O(n_ev × n_cells × R)</code> replay loop in <code>replay_schedule()</code>. The R-level wins (lpmatrix basis reuse across replicates, draw-vectorized replay) are spent; the deterministic (no-RNG) replay is the natural unit for a C++ port. The period loop is embarrassingly parallel but the wrong axis (breaks RNG reproducibility, lowest leverage); for the bootstrap, parallelize over <code>R</code> draws instead.</p>
+</div>
+<div class="section level2">
+<h2 id="planned-features-for-decompose_aggregated">Planned features for <code>decompose_aggregated()</code>
+<a class="anchor" aria-label="anchor" href="#planned-features-for-decompose_aggregated"></a></h2>
+<p>Remaining: the demographic-uncertainty branch of (a), and the rest of (b). Architecture keeps three inputs decoupled with a pluggable event generator between them:</p>
+<pre><code>[survey data] --fun_y--&gt; Y(cell,time)          &lt;- (a) perturbs (model draws)
+[population frame] n per cell per period        &lt;- shipped; (a) perturbs (demographic draws)
         v
-[event generator]  derive per-cell {mortality, coming_of_age, inmigration, outmigration}   &lt;- feature (b): pluggable strategies
-        |
+[event generator] derive {mortality, coming_of_age, inmigration, outmigration}  &lt;- (b): pluggable
         v
-[simulation core]  random event ordering + interleaved IC change &lt;- feature (a): repeat for ordering uncertainty
-        |
+[simulation core] random ordering + interleaved IC change  &lt;- (a): repeat for ordering uncertainty
         v
-[summarize]  point estimate + SE/CI, per-period &amp; cumulative, optionally split by covariate cell &amp; event type</code></pre>
-<p>The old scripts (<code>old_scripts/functions/functions_clean.R</code>) are the reference implementations for the unbuilt pieces, but might contains bugs as they are substantively untested: <code>eventDecompositionMat</code> (all four event types — the direct ancestor of <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code>), <code>fitBSModels</code>/<code>splineForBS</code> (Dirichlet-bootstrap GAM), <code>createPopFrame</code>/<code>calcSurvivingPop</code> (external WPP/HMD frame + mortality-residual migration), and <code>prepComponentData</code>/<code>decomposeChangeByVar</code> (bootstrap CIs + per-covariate/per-event breakdown).</p>
-</div>
-<div class="section level2">
-<h2 id="feature-a-standard-errors">Feature (a): Standard errors<a class="anchor" aria-label="anchor" href="#feature-a-standard-errors"></a></h2>
-<p>Three distinct uncertainty sources, in decreasing order of typical importance:</p>
-<ol style="list-style-type: decimal"><li>
-<strong>Model uncertainty</strong> — <code>fun_y</code> is a fitted model with sampling variability. Old scripts handled this with a Dirichlet bootstrap of the GAM (<code>fitBSModels</code>, 100 draws). This is the dominant source in practice.</li>
-<li>
-<strong>Simulation uncertainty</strong> — Monte Carlo noise from the random event ordering. Small when event counts are large (hundreds+). Should be <em>averaged out</em> of the point estimate, not reported as estimand uncertainty.</li>
-<li>
-<strong>Demographic uncertainty</strong> — uncertainty in the event counts / cell <code>n</code> themselves (survey sampling error in <code>n1</code>,<code>n2</code>; uncertainty in supplied mortality/migration). New beyond the old scripts, which treated the WPP/HMD frame as fixed.</li>
-</ol><hr></div>
-<div class="section level2">
-<h2 id="feature-b-migration-estimation">Feature (b): Migration estimation<a class="anchor" aria-label="anchor" href="#feature-b-migration-estimation"></a></h2>
-<p>Per cell (birth cohort × covariates) the accounting identity is:</p>
-<pre><code><span><span class="va">n2</span> <span class="op">=</span> <span class="va">n1</span> <span class="op">+</span> <span class="va">coming_of_age</span> <span class="op">+</span> <span class="va">inmigration</span> <span class="op">-</span> <span class="va">deaths</span> <span class="op">-</span> <span class="va">outmigration</span></span></code></pre>
-<p>For survivor cohorts (coming_of_age = 0) this is <strong>1 equation, 3 unknowns</strong> (deaths, inmigration, outmigration). Gross in- and out-migration are <em>not separately identified</em> from cell counts alone — only <strong>net</strong> migration per cell is. (The old scripts confirm this: <code>calcSurvivingPop</code> produces only net per cell, split into <code>Immig</code> if positive / <code>Emig</code> if negative.) Flexibility = which inputs the user supplies to close the system:</p>
-<ul><li>
-<strong>Default (current behavior)</strong>: no mortality/migration supplied → net change attributed to coming-of-age, mortality (shrinking survivors), or net in-migration (growing survivors). Out-migration = 0, deaths and migration never co-occur in the same cell. <em>(The in-migration half of this is already implemented — see “Always-on net in-migration” above.)</em>
-</li>
-<li>
-<strong>Supply mortality (recommended default for most cases)</strong>: <code>deaths = fun_mortality(cell)</code> (count, or a rate × <code>n1</code>). Then <code>net_migration = n2 - (n1 - deaths)</code>; positive ⇒ inmigration, negative ⇒ outmigration. This is exactly the old-scripts strategy (HMD mortality rate → <code>PopSurvive = Pop1 - deaths</code> → <code>NetImmig = Pop2 - PopSurvive</code>).</li>
-<li>
-<strong>Supply migration (net)</strong> → back out deaths from the identity.</li>
-<li>
-<strong>Supply both</strong> → system is over-determined; reconcile (let implied <code>n2</code> be a check, or warn on inconsistency beyond a tolerance).</li>
-</ul><p><strong>Proposed API</strong>: <code>fun_mortality = NULL</code> and <code>fun_migration = NULL</code> arguments (function-based inputs, evaluated per cell), consumed by <code>derive_events()</code> from the refactor. Default <code>NULL</code> = current <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax()</a></code> strategy (net change → mortality if shrinking, net in-migration if growing). The print/plot methods already render the migration component (each migration row is shown when its own contribution is non-zero); supplying these inputs would additionally make out-migration and same-cell death+migration non-zero, so the out-migration row would start appearing.</p>
-<p><strong>Open modeling choices to document</strong>: (i) migrants assumed to take the receiving cell’s mean Y (no migrant-specific outcome model); (ii) migration among coming-of-age cohorts is ignored (old scripts set their deaths=0, mig=0); (iii) net-only, gross requires external flow data.</p>
-<hr></div>
-<div class="section level2">
-<h2 id="how-the-two-features-overlap">How the two features overlap<a class="anchor" aria-label="anchor" href="#how-the-two-features-overlap"></a></h2>
-<ul><li>
-<strong>(a) ↔︎ (b)</strong> — (b) defines the event table; (a)’s demographic-uncertainty branch perturbs exactly that table. The mortality/migration estimates (b) introduces are a <em>new</em> uncertainty source (a) must propagate (e.g., stochastic <code>fun_mortality</code>).</li>
-<li>
-<strong>Both</strong> converge on the <strong>event-table abstraction</strong> (<code>derive_events()</code>) and the <strong>separation of Y model / population frame / event counts</strong>, both already in place.</li>
-</ul><p><strong>Suggested sequencing</strong>: feature (b)’s remaining half (<code>fun_mortality</code>/<code>fun_migration</code> inputs to close the identity → out-migration, same-cell death+migration) → feature (a) (bootstrap wrapper over the now-pluggable inputs).</p>
-<hr></div>
-<div class="section level2">
-<h2 id="possible-future-helper-cross-wave-harmonization--raking">Possible future helper: cross-wave harmonization / raking<a class="anchor" aria-label="anchor" href="#possible-future-helper-cross-wave-harmonization--raking"></a></h2>
-<p>For the “I have true population counts per cell per wave” case, the shipped <code>population</code> argument is the right tool: supply the counts directly, let the survey supply only <code>fun_y</code>, and survey age-structure noise across waves drops out entirely. This is the recommended path and needs no new machinery.</p>
-<p>A raking helper would only add value in the weaker data situation: you have <em>marginal</em> population targets (e.g. WPP age distribution, race composition, proportion newly age-eligible — as in the old scripts <code>jm_gss.R</code>/<code>gss_bootstrap.R</code>) but not their joint distribution across cells, so you can’t supply a <code>population</code> frame. Raking/IPF reconstructs an adjusted joint <code>n</code> from those margins. It is standalone preprocessing that produces an adjusted <code>n</code>/weight column before <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code> — sketch: <code>harmonize_cells(data, targets, by, within = "period")</code>. Standard IPF already exists (<code>survey::rake</code>, <code>anesrake</code>, <code>autumn</code>); the only real value-add of bundling is enforcing the two easy-to-get-wrong rules: rake <em>within</em> wave, and — under the feature (a) bootstrap — re-rake <em>inside</em> each draw, or the SE is wrong.</p>
-<p>Not near-term work. Revisit if a margins-only application comes up.</p>
+[summarize] point estimate + SE/CI, per-period &amp; cumulative, optional split by cell &amp; event</code></pre>
+<p>Reference (untested, may have bugs): <code>old_scripts/functions/functions_clean.R</code> — <code>eventDecompositionMat</code>, <code>fitBSModels</code>/<code>splineForBS</code>, <code>createPopFrame</code>/<code>calcSurvivingPop</code>, <code>prepComponentData</code>/<code>decomposeChangeByVar</code>.</p>
+<p><strong>Feature (a): Standard errors.</strong> Three uncertainty sources: 1. <strong>Model uncertainty — implemented.</strong> <code>R &gt; 0</code> refits <code>model</code> on <code>R</code> Dirichlet-reweighted copies of its training data (<code>y_replicates()</code> generic in <code>R/y_model.R</code>), replaying the <em>same</em> event schedule (common random numbers). Returns a long per-(draw, period, cell) <code>draws</code> table; print/plot derive the cumulative 95% CI (<code>cumulative_series()</code>). Reweighting microdata (not <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> posterior sim) is deliberate — captures misspecification and survey-weight variance. 2. <strong>Simulation uncertainty</strong> — Monte Carlo noise from random ordering; averaged out via common random numbers, not reported. 3. <strong>Demographic uncertainty — unimplemented.</strong> Sampling error in <code>n1</code>/<code>n2</code> and supplied mortality/migration. With <code>population</code>, the bootstrap reweights only the survey, so external counts carry no uncertainty.</p>
+<p>Deferred limitations of the bootstrap: survey design ignored (reweights rows not PSUs); refit reads original data by name (<code>getCall()$data</code>), breaks if out of scope; refitting transiently holds all <code>R</code> refits at once (the predictor itself keeps only their coefficients); replicates reuse one design matrix, so a model whose prediction isn’t a fixed <code>linkinv(Xβ)</code> (a weight-dependent basis) errors rather than falling back to per-replicate prediction.</p>
+<p><strong>Feature (b): Migration estimation.</strong> Per cell the identity is <code>n2 = n1 + coming_of_age + inmigration − deaths − outmigration</code>. For survivors that’s 1 equation, 3 unknowns — only <em>net</em> migration is identified. User closes the system by which inputs they supply: - Default (current): net change → coming-of-age / mortality (shrinking) / net in-migration (growing); out-migration = 0. - Supply mortality (recommended): <code>deaths = fun_mortality(cell)</code>, then <code>net_migration = n2 − (n1 − deaths)</code>; positive ⇒ in, negative ⇒ out. - Supply net migration → back out deaths. - Supply both → over-determined; reconcile / warn beyond tolerance.</p>
+<p>Proposed API: <code>fun_mortality = NULL</code>, <code>fun_migration = NULL</code>, consumed by <code>derive_events()</code>. Default <code>NULL</code> = current <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax()</a></code> strategy. Print/plot already render migration rows when non-zero; supplying inputs makes out-migration appear. Modeling choices to document: (i) migrants take receiving cell’s mean Y; (ii) migration among coming-of-age cohorts ignored; (iii) net-only.</p>
+<p><strong>Overlap &amp; sequencing:</strong> (b) defines the event table; (a)’s demographic branch perturbs it. Both converge on <code>derive_events()</code>. Do (b)’s remaining half first, then (a)’s bootstrap over the pluggable inputs.</p>
+<p><strong>Possible future helper — raking.</strong> Only adds value when you have <em>marginal</em> population targets but not their joint distribution (can’t supply a <code>population</code> frame). IPF reconstructs an adjusted joint <code>n</code> as preprocessing (<code>survey::rake</code>/<code>anesrake</code>/<code>autumn</code>); sketch <code>harmonize_cells(data, targets, by, within="period")</code>. The value-add is enforcing: rake <em>within</em> wave, and re-rake <em>inside</em> each bootstrap draw or the SE is wrong. Not near-term.</p>
 </div>
 </div>
-
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

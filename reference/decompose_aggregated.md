@@ -2,19 +2,21 @@
 
 Decomposes aggregate-level change into intraindividual change and
 population turnover components using microsimulation on stacked
-cross-sectional data. Requires a prediction function that models the
-outcome as a function of age, period, and covariates.
+cross-sectional data. Requires a fitted model that predicts the outcome
+as a function of age, period, and covariates.
 
 ## Usage
 
 ``` r
 decompose_aggregated(
   stacked_data,
-  fun_y,
+  model,
   cells = c(),
+  R = 0,
   tol = 0.05,
   weight = NULL,
-  population = NULL
+  population = NULL,
+  seed = NULL
 )
 
 # S3 method for class 'social_change_decomp'
@@ -30,21 +32,36 @@ plot(x, covariate = NULL, ...)
   aggregated to cells; otherwise individual-level rows are aggregated
   internally using `weight`.
 
-- fun_y:
+- model:
 
-  Prediction function taking `(newdata)` and returning predicted outcome
-  values
+  A fitted model object (`lm`, `glm`, or `gam`) predicting the outcome
+  from `age`, `period`, and any `cells`. Predictions are taken on the
+  response scale via
+  [`predict()`](https://rdrr.io/r/stats/predict.html).
 
 - cells:
 
   Character vector of additional cell identifier columns beyond age
   (e.g., "gender", "smoking")
 
+- R:
+
+  Number of Dirichlet-bootstrap replicates used to attach standard
+  errors capturing `model` uncertainty (default 0, point estimate only).
+  When `R > 0`, `model` is refit `R` times on Dirichlet-reweighted
+  copies of its training data; the spread of the resulting
+  decompositions (under common random numbers, so event-ordering noise
+  is differenced out) gives per-component standard errors and cumulative
+  confidence bands. This captures model uncertainty only – the dominant
+  source – not demographic uncertainty in the cell counts. For `gam`
+  models each replicate is a full refit plus prediction, so large `R`
+  can be slow.
+
 - tol:
 
   Maximum tolerated absolute deviation between observed and modeled
   period means, in the outcome's own units (default 0.05). Checks that
-  `fun_y` reproduces the observed period means; if the largest deviation
+  `model` reproduces the observed period means; if the largest deviation
   exceeds `tol`, the function errors. The default suits outcomes on a
   roughly unit scale (e.g. proportions in \[0, 1\]); set `tol` to match
   outcomes on another scale.
@@ -66,7 +83,7 @@ plot(x, covariate = NULL, ...)
   (columns `period`, `age`, the `cells` identifiers, and `n`). When
   supplied, these counts replace the survey-derived cell counts as the
   population frame: they drive event derivation and weight the modeled
-  mean, while `fun_y` continues to supply every cell's outcome and
+  mean, while `model` continues to supply every cell's outcome and
   `stacked_data` is used only for the observed-mean / model-fit
   diagnostic. This is the preferred input when true population counts
   (e.g. from a census or official statistics) are available alongside
@@ -77,6 +94,13 @@ plot(x, covariate = NULL, ...)
   frame must match the survey's minimum age and the level set of each
   `cells` column, and cover every survey period (extra periods are
   dropped); these are compared over rows with `n > 0`.
+
+- seed:
+
+  Optional integer seed for reproducible bootstrap replicates (default
+  `NULL`). The Dirichlet draw is always isolated from the global RNG
+  stream, so passing `R > 0` never changes the point estimate relative
+  to `R = 0` under the same outer seed.
 
 - x:
 
@@ -99,7 +123,7 @@ S3 object of class `social_change_decomp` with components:
 
 - `summary`: data.table with decomposition components by period
   (including the `inmigration` and `outmigration` columns; print/plot
-  show a migration component only for whichever of these is non-zero)
+  show a migration component only for whichever of these is non-zero).
 
 - `record`: list of per-transition change tables (one per period
   transition). Each table is tidy, with columns `component`, the cell
@@ -107,6 +131,11 @@ S3 object of class `social_change_decomp` with components:
   component per cell, holding that cell's total contribution to the
   change for that component over the transition. Summed over cells it
   reproduces the per-component totals in `summary`.
+
+- `draws`: when `R > 0`, a long data.table of per-(draw, period, cell)
+  component deltas (columns `draw`, `period`, `component`, `delta`, and
+  the cell covariates) from which any aggregate's confidence band can be
+  computed; `NULL` when `R = 0`.
 
 ## Details
 
@@ -125,7 +154,7 @@ survivors, and a mismatch across periods is an error.
 By default the survey itself supplies both the cell counts and the
 outcomes. Supplying `population` decouples these: the population frame
 supplies the cell counts `n` (and hence the inferred demographic
-events), while `fun_y` supplies the outcomes. The reported
+events), while `model` supplies the outcomes. The reported
 `modeled_mean` is then weighted by the population frame, whereas
 `observed_mean` remains the survey's own observed mean, so the two lines
 may diverge when the survey and population age structures differ.
@@ -172,7 +201,7 @@ data("gss_homosex", package = "socialchange")
 # restrict to age >= 21 so every wave shares a common minimum age
 stacked <- as.data.table(gss_homosex)[age >= 21, .(age, period = year, y = homosex)]
 model <- stats::lm(y ~ age + period, data = stacked)
-result <- decompose_aggregated(stacked, function(d) predict(model, newdata = d), tol = 0.1)
+result <- decompose_aggregated(stacked, model, tol = 0.1)
 print(result)
 #> Overview by period:
 #>  period observed_mean modeled_mean intraindividual coming_of_age  mortality

@@ -73,9 +73,9 @@
 
 
     <p>The scenarios below were first constructed using <code><a href="../reference/sim_social_change.html">sim_social_change()</a></code> to establish known ground truth — see the <a href="simulate.html">simulation vignette</a> for a detailed walkthrough of each scenario. The classical alternative, cohort replacement vs. intracohort change (CR-IC) decomposition, is covered in the <a href="replicating_firebaugh.html">Replications: Firebaugh</a> vignette.</p>
-<p>To use the event-based decomposition, we assume you have some kind of aggregated data that measures the same outcome across several points in time. This could for instance be data from the General Social Survey, which asks the same population (but not necessarily the same people) the same question every year. The idea of the event-based decomposition is based on the idea that we can follow a group of similar people over time, which are assumed to have similar characteristics. For instance, we can observe the number of white women, age 35, in year 1, and then compare that number to the number of white women, age 36, in year 2. If we assume that individuals don’t move across cells and ignore migration, it must be true that (Number of white women, age 36 in year 2) = (Number of white women, age 35 in year 1) - (Mortality between year 1 and year 2 within this cell). Mortality counts are thus directly estimable from the data. (This might be noisy when dealing with survey data with smaller sample sizes. Preprocessing might therefore be required.) If we continue to ignore migration, the only other input that is required is a function that predicts the outcome for a given cell. This function can be as complex or simple as needed, it just needs to fulfill a number of requirements:</p>
+<p>To use the event-based decomposition, we assume you have some kind of aggregated data that measures the same outcome across several points in time. This could for instance be data from the General Social Survey, which asks the same population (but not necessarily the same people) the same question every year. The idea of the event-based decomposition is based on the idea that we can follow a group of similar people over time, which are assumed to have similar characteristics. For instance, we can observe the number of white women, age 35, in year 1, and then compare that number to the number of white women, age 36, in year 2. If we assume that individuals don’t move across cells and ignore migration, it must be true that (Number of white women, age 36 in year 2) = (Number of white women, age 35 in year 1) - (Mortality between year 1 and year 2 within this cell). Mortality counts are thus directly estimable from the data. (This might be noisy when dealing with survey data with smaller sample sizes. Preprocessing might therefore be required.) If we continue to ignore migration, the only other input that is required is a fitted model (an <code>lm</code>, <code>glm</code>, or <code>gam</code>) that predicts the outcome for a given cell. Predictions are taken on the response scale. This model can be as complex or simple as needed, it just needs to fulfill a number of requirements:</p>
 <ul>
-<li>Takes as inputs the defined cells (such as age and gender), plus current period. It is not necessary that these are all used for the model’s predictions, though.</li>
+<li>Predicts from the defined cells (such as age and gender) and the period. It is not necessary that all of these enter the model, though.</li>
 <li>Needs to support fully continuous periods (e.g., for a survey it needs to provide a prediction not only for 2010 and 2011, but also for 2010.75 - three quarters of a year into 2010). This is required to estimate outcomes throughout the year as individuals leave and enter the population.</li>
 <li>Needs to be complex enough to fully model the observed means in each period. The decomposition fully acts on the modeled outcomes, not on the observed outcomes, so if these means don’t match the decomposition results will deviate from the observed data.</li>
 </ul>
@@ -126,9 +126,8 @@
 <code class="sourceCode R"><span><span class="va">stacked_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/rbindlist.html" class="external-link">rbindlist</a></span><span class="op">(</span><span class="va">simresult</span><span class="op">$</span><span class="va">snapshot</span><span class="op">)</span></span>
 <span><span class="co"># we know that y depends only on age here</span></span>
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">age</span>, data <span class="op">=</span> <span class="va">stacked_data</span><span class="op">)</span></span>
-<span><span class="va">predict_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">newdata</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model</span>, newdata <span class="op">=</span> <span class="va">newdata</span><span class="op">)</span> <span class="op">}</span></span>
 <span></span>
-<span><span class="va">decompresult</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">predict_y</span><span class="op">)</span></span>
+<span><span class="va">decompresult</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">model</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">decompresult</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component   Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)      0.3758        </span></span>
@@ -136,8 +135,8 @@
 <span><span class="co">#&gt;  Total change              0.0000        </span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.2500        </span></span>
 <span><span class="co">#&gt;  - Population turnover    -0.2500        </span></span>
-<span><span class="co">#&gt;    - Mortality            -0.1207        </span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.1293</span></span></code></pre></div>
+<span><span class="co">#&gt;    - Mortality            -0.1208        </span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.1292</span></span></code></pre></div>
 </div>
 <p>The event-based decomposition has exactly recovered the results.</p>
 </section><section class="level2"><h2 id="adding-a-covariate-scenario-2">Adding a covariate (Scenario 2)<a class="anchor" aria-label="anchor" href="#adding-a-covariate-scenario-2"></a>
@@ -175,11 +174,11 @@
 <span><span class="co">#&gt;  At initial                0.37580</span></span>
 <span><span class="co">#&gt;  At end                    0.37580</span></span>
 <span><span class="co">#&gt;  Total change              0.00000</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.12523</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.12523</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.12508</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.12508</span></span>
 <span><span class="co">#&gt;    - Mortality            -0.06045</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.00000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06478</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06463</span></span>
 <span><span class="co">#&gt;    - In-migration          0.00000</span></span></code></pre></div>
 </div>
 <p>For the event-based decomposition, we first try a misspecified model that ignores gender entirely. Still, the decomposition in this case recovers the result almost exactly:</p>
@@ -189,9 +188,8 @@
 <span><span class="va">model_no_gender</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">period</span>, data <span class="op">=</span> <span class="va">stacked_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">stacked_data</span><span class="op">$</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model_no_gender</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.6870648</span></span>
-<span><span class="va">predict_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">newdata</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model_no_gender</span>, newdata <span class="op">=</span> <span class="va">newdata</span><span class="op">)</span> <span class="op">}</span></span>
 <span></span>
-<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">predict_y</span><span class="op">)</span></span>
+<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">model_no_gender</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">decomp</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component    Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)      0.37580        </span></span>
@@ -199,8 +197,8 @@
 <span><span class="co">#&gt;  Total change              0.00000        </span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.12500        </span></span>
 <span><span class="co">#&gt;  - Population turnover    -0.12500        </span></span>
-<span><span class="co">#&gt;    - Mortality            -0.06032        </span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06469</span></span></code></pre></div>
+<span><span class="co">#&gt;    - Mortality            -0.06035        </span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06464</span></span></code></pre></div>
 </div>
 <p>And here are the results for the fully-specified model:</p>
 <div class="cell">
@@ -208,18 +206,17 @@
 <code class="sourceCode R"><span><span class="va">model_gender</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">age</span> <span class="op">*</span> <span class="va">gender</span>, data <span class="op">=</span> <span class="va">stacked_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">stacked_data</span><span class="op">$</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model_gender</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="va">predict_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">newdata</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model_gender</span>, newdata <span class="op">=</span> <span class="va">newdata</span><span class="op">)</span> <span class="op">}</span></span>
 <span></span>
-<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">predict_y</span>, <span class="st">"gender"</span><span class="op">)</span></span>
+<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">model_gender</span>, <span class="st">"gender"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">decomp</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component    Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)      0.37580        </span></span>
 <span><span class="co">#&gt;  At end (modeled)          0.37580        </span></span>
 <span><span class="co">#&gt;  Total change              0.00000        </span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.12499        </span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.12499        </span></span>
-<span><span class="co">#&gt;    - Mortality            -0.06036        </span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06463</span></span></code></pre></div>
+<span><span class="co">#&gt;  - Intraindividual change  0.12507        </span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.12507        </span></span>
+<span><span class="co">#&gt;    - Mortality            -0.06038        </span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06469</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="only-intraindividual-change-scenario-3">Only intraindividual change (Scenario 3)<a class="anchor" aria-label="anchor" href="#only-intraindividual-change-scenario-3"></a>
 </h2>
@@ -243,9 +240,9 @@
 <span><span class="co">#&gt;  Total change              0.500000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.500000</span></span>
 <span><span class="co">#&gt;  - Population turnover     0.000000</span></span>
-<span><span class="co">#&gt;    - Mortality             0.000016</span></span>
+<span><span class="co">#&gt;    - Mortality             0.000046</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.000000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.000016</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.000046</span></span>
 <span><span class="co">#&gt;    - In-migration          0.000000</span></span></code></pre></div>
 </div>
 <p>Again, we first try a misspecified model that ignores gender entirely. Again, the decomposition recovers the result almost exactly despite the misspecification:</p>
@@ -255,18 +252,17 @@
 <span><span class="va">model_no_gender</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">period</span>, data <span class="op">=</span> <span class="va">stacked_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">stacked_data</span><span class="op">$</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model_no_gender</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.8629489</span></span>
-<span><span class="va">predict_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">newdata</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model_no_gender</span>, newdata <span class="op">=</span> <span class="va">newdata</span><span class="op">)</span> <span class="op">}</span></span>
 <span></span>
-<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">predict_y</span><span class="op">)</span></span>
+<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">model_no_gender</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">decomp</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)       0.3        </span></span>
 <span><span class="co">#&gt;  At end (modeled)           0.8        </span></span>
 <span><span class="co">#&gt;  Total change               0.5   100.0</span></span>
 <span><span class="co">#&gt;  - Intraindividual change   0.5   100.0</span></span>
-<span><span class="co">#&gt;  - Population turnover      0.0   0.0  </span></span>
+<span><span class="co">#&gt;  - Population turnover      0.0   -0.0 </span></span>
 <span><span class="co">#&gt;    - Mortality              0.0   0.0  </span></span>
-<span><span class="co">#&gt;    - Coming-of-age          0.0   0.0</span></span></code></pre></div>
+<span><span class="co">#&gt;    - Coming-of-age          0.0   -0.0</span></span></code></pre></div>
 </div>
 <p>And here are the results for the fully-specified model:</p>
 <div class="cell">
@@ -274,18 +270,17 @@
 <code class="sourceCode R"><span><span class="va">model_gender</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">period</span> <span class="op">+</span> <span class="va">gender</span>, data <span class="op">=</span> <span class="va">stacked_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">stacked_data</span><span class="op">$</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model_gender</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="va">predict_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">newdata</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model_gender</span>, newdata <span class="op">=</span> <span class="va">newdata</span><span class="op">)</span> <span class="op">}</span></span>
 <span></span>
-<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">predict_y</span>, <span class="st">"gender"</span><span class="op">)</span></span>
+<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">model_gender</span>, <span class="st">"gender"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">decomp</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component     Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)      0.300000        </span></span>
 <span><span class="co">#&gt;  At end (modeled)          0.800000        </span></span>
 <span><span class="co">#&gt;  Total change              0.500000   100.0</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.500000   100.0</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.000000   0.0  </span></span>
-<span><span class="co">#&gt;    - Mortality            -0.000098   -0.0 </span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.000098   0.0</span></span></code></pre></div>
+<span><span class="co">#&gt;  - Population turnover     0.000000   -0.0 </span></span>
+<span><span class="co">#&gt;    - Mortality             0.000026   0.0  </span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.000026   -0.0</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="only-population-turnover-scenario-4">Only population turnover (Scenario 4)<a class="anchor" aria-label="anchor" href="#only-population-turnover-scenario-4"></a>
 </h2>
@@ -321,9 +316,8 @@
 <span><span class="va">model_no_gender</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">period</span>, data <span class="op">=</span> <span class="va">stacked_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">stacked_data</span><span class="op">$</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model_no_gender</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.9864554</span></span>
-<span><span class="va">predict_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">newdata</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model_no_gender</span>, newdata <span class="op">=</span> <span class="va">newdata</span><span class="op">)</span> <span class="op">}</span></span>
 <span></span>
-<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">predict_y</span><span class="op">)</span></span>
+<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">model_no_gender</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">decomp</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component  Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)     0.3000        </span></span>
@@ -331,8 +325,8 @@
 <span><span class="co">#&gt;  Total change             0.5000   100.0</span></span>
 <span><span class="co">#&gt;  - Intraindividual change 0.0000   0.0  </span></span>
 <span><span class="co">#&gt;  - Population turnover    0.5000   100.0</span></span>
-<span><span class="co">#&gt;    - Mortality            0.2414   48.3 </span></span>
-<span><span class="co">#&gt;    - Coming-of-age        0.2586   51.7</span></span></code></pre></div>
+<span><span class="co">#&gt;    - Mortality            0.2415   48.3 </span></span>
+<span><span class="co">#&gt;    - Coming-of-age        0.2585   51.7</span></span></code></pre></div>
 </div>
 <p>And here are the results for the fully-specified model:</p>
 <div class="cell">
@@ -340,9 +334,8 @@
 <code class="sourceCode R"><span><span class="va">model_gender</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">period</span> <span class="op">+</span> <span class="va">gender</span>, data <span class="op">=</span> <span class="va">stacked_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">stacked_data</span><span class="op">$</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model_gender</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="va">predict_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">newdata</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model_gender</span>, newdata <span class="op">=</span> <span class="va">newdata</span><span class="op">)</span> <span class="op">}</span></span>
 <span></span>
-<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">predict_y</span>, <span class="st">"gender"</span><span class="op">)</span></span>
+<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">model_gender</span>, <span class="st">"gender"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">decomp</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component  Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)     0.3000        </span></span>
@@ -395,9 +388,9 @@
 <span><span class="co">#&gt;  Total change              0.000000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.000000</span></span>
 <span><span class="co">#&gt;  - Population turnover     0.000000</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.000793</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.000801</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.000000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.000793</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.000801</span></span>
 <span><span class="co">#&gt;    - In-migration          0.000000</span></span></code></pre></div>
 </div>
 <p>Compare to decomposition:</p>
@@ -407,9 +400,8 @@
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">period</span> <span class="op">+</span> <span class="va">smoking</span>, data <span class="op">=</span> <span class="va">stacked_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">stacked_data</span><span class="op">$</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="va">predict_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">newdata</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model</span>, newdata <span class="op">=</span> <span class="va">newdata</span><span class="op">)</span> <span class="op">}</span></span>
 <span></span>
-<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">predict_y</span>, <span class="st">"smoking"</span><span class="op">)</span></span>
+<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">model</span>, <span class="st">"smoking"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">decomp</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component     Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)      0.867686        </span></span>
@@ -417,8 +409,8 @@
 <span><span class="co">#&gt;  Total change              0.000000        </span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.000000        </span></span>
 <span><span class="co">#&gt;  - Population turnover     0.000000        </span></span>
-<span><span class="co">#&gt;    - Mortality            -0.000801        </span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.000801</span></span></code></pre></div>
+<span><span class="co">#&gt;    - Mortality            -0.000826        </span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.000826</span></span></code></pre></div>
 </div>
 </section><section class="level3"><h3 id="intraindividual-change-scenario-5b">Intraindividual change (Scenario 5b)<a class="anchor" aria-label="anchor" href="#intraindividual-change-scenario-5b"></a>
 </h3>
@@ -440,11 +432,11 @@
 <span><span class="co">#&gt;  At initial                0.867686</span></span>
 <span><span class="co">#&gt;  At end                    0.590757</span></span>
 <span><span class="co">#&gt;  Total change             -0.276929</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.276851</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.000078</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.001131</span></span>
+<span><span class="co">#&gt;  - Intraindividual change -0.277034</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.000106</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.001124</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.000000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.001053</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.001230</span></span>
 <span><span class="co">#&gt;    - In-migration          0.000000</span></span></code></pre></div>
 </div>
 <p>Compare to decomposition:</p>
@@ -454,18 +446,17 @@
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">period</span> <span class="op">*</span> <span class="va">smoking</span>, data <span class="op">=</span> <span class="va">stacked_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">stacked_data</span><span class="op">$</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="va">predict_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">newdata</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model</span>, newdata <span class="op">=</span> <span class="va">newdata</span><span class="op">)</span> <span class="op">}</span></span>
 <span></span>
-<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">predict_y</span>, <span class="st">"smoking"</span><span class="op">)</span></span>
+<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">model</span>, <span class="st">"smoking"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">decomp</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component     Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)      0.867686        </span></span>
 <span><span class="co">#&gt;  At end (modeled)          0.590757        </span></span>
 <span><span class="co">#&gt;  Total change             -0.276929   100.0</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.276913   100.0</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.000015   0.0  </span></span>
-<span><span class="co">#&gt;    - Mortality            -0.001140   0.4  </span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.001125   -0.4</span></span></code></pre></div>
+<span><span class="co">#&gt;  - Intraindividual change -0.276866   100.0</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.000062   0.0  </span></span>
+<span><span class="co">#&gt;    - Mortality            -0.001137   0.4  </span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.001075   -0.4</span></span></code></pre></div>
 </div>
 </section><section class="level3"><h3 id="coming-of-age-scenario-5c">Coming of age (Scenario 5c)<a class="anchor" aria-label="anchor" href="#coming-of-age-scenario-5c"></a>
 </h3>
@@ -487,11 +478,11 @@
 <span><span class="co">#&gt;  At initial                0.86769</span></span>
 <span><span class="co">#&gt;  At end                    0.50476</span></span>
 <span><span class="co">#&gt;  Total change             -0.36293</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.29099</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.07193</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.01059</span></span>
+<span><span class="co">#&gt;  - Intraindividual change -0.29126</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.07167</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.01073</span></span>
 <span><span class="co">#&gt;    - Out-migration         0.00000</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06134</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06094</span></span>
 <span><span class="co">#&gt;    - In-migration          0.00000</span></span></code></pre></div>
 </div>
 <p>Compare to decomposition:</p>
@@ -501,18 +492,17 @@
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">age</span> <span class="op">+</span> <span class="va">period</span> <span class="op">*</span> <span class="va">smoking</span>, data <span class="op">=</span> <span class="va">stacked_data</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">stacked_data</span><span class="op">$</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="va">predict_y</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">newdata</span><span class="op">)</span> <span class="op">{</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model</span>, newdata <span class="op">=</span> <span class="va">newdata</span><span class="op">)</span> <span class="op">}</span></span>
 <span></span>
-<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">predict_y</span>, <span class="st">"smoking"</span><span class="op">)</span></span>
+<span><span class="va">decomp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">stacked_data</span>, <span class="va">model</span>, <span class="st">"smoking"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">decomp</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component    Value Percent</span></span>
 <span><span class="co">#&gt;  At initial (modeled)      0.86769        </span></span>
 <span><span class="co">#&gt;  At end (modeled)          0.50476        </span></span>
 <span><span class="co">#&gt;  Total change             -0.36293   100.0</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.29113   80.2 </span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.07179   19.8 </span></span>
-<span><span class="co">#&gt;    - Mortality            -0.01078   3.0  </span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06102   16.8</span></span></code></pre></div>
+<span><span class="co">#&gt;  - Intraindividual change -0.29131   80.3 </span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.07161   19.7 </span></span>
+<span><span class="co">#&gt;    - Mortality            -0.01077   3.0  </span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06084   16.8</span></span></code></pre></div>
 </div>
 </section></section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {

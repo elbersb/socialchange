@@ -25,14 +25,14 @@ of white women, age 35 in year 1) - (Mortality between year 1 and year 2
 within this cell). Mortality counts are thus directly estimable from the
 data. (This might be noisy when dealing with survey data with smaller
 sample sizes. Preprocessing might therefore be required.) If we continue
-to ignore migration, the only other input that is required is a function
-that predicts the outcome for a given cell. This function can be as
+to ignore migration, the only other input that is required is a fitted
+model (an `lm`, `glm`, or `gam`) that predicts the outcome for a given
+cell. Predictions are taken on the response scale. This model can be as
 complex or simple as needed, it just needs to fulfill a number of
 requirements:
 
-- Takes as inputs the defined cells (such as age and gender), plus
-  current period. It is not necessary that these are all used for the
-  model’s predictions, though.
+- Predicts from the defined cells (such as age and gender) and the
+  period. It is not necessary that all of these enter the model, though.
 - Needs to support fully continuous periods (e.g., for a survey it needs
   to provide a prediction not only for 2010 and 2011, but also for
   2010.75 - three quarters of a year into 2010). This is required to
@@ -92,9 +92,8 @@ We now feed the simulated data into the event-based decomposition:
 stacked_data <- rbindlist(simresult$snapshot)
 # we know that y depends only on age here
 model <- lm(y ~ age, data = stacked_data)
-predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
-decompresult <- decompose_aggregated(stacked_data, predict_y)
+decompresult <- decompose_aggregated(stacked_data, model)
 print(decompresult, detailed = FALSE)
 #>                 Component   Value Percent
 #>  At initial (modeled)      0.3758        
@@ -102,8 +101,8 @@ print(decompresult, detailed = FALSE)
 #>  Total change              0.0000        
 #>  - Intraindividual change  0.2500        
 #>  - Population turnover    -0.2500        
-#>    - Mortality            -0.1207        
-#>    - Coming-of-age        -0.1293
+#>    - Mortality            -0.1208        
+#>    - Coming-of-age        -0.1292
 ```
 
 The event-based decomposition has exactly recovered the results.
@@ -143,11 +142,11 @@ print(simresult, detailed = FALSE)
 #>  At initial                0.37580
 #>  At end                    0.37580
 #>  Total change              0.00000
-#>  - Intraindividual change  0.12523
-#>  - Population turnover    -0.12523
+#>  - Intraindividual change  0.12508
+#>  - Population turnover    -0.12508
 #>    - Mortality            -0.06045
 #>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.06478
+#>    - Coming-of-age        -0.06463
 #>    - In-migration          0.00000
 ```
 
@@ -161,9 +160,8 @@ stacked_data <- rbindlist(simresult$snapshot)
 model_no_gender <- lm(y ~ age + period, data = stacked_data)
 cor(stacked_data$y, predict(model_no_gender))
 #> [1] 0.6870648
-predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y)
+decomp <- decompose_aggregated(stacked_data, model_no_gender)
 print(decomp, detailed = FALSE)
 #>                 Component    Value Percent
 #>  At initial (modeled)      0.37580        
@@ -171,8 +169,8 @@ print(decomp, detailed = FALSE)
 #>  Total change              0.00000        
 #>  - Intraindividual change  0.12500        
 #>  - Population turnover    -0.12500        
-#>    - Mortality            -0.06032        
-#>    - Coming-of-age        -0.06469
+#>    - Mortality            -0.06035        
+#>    - Coming-of-age        -0.06464
 ```
 
 And here are the results for the fully-specified model:
@@ -182,18 +180,17 @@ And here are the results for the fully-specified model:
 model_gender <- lm(y ~ age * gender, data = stacked_data)
 cor(stacked_data$y, predict(model_gender))
 #> [1] 1
-predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+decomp <- decompose_aggregated(stacked_data, model_gender, "gender")
 print(decomp, detailed = FALSE)
 #>                 Component    Value Percent
 #>  At initial (modeled)      0.37580        
 #>  At end (modeled)          0.37580        
 #>  Total change              0.00000        
-#>  - Intraindividual change  0.12499        
-#>  - Population turnover    -0.12499        
-#>    - Mortality            -0.06036        
-#>    - Coming-of-age        -0.06463
+#>  - Intraindividual change  0.12507        
+#>  - Population turnover    -0.12507        
+#>    - Mortality            -0.06038        
+#>    - Coming-of-age        -0.06469
 ```
 
 ## Only intraindividual change (Scenario 3)
@@ -218,9 +215,9 @@ print(simresult, detailed = FALSE)
 #>  Total change              0.500000
 #>  - Intraindividual change  0.500000
 #>  - Population turnover     0.000000
-#>    - Mortality             0.000016
+#>    - Mortality             0.000046
 #>    - Out-migration         0.000000
-#>    - Coming-of-age        -0.000016
+#>    - Coming-of-age        -0.000046
 #>    - In-migration          0.000000
 ```
 
@@ -234,18 +231,17 @@ stacked_data <- rbindlist(simresult$snapshot)
 model_no_gender <- lm(y ~ age + period, data = stacked_data)
 cor(stacked_data$y, predict(model_no_gender))
 #> [1] 0.8629489
-predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y)
+decomp <- decompose_aggregated(stacked_data, model_no_gender)
 print(decomp, detailed = FALSE)
 #>                 Component Value Percent
 #>  At initial (modeled)       0.3        
 #>  At end (modeled)           0.8        
 #>  Total change               0.5   100.0
 #>  - Intraindividual change   0.5   100.0
-#>  - Population turnover      0.0   0.0  
+#>  - Population turnover      0.0   -0.0 
 #>    - Mortality              0.0   0.0  
-#>    - Coming-of-age          0.0   0.0
+#>    - Coming-of-age          0.0   -0.0
 ```
 
 And here are the results for the fully-specified model:
@@ -255,18 +251,17 @@ And here are the results for the fully-specified model:
 model_gender <- lm(y ~ age + period + gender, data = stacked_data)
 cor(stacked_data$y, predict(model_gender))
 #> [1] 1
-predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+decomp <- decompose_aggregated(stacked_data, model_gender, "gender")
 print(decomp, detailed = FALSE)
 #>                 Component     Value Percent
 #>  At initial (modeled)      0.300000        
 #>  At end (modeled)          0.800000        
 #>  Total change              0.500000   100.0
 #>  - Intraindividual change  0.500000   100.0
-#>  - Population turnover     0.000000   0.0  
-#>    - Mortality            -0.000098   -0.0 
-#>    - Coming-of-age         0.000098   0.0
+#>  - Population turnover     0.000000   -0.0 
+#>    - Mortality             0.000026   0.0  
+#>    - Coming-of-age        -0.000026   -0.0
 ```
 
 ## Only population turnover (Scenario 4)
@@ -307,9 +302,8 @@ stacked_data <- rbindlist(simresult$snapshot)
 model_no_gender <- lm(y ~ age + period, data = stacked_data)
 cor(stacked_data$y, predict(model_no_gender))
 #> [1] 0.9864554
-predict_y <- function(newdata) { predict(model_no_gender, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y)
+decomp <- decompose_aggregated(stacked_data, model_no_gender)
 print(decomp, detailed = FALSE)
 #>                 Component  Value Percent
 #>  At initial (modeled)     0.3000        
@@ -317,8 +311,8 @@ print(decomp, detailed = FALSE)
 #>  Total change             0.5000   100.0
 #>  - Intraindividual change 0.0000   0.0  
 #>  - Population turnover    0.5000   100.0
-#>    - Mortality            0.2414   48.3 
-#>    - Coming-of-age        0.2586   51.7
+#>    - Mortality            0.2415   48.3 
+#>    - Coming-of-age        0.2585   51.7
 ```
 
 And here are the results for the fully-specified model:
@@ -328,9 +322,8 @@ And here are the results for the fully-specified model:
 model_gender <- lm(y ~ age + period + gender, data = stacked_data)
 cor(stacked_data$y, predict(model_gender))
 #> [1] 1
-predict_y <- function(newdata) { predict(model_gender, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y, "gender")
+decomp <- decompose_aggregated(stacked_data, model_gender, "gender")
 print(decomp, detailed = FALSE)
 #>                 Component  Value Percent
 #>  At initial (modeled)     0.3000        
@@ -384,9 +377,9 @@ print(smoking1, detailed = FALSE)
 #>  Total change              0.000000
 #>  - Intraindividual change  0.000000
 #>  - Population turnover     0.000000
-#>    - Mortality            -0.000793
+#>    - Mortality            -0.000801
 #>    - Out-migration         0.000000
-#>    - Coming-of-age         0.000793
+#>    - Coming-of-age         0.000801
 #>    - In-migration          0.000000
 ```
 
@@ -398,9 +391,8 @@ stacked_data <- rbindlist(smoking1$snapshot)
 model <- lm(y ~ age + period + smoking, data = stacked_data)
 cor(stacked_data$y, predict(model))
 #> [1] 1
-predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+decomp <- decompose_aggregated(stacked_data, model, "smoking")
 print(decomp, detailed = FALSE)
 #>                 Component     Value Percent
 #>  At initial (modeled)      0.867686        
@@ -408,8 +400,8 @@ print(decomp, detailed = FALSE)
 #>  Total change              0.000000        
 #>  - Intraindividual change  0.000000        
 #>  - Population turnover     0.000000        
-#>    - Mortality            -0.000801        
-#>    - Coming-of-age         0.000801
+#>    - Mortality            -0.000826        
+#>    - Coming-of-age         0.000826
 ```
 
 ### Intraindividual change (Scenario 5b)
@@ -432,11 +424,11 @@ print(smoking2, detailed = FALSE)
 #>  At initial                0.867686
 #>  At end                    0.590757
 #>  Total change             -0.276929
-#>  - Intraindividual change -0.276851
-#>  - Population turnover    -0.000078
-#>    - Mortality            -0.001131
+#>  - Intraindividual change -0.277034
+#>  - Population turnover     0.000106
+#>    - Mortality            -0.001124
 #>    - Out-migration         0.000000
-#>    - Coming-of-age         0.001053
+#>    - Coming-of-age         0.001230
 #>    - In-migration          0.000000
 ```
 
@@ -448,18 +440,17 @@ stacked_data <- rbindlist(smoking2$snapshot)
 model <- lm(y ~ age + period * smoking, data = stacked_data)
 cor(stacked_data$y, predict(model))
 #> [1] 1
-predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+decomp <- decompose_aggregated(stacked_data, model, "smoking")
 print(decomp, detailed = FALSE)
 #>                 Component     Value Percent
 #>  At initial (modeled)      0.867686        
 #>  At end (modeled)          0.590757        
 #>  Total change             -0.276929   100.0
-#>  - Intraindividual change -0.276913   100.0
-#>  - Population turnover    -0.000015   0.0  
-#>    - Mortality            -0.001140   0.4  
-#>    - Coming-of-age         0.001125   -0.4
+#>  - Intraindividual change -0.276866   100.0
+#>  - Population turnover    -0.000062   0.0  
+#>    - Mortality            -0.001137   0.4  
+#>    - Coming-of-age         0.001075   -0.4
 ```
 
 ### Coming of age (Scenario 5c)
@@ -482,11 +473,11 @@ print(smoking3, detailed = FALSE)
 #>  At initial                0.86769
 #>  At end                    0.50476
 #>  Total change             -0.36293
-#>  - Intraindividual change -0.29099
-#>  - Population turnover    -0.07193
-#>    - Mortality            -0.01059
+#>  - Intraindividual change -0.29126
+#>  - Population turnover    -0.07167
+#>    - Mortality            -0.01073
 #>    - Out-migration         0.00000
-#>    - Coming-of-age        -0.06134
+#>    - Coming-of-age        -0.06094
 #>    - In-migration          0.00000
 ```
 
@@ -498,16 +489,15 @@ stacked_data <- rbindlist(smoking3$snapshot)
 model <- lm(y ~ age + period * smoking, data = stacked_data)
 cor(stacked_data$y, predict(model))
 #> [1] 1
-predict_y <- function(newdata) { predict(model, newdata = newdata) }
 
-decomp <- decompose_aggregated(stacked_data, predict_y, "smoking")
+decomp <- decompose_aggregated(stacked_data, model, "smoking")
 print(decomp, detailed = FALSE)
 #>                 Component    Value Percent
 #>  At initial (modeled)      0.86769        
 #>  At end (modeled)          0.50476        
 #>  Total change             -0.36293   100.0
-#>  - Intraindividual change -0.29113   80.2 
-#>  - Population turnover    -0.07179   19.8 
-#>    - Mortality            -0.01078   3.0  
-#>    - Coming-of-age        -0.06102   16.8
+#>  - Intraindividual change -0.29131   80.3 
+#>  - Population turnover    -0.07161   19.7 
+#>    - Mortality            -0.01077   3.0  
+#>    - Coming-of-age        -0.06084   16.8
 ```
