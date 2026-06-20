@@ -41,7 +41,7 @@ that predicts the outcome as a function of age, period, and covariates."></head>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Decompose social change from aggregated data</h1>
-      <small class="dont-index">Source: <a href="https://github.com/elbersb/socialchange/blob/main/R/decompose_aggregated.R" class="external-link"><code>R/decompose_aggregated.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/elbersb/socialchange/blob/main/R/decompose_aggregated.R" class="external-link"><code>R/decompose_aggregated.R</code></a>, <a href="https://github.com/elbersb/socialchange/blob/main/R/decompose_aggregated_output.R" class="external-link"><code>R/decompose_aggregated_output.R</code></a></small>
       <div class="d-none name"><code>decompose_aggregated.Rd</code></div>
     </div>
 
@@ -164,7 +164,8 @@ which to split the cumulative change lines. For more elaborate breakdowns, aggre
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The function estimates mortality, coming-of-age, and net in-migration from period-to-period
 population differences within cells, then uses microsimulation to randomly order demographic
-events and track their contribution to aggregate change. Unequal and multi-year gaps
+events – placed at evenly spaced times within each inter-period gap – and track their
+contribution to aggregate change. Unequal and multi-year gaps
 between periods are supported: when the gap exceeds one year, each entering cohort is
 assigned to the specific calendar year within the gap when it crosses the minimum age,
 so that post-entry aging is correctly attributed to intraindividual change rather than
@@ -216,72 +217,72 @@ effects are absorbed into the intraindividual change component.</p>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Overview by period:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  period observed_mean modeled_mean intraindividual coming_of_age  mortality</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1973        0.1845       0.1257              NA            NA         NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1974        0.2064       0.1348        0.004378      0.003070  0.0038321</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1976        0.2285       0.1490        0.008756      0.005024  0.0024406</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1977        0.2142       0.1609        0.004378      0.002362  0.0036549</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1980        0.2030       0.1880        0.013134      0.009134  0.0036248</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1982        0.2079       0.2060        0.008756      0.005605  0.0021687</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1984        0.2082       0.2303        0.008756      0.005809  0.0084059</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1985        0.1974       0.2313        0.004378      0.002114 -0.0002418</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1987        0.1830       0.2523        0.008756      0.004421  0.0070308</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1988        0.1826       0.2599        0.004378      0.001818  0.0032712</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1989        0.2112       0.2649        0.004378      0.003036  0.0044193</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1990        0.1828       0.2739        0.004378      0.001961  0.0054826</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1991        0.2068       0.2885        0.004378      0.004092  0.0070642</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1993        0.2821       0.3044        0.008756      0.003684  0.0044503</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1994        0.2839       0.3179        0.004378      0.002122  0.0009061</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1996        0.3366       0.3408        0.008756      0.003902  0.0080467</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1998        0.3566       0.3541        0.008756      0.004041  0.0045272</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    2000        0.3508       0.3682        0.008756      0.003694  0.0041280</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    2002        0.3969       0.3861        0.008756      0.003428  0.0058540</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    2004        0.3667       0.4085        0.008756      0.003658  0.0094180</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    2006        0.3880       0.4211        0.008756      0.005997  0.0013902</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    2008        0.4324       0.4361        0.008756      0.002466  0.0046382</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    2010        0.4885       0.4585        0.008756      0.003184  0.0079399</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    2012        0.4958       0.4735        0.008756      0.004220  0.0036313</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    2014        0.5462       0.4882        0.008756      0.003325  0.0027515</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    2016        0.5724       0.5035        0.008756      0.003638  0.0038334</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1973         0.184        0.126              NA            NA         NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1974         0.206        0.135         0.00438       0.00310  0.0037499</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1976         0.229        0.149         0.00876       0.00503  0.0024760</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1977         0.214        0.161         0.00438       0.00237  0.0036233</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1980         0.203        0.188         0.01313       0.00911  0.0036892</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1982         0.208        0.206         0.00876       0.00561  0.0021342</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1984         0.208        0.230         0.00876       0.00584  0.0083601</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1985         0.197        0.231         0.00438       0.00210 -0.0000644</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1987         0.183        0.252         0.00876       0.00441  0.0069815</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1988         0.183        0.260         0.00438       0.00178  0.0033264</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1989         0.211        0.265         0.00438       0.00301  0.0044047</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1990         0.183        0.274         0.00438       0.00201  0.0052257</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1991         0.207        0.289         0.00438       0.00409  0.0070398</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1993         0.282        0.304         0.00876       0.00365  0.0044900</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1994         0.284        0.318         0.00438       0.00218  0.0009825</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1996         0.337        0.341         0.00876       0.00392  0.0080203</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1998         0.357        0.354         0.00876       0.00406  0.0045233</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2000         0.351        0.368         0.00876       0.00373  0.0040311</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2002         0.397        0.386         0.00876       0.00349  0.0057825</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2004         0.367        0.409         0.00876       0.00362  0.0094769</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2006         0.388        0.421         0.00876       0.00611  0.0014395</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2008         0.432        0.436         0.00876       0.00246  0.0048131</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2010         0.488        0.459         0.00876       0.00320  0.0079013</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2012         0.496        0.473         0.00876       0.00424  0.0036194</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2014         0.546        0.488         0.00876       0.00332  0.0026143</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2016         0.572        0.504         0.00876       0.00365  0.0036220</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  period observed_mean modeled_mean intraindividual coming_of_age  mortality</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  outmigration inmigration</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            NA          NA</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0021454</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0020226</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0014728</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0012228</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0014504</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0014016</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0052631</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0008072</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0019064</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0068347</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0028205</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0009099</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0010134</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0061373</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0021765</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0040684</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0024392</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0001393</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0005537</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0035228</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0009016</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0025513</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0016353</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0001252</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0008985</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0020913</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0020617</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0015009</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0011810</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0014766</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0014155</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0054232</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0008668</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0019195</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0067985</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0026122</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0008854</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0010237</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0059980</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0021870</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0040857</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0023738</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0001275</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0005306</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0036859</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0010664</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0025789</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0016415</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0   0.0000155</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0  -0.0006973</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  outmigration inmigration</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Decomposition of total change:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 Component    Value Percent</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  At initial (modeled)      0.12566        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  At end (modeled)          0.50352        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Total change              0.37786   100.0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  - Intraindividual change  0.18826   49.8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  - Population turnover     0.18960   50.2 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    - Mortality             0.11267   29.8 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    - Coming-of-age         0.09581   25.4 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    - In-migration         -0.01887   -5.0 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 Component  Value Percent</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  At initial (modeled)      0.126        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  At end (modeled)          0.504        </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Total change              0.378   100.0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  - Intraindividual change  0.188    49.8</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  - Population turnover     0.190    50.2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    - Mortality             0.112    29.7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    - Coming-of-age         0.096    25.4</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    - In-migration         -0.019    -5.0</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

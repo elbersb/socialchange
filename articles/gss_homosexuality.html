@@ -337,15 +337,15 @@
 <div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">gss_all</span>, <span class="va">model</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                 Component    Value Percent</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.19739        </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.56751        </span></span>
-<span><span class="co">#&gt;  Total change              0.37013   100.0</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.19236   52.0 </span></span>
-<span><span class="co">#&gt;  - Population turnover     0.17777   48.0 </span></span>
-<span><span class="co">#&gt;    - Mortality             0.09952   26.9 </span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.10298   27.8 </span></span>
-<span><span class="co">#&gt;    - In-migration         -0.02472   -6.7</span></span></code></pre></div>
+<span><span class="co">#&gt;                 Component  Value Percent</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.197        </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.568        </span></span>
+<span><span class="co">#&gt;  Total change              0.370   100.0</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.192    51.9</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.178    48.1</span></span>
+<span><span class="co">#&gt;    - Mortality             0.099    26.8</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.103    27.8</span></span>
+<span><span class="co">#&gt;    - In-migration         -0.024    -6.5</span></span></code></pre></div>
 </div>
 <p>This decomposition compares cells across years, attributing shrinking cohorts to mortality and the youngest cohorts to coming-of-age. Every change in a cell’s size must be attributed to <em>some</em> demographic event — the decomposition never leaves a residual — so a survivor cohort that <em>grows</em> between two waves is credited to net in-migration. With only the survey to work from, this in-migration term (about −0.025, or −7% of the total change) largely reflects sampling fluctuation in cell sizes across waves rather than genuine immigration. It becomes meaningful only once a true population frame is supplied (see below), where a growing cohort really does signal net immigration.</p>
 <p>Of the roughly 37 percentage point rise in acceptance between 1973 and 2016, the decomposition attributes about 52% to intraindividual change and 48% to population turnover (mortality of older, less accepting cohorts; coming-of-age of younger, more accepting ones; and a small net in-migration term). This is close to, though slightly above, the range spanned by the CR-IC model-based methods above (37–44% turnover).</p>
@@ -370,15 +370,15 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">gss_all</span>, <span class="va">model</span>, cells <span class="op">=</span> <span class="st">"sex"</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                 Component    Value Percent</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.19732        </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.56757        </span></span>
-<span><span class="co">#&gt;  Total change              0.37025   100.0</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.18868   51.0 </span></span>
-<span><span class="co">#&gt;  - Population turnover     0.18157   49.0 </span></span>
-<span><span class="co">#&gt;    - Mortality             0.12478   33.7 </span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.10323   27.9 </span></span>
-<span><span class="co">#&gt;    - In-migration         -0.04643   -12.5</span></span>
+<span><span class="co">#&gt;                 Component  Value Percent</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.197        </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.568        </span></span>
+<span><span class="co">#&gt;  Total change              0.370   100.0</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.189    51.0</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.182    49.0</span></span>
+<span><span class="co">#&gt;    - Mortality             0.126    34.0</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.103    27.9</span></span>
+<span><span class="co">#&gt;    - In-migration         -0.047   -12.8</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
@@ -392,15 +392,15 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                 Component    Value Percent  female     male</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.19732                         </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.56757                         </span></span>
-<span><span class="co">#&gt;  Total change              0.37025   100.0 0.19629 0.17396 </span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.18868   51.0  0.09976 0.08892 </span></span>
-<span><span class="co">#&gt;  - Population turnover     0.18157   49.0  0.09653 0.08504 </span></span>
-<span><span class="co">#&gt;    - Mortality             0.12478   33.7  0.01211 0.11267 </span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.10323   27.9  0.06066 0.04256 </span></span>
-<span><span class="co">#&gt;    - In-migration         -0.04643   -12.5 0.02376 -0.07020</span></span>
+<span><span class="co">#&gt;                 Component  Value Percent female   male</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.197                      </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.568                      </span></span>
+<span><span class="co">#&gt;  Total change              0.370   100.0  0.195  0.175</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.189    51.0  0.100  0.089</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.182    49.0  0.095  0.086</span></span>
+<span><span class="co">#&gt;    - Mortality             0.126    34.0  0.012  0.114</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.103    27.9  0.061  0.042</span></span>
+<span><span class="co">#&gt;    - In-migration         -0.047   -12.8  0.023 -0.070</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
@@ -428,15 +428,15 @@
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">gss_all</span>, <span class="va">model</span>, cells <span class="op">=</span> <span class="st">"sex"</span>,</span>
 <span>                               weight <span class="op">=</span> <span class="st">"wtssall"</span>, population <span class="op">=</span> <span class="va">pop</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                 Component    Value Percent</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.19095        </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.56823        </span></span>
-<span><span class="co">#&gt;  Total change              0.37727   100.0</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.18754   49.7 </span></span>
-<span><span class="co">#&gt;  - Population turnover     0.18974   50.3 </span></span>
-<span><span class="co">#&gt;    - Mortality             0.10655   28.2 </span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.10910   28.9 </span></span>
-<span><span class="co">#&gt;    - In-migration         -0.02592   -6.9</span></span>
+<span><span class="co">#&gt;                 Component  Value Percent</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.191        </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.568        </span></span>
+<span><span class="co">#&gt;  Total change              0.377   100.0</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.188    49.7</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.190    50.3</span></span>
+<span><span class="co">#&gt;    - Mortality             0.106    28.2</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.109    28.9</span></span>
+<span><span class="co">#&gt;    - In-migration         -0.026    -6.9</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
@@ -450,15 +450,15 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                 Component    Value Percent   female      male</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.19095                           </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.56823                           </span></span>
-<span><span class="co">#&gt;  Total change              0.37727   100.0 0.19490  0.182376 </span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.18754   49.7  0.09532  0.092220 </span></span>
-<span><span class="co">#&gt;  - Population turnover     0.18974   50.3  0.09958  0.090156 </span></span>
-<span><span class="co">#&gt;    - Mortality             0.10655   28.2  0.05568  0.050866 </span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.10910   28.9  0.06364  0.045464 </span></span>
-<span><span class="co">#&gt;    - In-migration         -0.02592   -6.9  -0.01974 -0.006175</span></span>
+<span><span class="co">#&gt;                 Component  Value Percent female   male</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.191                      </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.568                      </span></span>
+<span><span class="co">#&gt;  Total change              0.377   100.0  0.195  0.182</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.188    49.7  0.095  0.092</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.190    50.3  0.100  0.090</span></span>
+<span><span class="co">#&gt;    - Mortality             0.106    28.2  0.056  0.051</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.109    28.9  0.064  0.045</span></span>
+<span><span class="co">#&gt;    - In-migration         -0.026    -6.9 -0.020 -0.006</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
@@ -476,15 +476,15 @@
 <span>                               weight <span class="op">=</span> <span class="st">"wtssall"</span>, population <span class="op">=</span> <span class="va">pop</span>, R <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Computing 100 bootstrap replicate(s); this can take a while for gam models.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                 Component    Value Percent             95% CI</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.19095                           </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.56823                           </span></span>
-<span><span class="co">#&gt;  Total change              0.37727   100.0 [0.3525, 0.4030]  </span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.18748   49.7  [0.1520, 0.2223]  </span></span>
-<span><span class="co">#&gt;  - Population turnover     0.18979   50.3  [0.1642, 0.2142]  </span></span>
-<span><span class="co">#&gt;    - Mortality             0.10640   28.2  [0.0985, 0.1169]  </span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.10927   29.0  [0.0830, 0.1310]  </span></span>
-<span><span class="co">#&gt;    - In-migration         -0.02587   -6.9  [-0.0303, -0.0227]</span></span>
+<span><span class="co">#&gt;                 Component  Value Percent           95% CI</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.191                         </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.568                         </span></span>
+<span><span class="co">#&gt;  Total change              0.377   100.0 [ 0.352, 0.410 ]</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.187    49.7 [ 0.154, 0.231 ]</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.190    50.3 [ 0.159, 0.214 ]</span></span>
+<span><span class="co">#&gt;    - Mortality             0.106    28.2 [ 0.098, 0.116 ]</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.109    29.0 [ 0.083, 0.130 ]</span></span>
+<span><span class="co">#&gt;    - In-migration         -0.026    -6.8 [-0.030, -0.022]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
@@ -494,24 +494,24 @@
 </div>
 <div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                 Component    Value Percent   female     male      female 95% CI</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.19095                                             </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.56823                                             </span></span>
-<span><span class="co">#&gt;  Total change              0.37727   100.0 0.19501  0.18227  [0.1822, 0.2082]  </span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.18748   49.7  0.09534  0.09214  [0.0771, 0.1127]  </span></span>
-<span><span class="co">#&gt;  - Population turnover     0.18979   50.3  0.09966  0.09013  [0.0872, 0.1122]  </span></span>
-<span><span class="co">#&gt;    - Mortality             0.10640   28.2  0.05565  0.05075  [0.0503, 0.0650]  </span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.10927   29.0  0.06373  0.04554  [0.0506, 0.0754]  </span></span>
-<span><span class="co">#&gt;    - In-migration         -0.02587   -6.9  -0.01971 -0.00616 [-0.0233, -0.0172]</span></span>
-<span><span class="co">#&gt;         male 95% CI</span></span>
-<span><span class="co">#&gt;                    </span></span>
-<span><span class="co">#&gt;                    </span></span>
-<span><span class="co">#&gt;  [0.1704, 0.1948]  </span></span>
-<span><span class="co">#&gt;  [0.0750, 0.1095]  </span></span>
-<span><span class="co">#&gt;  [0.0771, 0.1020]  </span></span>
-<span><span class="co">#&gt;  [0.0471, 0.0549]  </span></span>
-<span><span class="co">#&gt;  [0.0320, 0.0567]  </span></span>
-<span><span class="co">#&gt;  [-0.0071, -0.0053]</span></span>
+<span><span class="co">#&gt;                 Component  Value Percent female   male    female 95% CI</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.191                                       </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.568                                       </span></span>
+<span><span class="co">#&gt;  Total change              0.377   100.0  0.195  0.182 [ 0.182, 0.212 ]</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.187    49.7  0.096  0.092 [ 0.078, 0.117 ]</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.190    50.3  0.100  0.090 [ 0.084, 0.112 ]</span></span>
+<span><span class="co">#&gt;    - Mortality             0.106    28.2  0.056  0.051 [ 0.048, 0.063 ]</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.109    29.0  0.064  0.046 [ 0.051, 0.074 ]</span></span>
+<span><span class="co">#&gt;    - In-migration         -0.026    -6.8 -0.020 -0.006 [-0.023, -0.017]</span></span>
+<span><span class="co">#&gt;       male 95% CI</span></span>
+<span><span class="co">#&gt;                  </span></span>
+<span><span class="co">#&gt;                  </span></span>
+<span><span class="co">#&gt;  [ 0.169, 0.198 ]</span></span>
+<span><span class="co">#&gt;  [ 0.075, 0.113 ]</span></span>
+<span><span class="co">#&gt;  [ 0.075, 0.102 ]</span></span>
+<span><span class="co">#&gt;  [ 0.047, 0.054 ]</span></span>
+<span><span class="co">#&gt;  [ 0.031, 0.057 ]</span></span>
+<span><span class="co">#&gt;  [-0.007, -0.005]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>

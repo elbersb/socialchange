@@ -141,15 +141,16 @@ S3 object of class `social_change_decomp` with components:
 
 The function estimates mortality, coming-of-age, and net in-migration
 from period-to-period population differences within cells, then uses
-microsimulation to randomly order demographic events and track their
-contribution to aggregate change. Unequal and multi-year gaps between
-periods are supported: when the gap exceeds one year, each entering
-cohort is assigned to the specific calendar year within the gap when it
-crosses the minimum age, so that post-entry aging is correctly
-attributed to intraindividual change rather than coming-of-age. All
-waves must share a common minimum age (the youngest age observed with a
-non-zero count); this single threshold separates entering cohorts from
-survivors, and a mismatch across periods is an error.
+microsimulation to randomly order demographic events – placed at evenly
+spaced times within each inter-period gap – and track their contribution
+to aggregate change. Unequal and multi-year gaps between periods are
+supported: when the gap exceeds one year, each entering cohort is
+assigned to the specific calendar year within the gap when it crosses
+the minimum age, so that post-entry aging is correctly attributed to
+intraindividual change rather than coming-of-age. All waves must share a
+common minimum age (the youngest age observed with a non-zero count);
+this single threshold separates entering cohorts from survivors, and a
+mismatch across periods is an error.
 
 By default the survey itself supplies both the cell counts and the
 outcomes. Supplying `population` decouples these: the population frame
@@ -205,71 +206,71 @@ result <- decompose_aggregated(stacked, model, tol = 0.1)
 print(result)
 #> Overview by period:
 #>  period observed_mean modeled_mean intraindividual coming_of_age  mortality
-#>    1973        0.1845       0.1257              NA            NA         NA
-#>    1974        0.2064       0.1348        0.004378      0.003070  0.0038321
-#>    1976        0.2285       0.1490        0.008756      0.005024  0.0024406
-#>    1977        0.2142       0.1609        0.004378      0.002362  0.0036549
-#>    1980        0.2030       0.1880        0.013134      0.009134  0.0036248
-#>    1982        0.2079       0.2060        0.008756      0.005605  0.0021687
-#>    1984        0.2082       0.2303        0.008756      0.005809  0.0084059
-#>    1985        0.1974       0.2313        0.004378      0.002114 -0.0002418
-#>    1987        0.1830       0.2523        0.008756      0.004421  0.0070308
-#>    1988        0.1826       0.2599        0.004378      0.001818  0.0032712
-#>    1989        0.2112       0.2649        0.004378      0.003036  0.0044193
-#>    1990        0.1828       0.2739        0.004378      0.001961  0.0054826
-#>    1991        0.2068       0.2885        0.004378      0.004092  0.0070642
-#>    1993        0.2821       0.3044        0.008756      0.003684  0.0044503
-#>    1994        0.2839       0.3179        0.004378      0.002122  0.0009061
-#>    1996        0.3366       0.3408        0.008756      0.003902  0.0080467
-#>    1998        0.3566       0.3541        0.008756      0.004041  0.0045272
-#>    2000        0.3508       0.3682        0.008756      0.003694  0.0041280
-#>    2002        0.3969       0.3861        0.008756      0.003428  0.0058540
-#>    2004        0.3667       0.4085        0.008756      0.003658  0.0094180
-#>    2006        0.3880       0.4211        0.008756      0.005997  0.0013902
-#>    2008        0.4324       0.4361        0.008756      0.002466  0.0046382
-#>    2010        0.4885       0.4585        0.008756      0.003184  0.0079399
-#>    2012        0.4958       0.4735        0.008756      0.004220  0.0036313
-#>    2014        0.5462       0.4882        0.008756      0.003325  0.0027515
-#>    2016        0.5724       0.5035        0.008756      0.003638  0.0038334
+#>    1973         0.184        0.126              NA            NA         NA
+#>    1974         0.206        0.135         0.00438       0.00310  0.0037499
+#>    1976         0.229        0.149         0.00876       0.00503  0.0024760
+#>    1977         0.214        0.161         0.00438       0.00237  0.0036233
+#>    1980         0.203        0.188         0.01313       0.00911  0.0036892
+#>    1982         0.208        0.206         0.00876       0.00561  0.0021342
+#>    1984         0.208        0.230         0.00876       0.00584  0.0083601
+#>    1985         0.197        0.231         0.00438       0.00210 -0.0000644
+#>    1987         0.183        0.252         0.00876       0.00441  0.0069815
+#>    1988         0.183        0.260         0.00438       0.00178  0.0033264
+#>    1989         0.211        0.265         0.00438       0.00301  0.0044047
+#>    1990         0.183        0.274         0.00438       0.00201  0.0052257
+#>    1991         0.207        0.289         0.00438       0.00409  0.0070398
+#>    1993         0.282        0.304         0.00876       0.00365  0.0044900
+#>    1994         0.284        0.318         0.00438       0.00218  0.0009825
+#>    1996         0.337        0.341         0.00876       0.00392  0.0080203
+#>    1998         0.357        0.354         0.00876       0.00406  0.0045233
+#>    2000         0.351        0.368         0.00876       0.00373  0.0040311
+#>    2002         0.397        0.386         0.00876       0.00349  0.0057825
+#>    2004         0.367        0.409         0.00876       0.00362  0.0094769
+#>    2006         0.388        0.421         0.00876       0.00611  0.0014395
+#>    2008         0.432        0.436         0.00876       0.00246  0.0048131
+#>    2010         0.488        0.459         0.00876       0.00320  0.0079013
+#>    2012         0.496        0.473         0.00876       0.00424  0.0036194
+#>    2014         0.546        0.488         0.00876       0.00332  0.0026143
+#>    2016         0.572        0.504         0.00876       0.00365  0.0036220
 #>  period observed_mean modeled_mean intraindividual coming_of_age  mortality
 #>  outmigration inmigration
 #>            NA          NA
-#>             0  -0.0021454
-#>             0  -0.0020226
-#>             0   0.0014728
-#>             0   0.0012228
-#>             0   0.0014504
-#>             0   0.0014016
-#>             0  -0.0052631
-#>             0   0.0008072
-#>             0  -0.0019064
-#>             0  -0.0068347
-#>             0  -0.0028205
-#>             0  -0.0009099
-#>             0  -0.0010134
-#>             0   0.0061373
-#>             0   0.0021765
-#>             0  -0.0040684
-#>             0  -0.0024392
-#>             0  -0.0001393
-#>             0   0.0005537
-#>             0  -0.0035228
-#>             0  -0.0009016
-#>             0   0.0025513
-#>             0  -0.0016353
-#>             0  -0.0001252
-#>             0  -0.0008985
+#>             0  -0.0020913
+#>             0  -0.0020617
+#>             0   0.0015009
+#>             0   0.0011810
+#>             0   0.0014766
+#>             0   0.0014155
+#>             0  -0.0054232
+#>             0   0.0008668
+#>             0  -0.0019195
+#>             0  -0.0067985
+#>             0  -0.0026122
+#>             0  -0.0008854
+#>             0  -0.0010237
+#>             0   0.0059980
+#>             0   0.0021870
+#>             0  -0.0040857
+#>             0  -0.0023738
+#>             0  -0.0001275
+#>             0   0.0005306
+#>             0  -0.0036859
+#>             0  -0.0010664
+#>             0   0.0025789
+#>             0  -0.0016415
+#>             0   0.0000155
+#>             0  -0.0006973
 #>  outmigration inmigration
 #> 
 #> Decomposition of total change:
-#>                 Component    Value Percent
-#>  At initial (modeled)      0.12566        
-#>  At end (modeled)          0.50352        
-#>  Total change              0.37786   100.0
-#>  - Intraindividual change  0.18826   49.8 
-#>  - Population turnover     0.18960   50.2 
-#>    - Mortality             0.11267   29.8 
-#>    - Coming-of-age         0.09581   25.4 
-#>    - In-migration         -0.01887   -5.0 
+#>                 Component  Value Percent
+#>  At initial (modeled)      0.126        
+#>  At end (modeled)          0.504        
+#>  Total change              0.378   100.0
+#>  - Intraindividual change  0.188    49.8
+#>  - Population turnover     0.190    50.2
+#>    - Mortality             0.112    29.7
+#>    - Coming-of-age         0.096    25.4
+#>    - In-migration         -0.019    -5.0
 # }
 ```

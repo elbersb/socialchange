@@ -55,7 +55,8 @@ interfaces (`Outcome ~ Unit + Time`), and S3 classes with custom
     coming-of-age, mortality, net in-migration. Optional `population`
     arg supplies a true cell × period count frame (overrides survey
     counts). `R > 0` adds model-uncertainty SEs via Dirichlet bootstrap.
-    → class `social_change_decomp`
+    → class `social_change_decomp`. `print` and `plot` methods live in
+    `R/decompose_aggregated_output.R`.
 3.  **Simulation** (`R/simulate.R`) —
     [`sim_social_change()`](https://elbersb.github.io/socialchange/reference/sim_social_change.md):
     forward simulation. User supplies functions for outcome (`fun_y`),
@@ -85,6 +86,7 @@ elbersb/weightedcontrasts). roxygen2 8.0.0; S3 methods registered with
 - `gss_homosex.rda` — GSS attitudes toward homosexual sex (1973–2018)
 - `eu_membership.rda` — EU entry/exit dates
 - `wpp_data.rda` — UN World Population Prospects (1950+)
+- `mortality_us.rda` — US mortality rates (1933-2019)
 
 ## Vignettes (`vignettes/`)
 

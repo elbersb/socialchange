@@ -64,8 +64,7 @@
 <strong>Event-based</strong> (<code>R/decompose_events.R</code>) — <code><a href="reference/decompose_events.html">decompose_events()</a></code>: units enter/exit at discrete times. Two datasets (events + outcomes). Separates “change” (within-unit) from “replacement” (turnover) with counterfactuals. → class <code>decompose_events</code>
 </li>
 <li>
-<strong>Aggregated</strong> (<code>R/decompose_aggregated.R</code>) — <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code>: data aggregated by age + covariates. Microsimulation randomly orders demographic events. Needs stacked panel data (age, period, cell counts) and a fitted <code>model</code> (<code>lm</code>/<code>glm</code>/<code>gam</code>) predicting outcome from age/period/cells. Decomposes into intraindividual change, coming-of-age, mortality, net in-migration. Optional <code>population</code> arg supplies a true cell × period count frame (overrides survey counts). <code>R &gt; 0</code> adds model-uncertainty SEs via Dirichlet bootstrap. → class <code>social_change_decomp</code>
-</li>
+<strong>Aggregated</strong> (<code>R/decompose_aggregated.R</code>) — <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code>: data aggregated by age + covariates. Microsimulation randomly orders demographic events. Needs stacked panel data (age, period, cell counts) and a fitted <code>model</code> (<code>lm</code>/<code>glm</code>/<code>gam</code>) predicting outcome from age/period/cells. Decomposes into intraindividual change, coming-of-age, mortality, net in-migration. Optional <code>population</code> arg supplies a true cell × period count frame (overrides survey counts). <code>R &gt; 0</code> adds model-uncertainty SEs via Dirichlet bootstrap. → class <code>social_change_decomp</code>. <code>print</code> and <code>plot</code> methods live in <code>R/decompose_aggregated_output.R</code>.</li>
 <li>
 <strong>Simulation</strong> (<code>R/simulate.R</code>) — <code><a href="reference/sim_social_change.html">sim_social_change()</a></code>: forward simulation. User supplies functions for outcome (<code>fun_y</code>), mortality, coming-of-age, migration, state transitions. Returns event-by-event records. → class <code>social_change_sim</code>
 </li>
@@ -86,6 +85,8 @@
 <code>eu_membership.rda</code> — EU entry/exit dates</li>
 <li>
 <code>wpp_data.rda</code> — UN World Population Prospects (1950+)</li>
+<li>
+<code>mortality_us.rda</code> — US mortality rates (1933-2019)</li>
 </ul></div>
 <div class="section level2">
 <h2 id="vignettes-vignettes">Vignettes (<code>vignettes/</code>)<a class="anchor" aria-label="anchor" href="#vignettes-vignettes"></a></h2>

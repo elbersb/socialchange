@@ -220,15 +220,15 @@ following commmand:
 
 result <- decompose_aggregated(gss_all, model, weight = "wtssall")
 print(result, detailed = FALSE)
-#>                 Component    Value Percent
-#>  At initial (modeled)      0.19739        
-#>  At end (modeled)          0.56751        
-#>  Total change              0.37013   100.0
-#>  - Intraindividual change  0.19236   52.0 
-#>  - Population turnover     0.17777   48.0 
-#>    - Mortality             0.09952   26.9 
-#>    - Coming-of-age         0.10298   27.8 
-#>    - In-migration         -0.02472   -6.7
+#>                 Component  Value Percent
+#>  At initial (modeled)      0.197        
+#>  At end (modeled)          0.568        
+#>  Total change              0.370   100.0
+#>  - Intraindividual change  0.192    51.9
+#>  - Population turnover     0.178    48.1
+#>    - Mortality             0.099    26.8
+#>    - Coming-of-age         0.103    27.8
+#>    - In-migration         -0.024    -6.5
 ```
 
 This decomposition compares cells across years, attributing shrinking
@@ -291,15 +291,15 @@ model <- mgcv::gam(y ~ s(age) + s(period) + sex, data = gss_all, weights = wtssa
 set.seed(42)
 result <- decompose_aggregated(gss_all, model, cells = "sex", weight = "wtssall")
 print(result, detailed = FALSE)
-#>                 Component    Value Percent
-#>  At initial (modeled)      0.19732        
-#>  At end (modeled)          0.56757        
-#>  Total change              0.37025   100.0
-#>  - Intraindividual change  0.18868   51.0 
-#>  - Population turnover     0.18157   49.0 
-#>    - Mortality             0.12478   33.7 
-#>    - Coming-of-age         0.10323   27.9 
-#>    - In-migration         -0.04643   -12.5
+#>                 Component  Value Percent
+#>  At initial (modeled)      0.197        
+#>  At end (modeled)          0.568        
+#>  Total change              0.370   100.0
+#>  - Intraindividual change  0.189    51.0
+#>  - Population turnover     0.182    49.0
+#>    - Mortality             0.126    34.0
+#>    - Coming-of-age         0.103    27.9
+#>    - In-migration         -0.047   -12.8
 plot(result)
 ```
 
@@ -321,15 +321,15 @@ change.
 ``` r
 
 print(result, detailed = FALSE, covariate = "sex")
-#>                 Component    Value Percent  female     male
-#>  At initial (modeled)      0.19732                         
-#>  At end (modeled)          0.56757                         
-#>  Total change              0.37025   100.0 0.19629 0.17396 
-#>  - Intraindividual change  0.18868   51.0  0.09976 0.08892 
-#>  - Population turnover     0.18157   49.0  0.09653 0.08504 
-#>    - Mortality             0.12478   33.7  0.01211 0.11267 
-#>    - Coming-of-age         0.10323   27.9  0.06066 0.04256 
-#>    - In-migration         -0.04643   -12.5 0.02376 -0.07020
+#>                 Component  Value Percent female   male
+#>  At initial (modeled)      0.197                      
+#>  At end (modeled)          0.568                      
+#>  Total change              0.370   100.0  0.195  0.175
+#>  - Intraindividual change  0.189    51.0  0.100  0.089
+#>  - Population turnover     0.182    49.0  0.095  0.086
+#>    - Mortality             0.126    34.0  0.012  0.114
+#>    - Coming-of-age         0.103    27.9  0.061  0.042
+#>    - In-migration         -0.047   -12.8  0.023 -0.070
 plot(result, covariate = "sex")
 ```
 
@@ -381,15 +381,15 @@ set.seed(42)
 result <- decompose_aggregated(gss_all, model, cells = "sex",
                                weight = "wtssall", population = pop)
 print(result, detailed = FALSE)
-#>                 Component    Value Percent
-#>  At initial (modeled)      0.19095        
-#>  At end (modeled)          0.56823        
-#>  Total change              0.37727   100.0
-#>  - Intraindividual change  0.18754   49.7 
-#>  - Population turnover     0.18974   50.3 
-#>    - Mortality             0.10655   28.2 
-#>    - Coming-of-age         0.10910   28.9 
-#>    - In-migration         -0.02592   -6.9
+#>                 Component  Value Percent
+#>  At initial (modeled)      0.191        
+#>  At end (modeled)          0.568        
+#>  Total change              0.377   100.0
+#>  - Intraindividual change  0.188    49.7
+#>  - Population turnover     0.190    50.3
+#>    - Mortality             0.106    28.2
+#>    - Coming-of-age         0.109    28.9
+#>    - In-migration         -0.026    -6.9
 plot(result)
 ```
 
@@ -409,15 +409,15 @@ compare directly with the survey-counts version above.
 ``` r
 
 print(result, detailed = FALSE, covariate = "sex")
-#>                 Component    Value Percent   female      male
-#>  At initial (modeled)      0.19095                           
-#>  At end (modeled)          0.56823                           
-#>  Total change              0.37727   100.0 0.19490  0.182376 
-#>  - Intraindividual change  0.18754   49.7  0.09532  0.092220 
-#>  - Population turnover     0.18974   50.3  0.09958  0.090156 
-#>    - Mortality             0.10655   28.2  0.05568  0.050866 
-#>    - Coming-of-age         0.10910   28.9  0.06364  0.045464 
-#>    - In-migration         -0.02592   -6.9  -0.01974 -0.006175
+#>                 Component  Value Percent female   male
+#>  At initial (modeled)      0.191                      
+#>  At end (modeled)          0.568                      
+#>  Total change              0.377   100.0  0.195  0.182
+#>  - Intraindividual change  0.188    49.7  0.095  0.092
+#>  - Population turnover     0.190    50.3  0.100  0.090
+#>    - Mortality             0.106    28.2  0.056  0.051
+#>    - Coming-of-age         0.109    28.9  0.064  0.045
+#>    - In-migration         -0.026    -6.9 -0.020 -0.006
 plot(result, covariate = "sex")
 ```
 
@@ -440,15 +440,15 @@ result <- decompose_aggregated(gss_all, model, cells = "sex",
                                weight = "wtssall", population = pop, R = 100)
 #> Computing 100 bootstrap replicate(s); this can take a while for gam models.
 print(result, detailed = FALSE)
-#>                 Component    Value Percent             95% CI
-#>  At initial (modeled)      0.19095                           
-#>  At end (modeled)          0.56823                           
-#>  Total change              0.37727   100.0 [0.3525, 0.4030]  
-#>  - Intraindividual change  0.18748   49.7  [0.1520, 0.2223]  
-#>  - Population turnover     0.18979   50.3  [0.1642, 0.2142]  
-#>    - Mortality             0.10640   28.2  [0.0985, 0.1169]  
-#>    - Coming-of-age         0.10927   29.0  [0.0830, 0.1310]  
-#>    - In-migration         -0.02587   -6.9  [-0.0303, -0.0227]
+#>                 Component  Value Percent           95% CI
+#>  At initial (modeled)      0.191                         
+#>  At end (modeled)          0.568                         
+#>  Total change              0.377   100.0 [ 0.352, 0.410 ]
+#>  - Intraindividual change  0.187    49.7 [ 0.154, 0.231 ]
+#>  - Population turnover     0.190    50.3 [ 0.159, 0.214 ]
+#>    - Mortality             0.106    28.2 [ 0.098, 0.116 ]
+#>    - Coming-of-age         0.109    29.0 [ 0.083, 0.130 ]
+#>    - In-migration         -0.026    -6.8 [-0.030, -0.022]
 plot(result)
 ```
 
@@ -457,24 +457,24 @@ plot(result)
 ``` r
 
 print(result, detailed = FALSE, covariate = "sex")
-#>                 Component    Value Percent   female     male      female 95% CI
-#>  At initial (modeled)      0.19095                                             
-#>  At end (modeled)          0.56823                                             
-#>  Total change              0.37727   100.0 0.19501  0.18227  [0.1822, 0.2082]  
-#>  - Intraindividual change  0.18748   49.7  0.09534  0.09214  [0.0771, 0.1127]  
-#>  - Population turnover     0.18979   50.3  0.09966  0.09013  [0.0872, 0.1122]  
-#>    - Mortality             0.10640   28.2  0.05565  0.05075  [0.0503, 0.0650]  
-#>    - Coming-of-age         0.10927   29.0  0.06373  0.04554  [0.0506, 0.0754]  
-#>    - In-migration         -0.02587   -6.9  -0.01971 -0.00616 [-0.0233, -0.0172]
-#>         male 95% CI
-#>                    
-#>                    
-#>  [0.1704, 0.1948]  
-#>  [0.0750, 0.1095]  
-#>  [0.0771, 0.1020]  
-#>  [0.0471, 0.0549]  
-#>  [0.0320, 0.0567]  
-#>  [-0.0071, -0.0053]
+#>                 Component  Value Percent female   male    female 95% CI
+#>  At initial (modeled)      0.191                                       
+#>  At end (modeled)          0.568                                       
+#>  Total change              0.377   100.0  0.195  0.182 [ 0.182, 0.212 ]
+#>  - Intraindividual change  0.187    49.7  0.096  0.092 [ 0.078, 0.117 ]
+#>  - Population turnover     0.190    50.3  0.100  0.090 [ 0.084, 0.112 ]
+#>    - Mortality             0.106    28.2  0.056  0.051 [ 0.048, 0.063 ]
+#>    - Coming-of-age         0.109    29.0  0.064  0.046 [ 0.051, 0.074 ]
+#>    - In-migration         -0.026    -6.8 -0.020 -0.006 [-0.023, -0.017]
+#>       male 95% CI
+#>                  
+#>                  
+#>  [ 0.169, 0.198 ]
+#>  [ 0.075, 0.113 ]
+#>  [ 0.075, 0.102 ]
+#>  [ 0.047, 0.054 ]
+#>  [ 0.031, 0.057 ]
+#>  [-0.007, -0.005]
 plot(result, covariate = "sex")
 ```
 

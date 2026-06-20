@@ -71,7 +71,7 @@
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"elbersb/socialchange"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
+<h2 id="example-direct-decomposition-of-events">Example: Direct decomposition of events<a class="anchor" aria-label="anchor" href="#example-direct-decomposition-of-events"></a>
 </h2>
 <p>As a basic example, we look at a decomposition of EU membership, and whether population growth in the EU is due to intracountry changes in population, or due to the admission of new countries. The decomposition unit is the country. To run the <code>decompose_events</code> decomposition function, we need two datasets: One dataset contains the events, in this case the dates when countries entered or exited the EU. This dataset is included in the <code>socialchange</code> package:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -148,6 +148,30 @@
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">ev</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-5-1.png" width="100%"></p>
+</div>
+<div class="section level2">
+<h2 id="example-decompose-aggregated-data">Example: Decompose aggregated data<a class="anchor" aria-label="anchor" href="#example-decompose-aggregated-data"></a>
+</h2>
+<p>In this example we decompose survey data, based on the U.S. General Social Survey. More details on this example can be found in the <a href="https://elbersb.github.io/socialchange/articles/gss_homosexuality.html#event-based-decomposition">vignette</a>.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">gss_homosex</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">gss_all</span> <span class="op">&lt;-</span> <span class="va">gss_homosex</span><span class="op">[</span><span class="va">age</span> <span class="op">&gt;=</span> <span class="fl">21</span>, <span class="fu">.</span><span class="op">(</span><span class="va">age</span>, period <span class="op">=</span> <span class="va">year</span>, <span class="va">sex</span>, y <span class="op">=</span> <span class="va">homosex</span>, <span class="va">wtssall</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">mgcv</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="fu">s</span><span class="op">(</span><span class="va">age</span><span class="op">)</span> <span class="op">+</span> <span class="fu">s</span><span class="op">(</span><span class="va">period</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">gss_all</span>, weights <span class="op">=</span> <span class="va">wtssall</span><span class="op">)</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">gss_all</span>, <span class="va">model</span>, cells <span class="op">=</span> <span class="st">"sex"</span>, weight <span class="op">=</span> <span class="st">"wtssall"</span>, R <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Computing 100 bootstrap replicate(s); this can take a while for gam models.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                 Component    Value Percent             95% CI</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.19709                           </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.56741                           </span></span>
+<span><span class="co">#&gt;  Total change              0.37032   100.0 [0.3487, 0.3959]  </span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.19215   51.9  [0.1597, 0.2244]  </span></span>
+<span><span class="co">#&gt;  - Population turnover     0.17817   48.1  [0.1516, 0.1981]  </span></span>
+<span><span class="co">#&gt;    - Mortality             0.11958   32.3  [0.1126, 0.1256]  </span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.10317   27.9  [0.0768, 0.1247]  </span></span>
+<span><span class="co">#&gt;    - In-migration         -0.04457   -12.0 [-0.0472, -0.0412]</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-6-1.png" width="100%"></p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

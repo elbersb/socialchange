@@ -72,9 +72,9 @@ outcomes <- data.table(
 )
 result <- decompose_events(events, outcomes, gdp ~ country + year)
 print(result)
-#>     event_type       term     total      pct
-#>         <char>      <num>     <num>    <num>
-#> 1:      change 0.43638105 0.5294559 82.42066
-#> 2: replacement 0.09307482 0.5294559 17.57934
+#>     event_type       term      total      pct
+#>         <char>      <num>      <num>    <num>
+#> 1:      change -0.3032191 -0.4281657 70.81816
+#> 2: replacement -0.1249466 -0.4281657 29.18184
 # }
 ```
