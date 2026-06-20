@@ -60,7 +60,8 @@
 #' @details
 #' The function estimates mortality, coming-of-age, and net in-migration from period-to-period
 #' population differences within cells, then uses microsimulation to randomly order demographic
-#' events and track their contribution to aggregate change. Unequal and multi-year gaps
+#' events -- placed at evenly spaced times within each inter-period gap -- and track their
+#' contribution to aggregate change. Unequal and multi-year gaps
 #' between periods are supported: when the gap exceeds one year, each entering cohort is
 #' assigned to the specific calendar year within the gap when it crosses the minimum age,
 #' so that post-entry aging is correctly attributed to intraindividual change rather than
@@ -269,6 +270,9 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
     # decompose - main loop
     for (i_period in seq_len(length(periods) - 1)) {
         gap <- as.numeric(periods[i_period + 1] - periods[i_period])
+        # coming-of-age banding (coa_band = min_age - age) is exact only for whole-number
+        # gaps; a fractional gap would silently drop entrants.
+        checkmate::assert_integerish(gap, lower = 1, .var.name = "period gap")
 
         # Align the two waves into one per-cell table with start/end counts n1/n2.
         data <- align_periods(frame, periods, i_period, gap, cells, model)
@@ -361,65 +365,71 @@ derive_events <- function(data, min_age) {
     data
 }
 
-# Expand the per-cell event-count table into a flat, time-sorted event list.
-# Returns parallel vectors (ev_type, ev_cell, events_tick), each of length n_ev,
-# assigning every demographic event a (type, cell, time-in-[0,1]) triple.
+# Expand the per-cell event-count table into a flat, time-ordered event list.
+# Returns parallel vectors (events_tick, ev_type, ev_cell), each of length K (the
+# total number of events), giving every demographic event a (time, type, cell) triple.
 #
-# Coming-of-age timing:
-#   data2 ages are shifted back by `gap`, so a row with aligned age `a` represents
-#   people who were `a` years old at period 1 and will be `a + gap` at period 2.
-#   For coming-of-age cells (a < min_age), these people crossed the minimum age
-#   threshold during the gap.  A person with aligned age `a` reaches min_age
-#   exactly (min_age - a) years into the gap.  Because birth dates are spread
-#   across a calendar year, entries are uniform over the year ending at that point:
-#
-#     lo = (min_age - a - 1) / gap     hi = (min_age - a) / gap
+# The gap splits into `gap` crossing-year bands of width 1/gap. A coming-of-age cell
+# (aligned age a < min_age) crosses min_age exactly (min_age - a) years in, so its
+# entrants belong to band b = min_age - a; the band's interval ((b-1)/gap, b/gap] is
+# their entry window. Mortality and in-migration span the whole gap, so they are split
+# as evenly as possible across the bands (which event lands in which band is random).
 #
 #   Example — gap = 2, min_age = 20:
-#     aligned age 19 (age 21 in period 2): lo = 0,   hi = 0.5  (enter in year 1)
-#     aligned age 18 (age 20 in period 2): lo = 0.5, hi = 1.0  (enter in year 2)
+#     aligned age 19 (age 21 in period 2): band 1, window (0,   0.5]  (crosses in year 1)
+#     aligned age 18 (age 20 in period 2): band 2, window (0.5, 1.0]  (crosses in year 2)
 #
-# Mortality and migration are uniformly distributed across the full gap.
+# Within a band the events sit on a fixed even grid -- unique slots at the midpoints of
+# n equal subintervals -- while their *order* (which event lands in which slot) is drawn
+# at random. This keeps the random interleaving of births/deaths/migration (the
+# demographically meaningful part) and drops the Monte-Carlo noise in the exact sub-gap
+# timing. Banding (rather than one global grid) lets entrants concentrated in a single
+# year fill that year's slots without colliding with the rest of the gap. outmigration is
+# always 0, so it never enters the pool.
 schedule_events <- function(data, min_age, gap) {
-    n_ev <- data[, sum(coming_of_age) + sum(mortality) + sum(inmigration) + sum(outmigration)]
+    coa <- data$coming_of_age
     n_c <- nrow(data)
+    nb <- max(1L, as.integer(round(gap))) # one band per crossing-year of the gap
+
+    # Whole-gap events (out-migration is always 0), each a (type, cell) pair, assigned to
+    # bands in round-robin over a random permutation: even counts per band, random membership.
+    free_type <- c(rep.int("mortality", sum(data$mortality)),
+                   rep.int("inmigration", sum(data$inmigration)))
+    free_cell <- c(rep.int(seq_len(n_c), data$mortality),
+                   rep.int(seq_len(n_c), data$inmigration))
+    M <- length(free_type)
+    free_band <- integer(M)
+    if (M > 0L) free_band[sample.int(M)] <- ((seq_len(M) - 1L) %% nb) + 1L
+
+    n_ev <- sum(coa) + M
+    if (n_ev == 0L) {
+        return(list(events_tick = numeric(0), ev_type = character(0), ev_cell = integer(0)))
+    }
+
+    coa_band <- min_age - data$age # band index for coming-of-age cells (1..nb)
+    ev_time <- numeric(n_ev)
     ev_type <- character(n_ev)
     ev_cell <- integer(n_ev)
-    ev_time <- numeric(n_ev)
-    ev_idx <- 1L
-    coa_vec <- data$coming_of_age
-    # Uniform-over-gap event types, in fixed order. outmigration is always 0, so
-    # its guarded branch never runs.
-    unif_vecs <- list(
-        mortality = data$mortality,
-        inmigration = data$inmigration,
-        outmigration = data$outmigration
-    )
-    for (cidx in seq_len(n_c)) {
-        n_coa <- coa_vec[cidx]
-        if (n_coa > 0L) {
-            a <- data$age[cidx]
-            lo <- max(0, (min_age - a - 1) / gap)
-            hi <- (min_age - a) / gap
-            end_idx <- ev_idx + n_coa - 1L
-            ev_type[ev_idx:end_idx] <- "coming_of_age"
-            ev_cell[ev_idx:end_idx] <- cidx
-            ev_time[ev_idx:end_idx] <- stats::runif(n_coa, lo, hi)
-            ev_idx <- end_idx + 1L
-        }
-        for (et in names(unif_vecs)) {
-            n_et <- unif_vecs[[et]][cidx]
-            if (n_et > 0L) {
-                end_idx <- ev_idx + n_et - 1L
-                ev_type[ev_idx:end_idx] <- et
-                ev_cell[ev_idx:end_idx] <- cidx
-                ev_time[ev_idx:end_idx] <- stats::runif(n_et)
-                ev_idx <- end_idx + 1L
-            }
-        }
+    pos <- 1L
+    for (b in seq_len(nb)) {
+        coa_cells <- which(coa > 0L & coa_band == b)
+        fidx <- which(free_band == b)
+        b_type <- c(rep.int("coming_of_age", sum(coa[coa_cells])), free_type[fidx])
+        b_cell <- c(rep.int(coa_cells, coa[coa_cells]), free_cell[fidx])
+        nbk <- length(b_type)
+        if (nbk == 0L) next
+
+        # Even unique slots inside the band interval ((b-1)/nb, b/nb], events in random order.
+        slots <- ((b - 1L) + (seq_len(nbk) - 0.5) / nbk) / nb
+        o <- if (nbk > 1L) sample.int(nbk) else 1L
+        rng <- pos:(pos + nbk - 1L)
+        ev_time[rng] <- slots
+        ev_type[rng] <- b_type[o]
+        ev_cell[rng] <- b_cell[o]
+        pos <- pos + nbk
     }
-    ord <- order(ev_time)
-    list(events_tick = ev_time[ord], ev_type = ev_type[ord], ev_cell = ev_cell[ord])
+    # Bands are emitted in order and slots ascend within each, so ev_time is already sorted.
+    list(events_tick = ev_time, ev_type = ev_type, ev_cell = ev_cell)
 }
 
 # One prediction slice per evaluation tick: stack `data`, advancing only age and period
