@@ -13,7 +13,7 @@ Description: Provides methods for decomposing aggregate-level social change
 Depends: R (>= 4.0.0)
 License: MIT + file LICENSE
 Imports: data.table, ggplot2, checkmate, weightedcontrasts
-Remotes: elbersb/weightedcontrasts, kjhealy/gssr, guyabel/tidywpp
+Remotes: elbersb/weightedcontrasts, kjhealy/gssr, guyabel/tidywpp, timriffe/HMDHFDplus
 Encoding: UTF-8
 LazyData: true
 URL: https://elbersb.github.io/socialchange/
@@ -25,7 +25,8 @@ Suggests:
     quarto,
     testthat (>= 3.0.0),
     tidywpp,
-    modelsummary
+    modelsummary,
+    HMDHFDplus
 VignetteBuilder: quarto
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3

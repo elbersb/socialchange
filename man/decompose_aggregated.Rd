@@ -95,7 +95,8 @@ that predicts the outcome as a function of age, period, and covariates.
 \details{
 The function estimates mortality, coming-of-age, and net in-migration from period-to-period
 population differences within cells, then uses microsimulation to randomly order demographic
-events and track their contribution to aggregate change. Unequal and multi-year gaps
+events -- placed at evenly spaced times within each inter-period gap -- and track their
+contribution to aggregate change. Unequal and multi-year gaps
 between periods are supported: when the gap exceeds one year, each entering cohort is
 assigned to the specific calendar year within the gap when it crosses the minimum age,
 so that post-entry aging is correctly attributed to intraindividual change rather than

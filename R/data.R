@@ -124,6 +124,25 @@
 #'   \url{https://population.un.org/wpp/}
 "wpp_us"
 
+#' US mortality rates, 1933--2019
+#'
+#' Mortality rates by sex and age. Used in examples for
+#' \code{\link{decompose_aggregated}}.
+#'
+#' @format A data frame with 15,660 rows and 4 variables:
+#' \describe{
+#'   \item{year}{Year.}
+#'   \item{age}{Age.}
+#'   \item{sex}{Sex, either 'male' or 'female'.}
+#'   \item{death_rate}{Central death rate m(x): deaths divided by exposure (HMD `Mx_1x1`).
+#'     Not a probability -- it can exceed 1 at the oldest ages.}
+#' }
+#' @source HMD. Human Mortality Database.
+#'  Max Planck Institute for Demographic Research (Germany),
+#'  University of California, Berkeley (USA),
+#'  and French Institute for Demographic Studies (France). Available at www.mortality.org.
+"mortality_us"
+
 #' EU membership events
 #'
 #' Dates of entry into and exit from the European Union (and its predecessor,
