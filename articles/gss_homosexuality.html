@@ -470,6 +470,7 @@
 <p>The mortality contribution, which the survey cells had loaded almost entirely onto men (0.012 for women vs 0.113 for men), now splits roughly evenly (0.056 vs 0.051) once real population counts drive the events. The large offsetting male in-migration term collapses to a small, plausibly-signed net term for both sexes, although female in-migration still contributes significantly more compared to male in-migration. The stable quantities barely move, confirming that the earlier male-mortality / female-migration pattern was due to small cell counts.</p>
 </section><section class="level3"><h3 id="standard-errors">Standard errors<a class="anchor" aria-label="anchor" href="#standard-errors"></a>
 </h3>
+<p>Passing <code>R &gt; 0</code> attaches standard errors and 95% confidence bands to every component. Each replicate re-runs the decomposition under a fresh random ordering of the interleaved demographic events and a refit of the outcome <code>model</code> on a reweighted bootstrap sample of the survey; the spread across the <code>R</code> replicates is the band that <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> reports and <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> shades.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span><span class="va">gss_all</span>, <span class="va">model</span>, cells <span class="op">=</span> <span class="st">"sex"</span>,</span>
@@ -481,10 +482,10 @@
 <span><span class="co">#&gt;  At end (modeled)          0.568                         </span></span>
 <span><span class="co">#&gt;  Total change              0.377   100.0 [ 0.352, 0.410 ]</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.187    49.7 [ 0.154, 0.231 ]</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.190    50.3 [ 0.159, 0.214 ]</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.190    50.3 [ 0.159, 0.213 ]</span></span>
 <span><span class="co">#&gt;    - Mortality             0.106    28.2 [ 0.098, 0.116 ]</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.109    29.0 [ 0.083, 0.130 ]</span></span>
-<span><span class="co">#&gt;    - In-migration         -0.026    -6.8 [-0.030, -0.022]</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.109    28.9 [ 0.082, 0.130 ]</span></span>
+<span><span class="co">#&gt;    - In-migration         -0.026    -6.9 [-0.030, -0.022]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
@@ -492,22 +493,27 @@
 </figure>
 </div>
 </div>
+</div>
+<p>Two things are worth reading off these bands. First, they are narrow relative to the point estimates: the total change and each major component sit well away from zero, so the near-even intraindividual/turnover split — and the comparable sizes of the mortality and coming-of-age terms — are real features of the data rather than artifacts of the random event ordering or model fit. The within-person and coming-of-age terms carry the widest intervals, while mortality and the small net in-migration term are pinned down comparatively tightly.</p>
+<p>Second, the bands combine model uncertainty with event-ordering uncertainty only. Because the population frame supplies the cell counts, those counts are treated as fixed, so the intervals do not include demographic sampling error in the turnover the counts drive — they would understate total uncertainty if the cell sizes were themselves noisy (as they are when the counts come from the survey, for instance, rather than a population frame).</p>
+<p>Standard errors can also be obtained when we split by covariate:</p>
+<div class="cell">
 <div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 Component  Value Percent female   male    female 95% CI</span></span>
 <span><span class="co">#&gt;  At initial (modeled)      0.191                                       </span></span>
 <span><span class="co">#&gt;  At end (modeled)          0.568                                       </span></span>
 <span><span class="co">#&gt;  Total change              0.377   100.0  0.195  0.182 [ 0.182, 0.212 ]</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.187    49.7  0.096  0.092 [ 0.078, 0.117 ]</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.187    49.7  0.095  0.092 [ 0.078, 0.117 ]</span></span>
 <span><span class="co">#&gt;  - Population turnover     0.190    50.3  0.100  0.090 [ 0.084, 0.112 ]</span></span>
 <span><span class="co">#&gt;    - Mortality             0.106    28.2  0.056  0.051 [ 0.048, 0.063 ]</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.109    29.0  0.064  0.046 [ 0.051, 0.074 ]</span></span>
-<span><span class="co">#&gt;    - In-migration         -0.026    -6.8 -0.020 -0.006 [-0.023, -0.017]</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.109    28.9  0.064  0.046 [ 0.051, 0.074 ]</span></span>
+<span><span class="co">#&gt;    - In-migration         -0.026    -6.9 -0.020 -0.006 [-0.023, -0.017]</span></span>
 <span><span class="co">#&gt;       male 95% CI</span></span>
 <span><span class="co">#&gt;                  </span></span>
 <span><span class="co">#&gt;                  </span></span>
-<span><span class="co">#&gt;  [ 0.169, 0.198 ]</span></span>
-<span><span class="co">#&gt;  [ 0.075, 0.113 ]</span></span>
+<span><span class="co">#&gt;  [ 0.170, 0.198 ]</span></span>
+<span><span class="co">#&gt;  [ 0.076, 0.114 ]</span></span>
 <span><span class="co">#&gt;  [ 0.075, 0.102 ]</span></span>
 <span><span class="co">#&gt;  [ 0.047, 0.054 ]</span></span>
 <span><span class="co">#&gt;  [ 0.031, 0.057 ]</span></span>
@@ -515,11 +521,12 @@
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">result</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
-<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-15-2.png" width="672"></p>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-16-1.png" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
+<p>The female and male intervals overlap for the total change and for every component except net in-migration, so the apparent difference in intraindividual change, mortality, and coming-of-age is within sampling noise rather than a distinguishable difference. Net in-migration is the exception (the component for women being clearly more negative).</p>
 </section></section><section class="level2"><h2 id="further-reading">Further reading<a class="anchor" aria-label="anchor" href="#further-reading"></a>
 </h2>
 <p>For APC analysis of the same <code>gss_homosex</code> dataset, see the <a href="apc.html">APC vignette</a>.</p>

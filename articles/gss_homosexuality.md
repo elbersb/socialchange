@@ -434,6 +434,14 @@ male-mortality / female-migration pattern was due to small cell counts.
 
 ### Standard errors
 
+Passing `R > 0` attaches standard errors and 95% confidence bands to
+every component. Each replicate re-runs the decomposition under a fresh
+random ordering of the interleaved demographic events and a refit of the
+outcome `model` on a reweighted bootstrap sample of the survey; the
+spread across the `R` replicates is the band that
+[`print()`](https://rdrr.io/r/base/print.html) reports and
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) shades.
+
 ``` r
 
 result <- decompose_aggregated(gss_all, model, cells = "sex",
@@ -445,14 +453,34 @@ print(result, detailed = FALSE)
 #>  At end (modeled)          0.568                         
 #>  Total change              0.377   100.0 [ 0.352, 0.410 ]
 #>  - Intraindividual change  0.187    49.7 [ 0.154, 0.231 ]
-#>  - Population turnover     0.190    50.3 [ 0.159, 0.214 ]
+#>  - Population turnover     0.190    50.3 [ 0.159, 0.213 ]
 #>    - Mortality             0.106    28.2 [ 0.098, 0.116 ]
-#>    - Coming-of-age         0.109    29.0 [ 0.083, 0.130 ]
-#>    - In-migration         -0.026    -6.8 [-0.030, -0.022]
+#>    - Coming-of-age         0.109    28.9 [ 0.082, 0.130 ]
+#>    - In-migration         -0.026    -6.9 [-0.030, -0.022]
 plot(result)
 ```
 
 ![](gss_homosexuality_files/figure-html/unnamed-chunk-15-1.png)
+
+Two things are worth reading off these bands. First, they are narrow
+relative to the point estimates: the total change and each major
+component sit well away from zero, so the near-even
+intraindividual/turnover split — and the comparable sizes of the
+mortality and coming-of-age terms — are real features of the data rather
+than artifacts of the random event ordering or model fit. The
+within-person and coming-of-age terms carry the widest intervals, while
+mortality and the small net in-migration term are pinned down
+comparatively tightly.
+
+Second, the bands combine model uncertainty with event-ordering
+uncertainty only. Because the population frame supplies the cell counts,
+those counts are treated as fixed, so the intervals do not include
+demographic sampling error in the turnover the counts drive — they would
+understate total uncertainty if the cell sizes were themselves noisy (as
+they are when the counts come from the survey, for instance, rather than
+a population frame).
+
+Standard errors can also be obtained when we split by covariate:
 
 ``` r
 
@@ -461,16 +489,16 @@ print(result, detailed = FALSE, covariate = "sex")
 #>  At initial (modeled)      0.191                                       
 #>  At end (modeled)          0.568                                       
 #>  Total change              0.377   100.0  0.195  0.182 [ 0.182, 0.212 ]
-#>  - Intraindividual change  0.187    49.7  0.096  0.092 [ 0.078, 0.117 ]
+#>  - Intraindividual change  0.187    49.7  0.095  0.092 [ 0.078, 0.117 ]
 #>  - Population turnover     0.190    50.3  0.100  0.090 [ 0.084, 0.112 ]
 #>    - Mortality             0.106    28.2  0.056  0.051 [ 0.048, 0.063 ]
-#>    - Coming-of-age         0.109    29.0  0.064  0.046 [ 0.051, 0.074 ]
-#>    - In-migration         -0.026    -6.8 -0.020 -0.006 [-0.023, -0.017]
+#>    - Coming-of-age         0.109    28.9  0.064  0.046 [ 0.051, 0.074 ]
+#>    - In-migration         -0.026    -6.9 -0.020 -0.006 [-0.023, -0.017]
 #>       male 95% CI
 #>                  
 #>                  
-#>  [ 0.169, 0.198 ]
-#>  [ 0.075, 0.113 ]
+#>  [ 0.170, 0.198 ]
+#>  [ 0.076, 0.114 ]
 #>  [ 0.075, 0.102 ]
 #>  [ 0.047, 0.054 ]
 #>  [ 0.031, 0.057 ]
@@ -478,7 +506,13 @@ print(result, detailed = FALSE, covariate = "sex")
 plot(result, covariate = "sex")
 ```
 
-![](gss_homosexuality_files/figure-html/unnamed-chunk-15-2.png)
+![](gss_homosexuality_files/figure-html/unnamed-chunk-16-1.png)
+
+The female and male intervals overlap for the total change and for every
+component except net in-migration, so the apparent difference in
+intraindividual change, mortality, and coming-of-age is within sampling
+noise rather than a distinguishable difference. Net in-migration is the
+exception (the component for women being clearly more negative).
 
 ## Further reading
 

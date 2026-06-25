@@ -89,13 +89,13 @@ via <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">p
 
 
 <dt id="arg-r">R<a class="anchor" aria-label="anchor" href="#arg-r"></a></dt>
-<dd><p>Number of Dirichlet-bootstrap replicates used to attach standard errors capturing
-<code>model</code> uncertainty (default 0, point estimate only). When <code>R &gt; 0</code>, <code>model</code> is
-refit <code>R</code> times on Dirichlet-reweighted copies of its training data; the spread of the
-resulting decompositions (under common random numbers, so event-ordering noise is differenced
-out) gives per-component standard errors and cumulative confidence bands. This captures model
-uncertainty only – the dominant source – not demographic uncertainty in the cell counts. For
-<code>gam</code> models each replicate is a full refit plus prediction, so large <code>R</code> can be slow.</p></dd>
+<dd><p>Number of paired (event-ordering, model-draw) replicates used to attach standard
+errors (default 0, point estimate only). When <code>R &gt; 0</code>, each replicate draws its own
+random event ordering and pairs it with a Dirichlet-reweighted refit of <code>model</code>; the
+spread of the resulting decompositions gives per-component standard errors and cumulative
+confidence bands. The band is the <em>combined</em> event-ordering and model uncertainty, not
+demographic uncertainty in the cell counts. For <code>gam</code> models
+each replicate is a full refit plus prediction, so large <code>R</code> can be slow.</p></dd>
 
 
 <dt id="arg-tol">tol<a class="anchor" aria-label="anchor" href="#arg-tol"></a></dt>
@@ -128,8 +128,10 @@ dropped); these are compared over rows with <code>n &gt; 0</code>.</p></dd>
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
 <dd><p>Optional integer seed for reproducible bootstrap replicates (default <code>NULL</code>).
-The Dirichlet draw is always isolated from the global RNG stream, so passing <code>R &gt; 0</code> never
-changes the point estimate relative to <code>R = 0</code> under the same outer seed.</p></dd>
+The Dirichlet refit draw is isolated from the global RNG stream, so the replicate refits are
+reproducible via <code>seed</code> while the event orderings follow the outer <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>.
+Only <code>R = 0</code> reproduces the legacy single-ordering point estimate; with <code>R &gt; 0</code> the
+point is the mean over the <code>R</code> orderings (see Details).</p></dd>
 
 
 <dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
@@ -165,7 +167,11 @@ which to split the cumulative change lines. For more elaborate breakdowns, aggre
     <p>The function estimates mortality, coming-of-age, and net in-migration from period-to-period
 population differences within cells, then uses microsimulation to randomly order demographic
 events – placed at evenly spaced times within each inter-period gap – and track their
-contribution to aggregate change. Unequal and multi-year gaps
+contribution to aggregate change. The ordering is itself an uncertainty source (it stands in
+for the unobserved true event sequence): the point estimate is the mean decomposition over
+<code>max(R, 1)</code> random orderings, and when <code>R &gt; 0</code> each replicate carries its own
+ordering (paired with its own model refit), so the reported band folds ordering and model
+uncertainty together. Unequal and multi-year gaps
 between periods are supported: when the gap exceeds one year, each entering cohort is
 assigned to the specific calendar year within the gap when it crosses the minimum age,
 so that post-entry aging is correctly attributed to intraindividual change rather than

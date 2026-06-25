@@ -46,14 +46,13 @@ plot(x, covariate = NULL, ...)
 
 - R:
 
-  Number of Dirichlet-bootstrap replicates used to attach standard
-  errors capturing `model` uncertainty (default 0, point estimate only).
-  When `R > 0`, `model` is refit `R` times on Dirichlet-reweighted
-  copies of its training data; the spread of the resulting
-  decompositions (under common random numbers, so event-ordering noise
-  is differenced out) gives per-component standard errors and cumulative
-  confidence bands. This captures model uncertainty only – the dominant
-  source – not demographic uncertainty in the cell counts. For `gam`
+  Number of paired (event-ordering, model-draw) replicates used to
+  attach standard errors (default 0, point estimate only). When `R > 0`,
+  each replicate draws its own random event ordering and pairs it with a
+  Dirichlet-reweighted refit of `model`; the spread of the resulting
+  decompositions gives per-component standard errors and cumulative
+  confidence bands. The band is the *combined* event-ordering and model
+  uncertainty, not demographic uncertainty in the cell counts. For `gam`
   models each replicate is a full refit plus prediction, so large `R`
   can be slow.
 
@@ -98,9 +97,12 @@ plot(x, covariate = NULL, ...)
 - seed:
 
   Optional integer seed for reproducible bootstrap replicates (default
-  `NULL`). The Dirichlet draw is always isolated from the global RNG
-  stream, so passing `R > 0` never changes the point estimate relative
-  to `R = 0` under the same outer seed.
+  `NULL`). The Dirichlet refit draw is isolated from the global RNG
+  stream, so the replicate refits are reproducible via `seed` while the
+  event orderings follow the outer
+  [`set.seed()`](https://rdrr.io/r/base/Random.html). Only `R = 0`
+  reproduces the legacy single-ordering point estimate; with `R > 0` the
+  point is the mean over the `R` orderings (see Details).
 
 - x:
 
@@ -143,14 +145,19 @@ The function estimates mortality, coming-of-age, and net in-migration
 from period-to-period population differences within cells, then uses
 microsimulation to randomly order demographic events – placed at evenly
 spaced times within each inter-period gap – and track their contribution
-to aggregate change. Unequal and multi-year gaps between periods are
-supported: when the gap exceeds one year, each entering cohort is
-assigned to the specific calendar year within the gap when it crosses
-the minimum age, so that post-entry aging is correctly attributed to
-intraindividual change rather than coming-of-age. All waves must share a
-common minimum age (the youngest age observed with a non-zero count);
-this single threshold separates entering cohorts from survivors, and a
-mismatch across periods is an error.
+to aggregate change. The ordering is itself an uncertainty source (it
+stands in for the unobserved true event sequence): the point estimate is
+the mean decomposition over `max(R, 1)` random orderings, and when
+`R > 0` each replicate carries its own ordering (paired with its own
+model refit), so the reported band folds ordering and model uncertainty
+together. Unequal and multi-year gaps between periods are supported:
+when the gap exceeds one year, each entering cohort is assigned to the
+specific calendar year within the gap when it crosses the minimum age,
+so that post-entry aging is correctly attributed to intraindividual
+change rather than coming-of-age. All waves must share a common minimum
+age (the youngest age observed with a non-zero count); this single
+threshold separates entering cohorts from survivors, and a mismatch
+across periods is an error.
 
 By default the survey itself supplies both the cell counts and the
 outcomes. Supplying `population` decouples these: the population frame

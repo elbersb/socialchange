@@ -64,7 +64,7 @@
 <strong>Event-based</strong> (<code>R/decompose_events.R</code>) — <code><a href="reference/decompose_events.html">decompose_events()</a></code>: units enter/exit at discrete times. Two datasets (events + outcomes). Separates “change” (within-unit) from “replacement” (turnover) with counterfactuals. → class <code>decompose_events</code>
 </li>
 <li>
-<strong>Aggregated</strong> (<code>R/decompose_aggregated.R</code>) — <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code>: data aggregated by age + covariates. Microsimulation randomly orders demographic events. Needs stacked panel data (age, period, cell counts) and a fitted <code>model</code> (<code>lm</code>/<code>glm</code>/<code>gam</code>) predicting outcome from age/period/cells. Decomposes into intraindividual change, coming-of-age, mortality, net in-migration. Optional <code>population</code> arg supplies a true cell × period count frame (overrides survey counts). <code>R &gt; 0</code> adds model-uncertainty SEs via Dirichlet bootstrap. → class <code>social_change_decomp</code>. <code>print</code> and <code>plot</code> methods live in <code>R/decompose_aggregated_output.R</code>.</li>
+<strong>Aggregated</strong> (<code>R/decompose_aggregated.R</code>) — <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code>: data aggregated by age + covariates. Microsimulation randomly orders demographic events. Needs stacked panel data (age, period, cell counts) and a fitted <code>model</code> (<code>lm</code>/<code>glm</code>/<code>gam</code>) predicting outcome from age/period/cells. Decomposes into intraindividual change, coming-of-age, mortality, net in-migration. Optional <code>population</code> arg supplies a true cell × period count frame (overrides survey counts). <code>R &gt; 0</code> adds bootstrap SEs (combined ordering + model uncertainty). → class <code>social_change_decomp</code>. <code>print</code> and <code>plot</code> methods live in <code>R/decompose_aggregated_output.R</code>.</li>
 <li>
 <strong>Simulation</strong> (<code>R/simulate.R</code>) — <code><a href="reference/sim_social_change.html">sim_social_change()</a></code>: forward simulation. User supplies functions for outcome (<code>fun_y</code>), mortality, coming-of-age, migration, state transitions. Returns event-by-event records. → class <code>social_change_sim</code>
 </li>
@@ -109,22 +109,42 @@
 <h2 id="performance-profile-of-decompose_aggregated">Performance profile of <code>decompose_aggregated()</code>
 <a class="anchor" aria-label="anchor" href="#performance-profile-of-decompose_aggregated"></a></h2>
 <p>Profiled on GSS homosexuality (34,026 rows, 26 periods, ages 21–89). <strong>With a GAM <code>fun_y</code> (<code>s(age)+s(period)</code>) ~75% of wall time is the user’s model prediction, not simulation logic:</strong> GAM call ~1.43 s (of which ~1.08 s is <code>predict.gam</code>/<code>PredictMat</code>), lm call ~0.35 s; simulation machinery ~0.35 s. <code>simulate_schedule()</code> evaluates <code>fun_y</code> once over an <code>n_cells × (n_ev+1)</code> stacked frame, so cost scales <code>n_cells × n_ev × cost(fun_y)</code> — and the bootstrap multiplies by <code>R</code>.</p>
-<p>Remaining leverage: the <code>O(n_ev × n_cells × R)</code> replay loop in <code>replay_schedule()</code>. The R-level wins (lpmatrix basis reuse across replicates, draw-vectorized replay) are spent; the deterministic (no-RNG) replay is the natural unit for a C++ port. The period loop is embarrassingly parallel but the wrong axis (breaks RNG reproducibility, lowest leverage); for the bootstrap, parallelize over <code>R</code> draws instead.</p>
+<p><strong>Bootstrap breakdown (<code>cells="sex"</code>, <code>R=100</code>, GAM <code>s(age)+s(period)</code>, model pre-fit, ~19.5 s total, <code>Rprof</code>):</strong></p>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Chunk</th>
+<th>~Time</th>
+<th>Nature</th>
+</tr></thead><tbody><tr><td>100 GAM refits (<code>y_replicates</code>)</td>
+<td>~7 s</td>
+<td>
+<code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam</a></code> REML/penalized fit (<code>.C</code>/<code>.Fortran</code>/<code>magic</code>/<code>am.fit</code>) — compiled, not our R</td>
+</tr><tr><td>GAM surface prediction (<code>predict.gam</code>/<code>PredictMat</code>)</td>
+<td>~4.5 s</td>
+<td>lpmatrix build, once per transition — compiled, not our R</td>
+</tr><tr><td><code>replay_schedule</code></td>
+<td>~5.8 s (3.96 self)</td>
+<td>the deterministic per-event replay loop — <strong>our pure R</strong>
+</td>
+</tr><tr><td>data.table + matrix glue</td>
+<td>~2 s</td>
+<td>surface assembly, aggregation — our R</td>
+</tr></tbody></table><p><strong>~11.5 s of the 19.5 s is mgcv’s own compiled code (refit + predict); C++ on our side cannot touch it.</strong> Floor with every optimization below: ~10–11 s, then ~90% mgcv. Moving past that means cutting the mgcv cost itself (lower <code>R</code>, fix <code>sp</code>, <code>bam</code>/discretization), not R-vs-C++.</p>
+<p>Remaining leverage, highest first: - <strong>C++ port of <code>replay_schedule</code> (~5 s, the one big win on our side).</strong> The <code>O(n_ev × n_cells × K)</code> replay loop (<code>K = max(R, 1)</code> columns, one per <code>(ordering, draw)</code> replicate); no RNG, deterministic — the natural Rcpp unit. Runs 2×(n_periods−1) times at K=R. Per-column vectorized replay is already spent; ~5.8 s → &lt;1 s in C++. - <strong>Pure-R: share the stack lpmatrix between point and draws (~2 s).</strong> Each transition hits <code>PredictMat</code> twice on the <em>same</em> <code>stack</code> — <code>predict_y(model, stack)</code> (point) and <code>make_X(stack)</code> inside <code>replicate_predict</code> (draws). Build <code>X</code> once, then <code>point = linkinv(X %*% coef(model))</code>, <code>draws = linkinv(X %*% beta)</code>. <code>make_predictor()</code>’s probe already guarantees <code>linkinv(X%*%coef)==predict</code>, so the point stays byte-identical. - <strong>Pure-R: fix smoothing params in refits, <code>sp = model$sp</code> (~1.5–2 s, ~25% off refit).</strong> Conditions the bootstrap on the selected smoothness — defensible, but shifts SEs, so gate behind a flag rather than change the default silently. - Micro-opts in <code>replay_schedule</code> (~1 s): hoist <code>rep(sum_n, each=n_cells)</code>, fold the two per-iteration <code>colSums</code>.</p>
+<p>The period loop is embarrassingly parallel but the wrong axis (breaks RNG reproducibility, lowest leverage); for the bootstrap, parallelize over the <code>K</code> columns instead.</p>
 </div>
 <div class="section level2">
 <h2 id="planned-features-for-decompose_aggregated">Planned features for <code>decompose_aggregated()</code>
 <a class="anchor" aria-label="anchor" href="#planned-features-for-decompose_aggregated"></a></h2>
 <p>Remaining: the demographic-uncertainty branch of (a), and the rest of (b). Architecture keeps three inputs decoupled with a pluggable event generator between them:</p>
-<pre><code>[survey data] --fun_y--&gt; Y(cell,time)          &lt;- (a) perturbs (model draws)
-[population frame] n per cell per period        &lt;- shipped; (a) perturbs (demographic draws)
+<pre><code>[survey data] --fun_y--&gt; Y(cell,time)
+[population frame] n per cell per period        &lt;- (a) demographic draws perturb here (TODO)
         v
-[event generator] derive {mortality, coming_of_age, inmigration, outmigration}  &lt;- (b): pluggable
+[event generator] derive {mortality, coming_of_age, inmigration, outmigration}  &lt;- (b): make pluggable (TODO)
         v
-[simulation core] random ordering + interleaved IC change  &lt;- (a): repeat for ordering uncertainty
+[simulation core] random ordering + interleaved IC change
         v
 [summarize] point estimate + SE/CI, per-period &amp; cumulative, optional split by cell &amp; event</code></pre>
 <p>Reference (untested, may have bugs): <code>old_scripts/functions/functions_clean.R</code> — <code>eventDecompositionMat</code>, <code>fitBSModels</code>/<code>splineForBS</code>, <code>createPopFrame</code>/<code>calcSurvivingPop</code>, <code>prepComponentData</code>/<code>decomposeChangeByVar</code>.</p>
-<p><strong>Feature (a): Standard errors.</strong> Three uncertainty sources: 1. <strong>Model uncertainty — implemented.</strong> <code>R &gt; 0</code> refits <code>model</code> on <code>R</code> Dirichlet-reweighted copies of its training data (<code>y_replicates()</code> generic in <code>R/y_model.R</code>), replaying the <em>same</em> event schedule (common random numbers). Returns a long per-(draw, period, cell) <code>draws</code> table; print/plot derive the cumulative 95% CI (<code>cumulative_series()</code>). Reweighting microdata (not <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> posterior sim) is deliberate — captures misspecification and survey-weight variance. 2. <strong>Simulation uncertainty</strong> — Monte Carlo noise from random ordering; averaged out via common random numbers, not reported. 3. <strong>Demographic uncertainty — unimplemented.</strong> Sampling error in <code>n1</code>/<code>n2</code> and supplied mortality/migration. With <code>population</code>, the bootstrap reweights only the survey, so external counts carry no uncertainty.</p>
+<p><strong>Feature (a): Standard errors.</strong> Model and ordering uncertainty ship via <code>R &gt; 0</code>. Remaining is <strong>demographic uncertainty</strong> — sampling error in <code>n1</code>/<code>n2</code> and supplied mortality/migration. With <code>population</code>, the bootstrap reweights only the survey, so external counts carry no uncertainty.</p>
 <p>Deferred limitations of the bootstrap: survey design ignored (reweights rows not PSUs); refit reads original data by name (<code>getCall()$data</code>), breaks if out of scope; refitting transiently holds all <code>R</code> refits at once (the predictor itself keeps only their coefficients); replicates reuse one design matrix, so a model whose prediction isn’t a fixed <code>linkinv(Xβ)</code> (a weight-dependent basis) errors rather than falling back to per-replicate prediction.</p>
 <p><strong>Feature (b): Migration estimation.</strong> Per cell the identity is <code>n2 = n1 + coming_of_age + inmigration − deaths − outmigration</code>. For survivors that’s 1 equation, 3 unknowns — only <em>net</em> migration is identified. User closes the system by which inputs they supply: - Default (current): net change → coming-of-age / mortality (shrinking) / net in-migration (growing); out-migration = 0. - Supply mortality (recommended): <code>deaths = fun_mortality(cell)</code>, then <code>net_migration = n2 − (n1 − deaths)</code>; positive ⇒ in, negative ⇒ out. - Supply net migration → back out deaths. - Supply both → over-determined; reconcile / warn beyond tolerance.</p>
 <p>Proposed API: <code>fun_mortality = NULL</code>, <code>fun_migration = NULL</code>, consumed by <code>derive_events()</code>. Default <code>NULL</code> = current <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax()</a></code> strategy. Print/plot already render migration rows when non-zero; supplying inputs makes out-migration appear. Modeling choices to document: (i) migrants take receiving cell’s mean Y; (ii) migration among coming-of-age cohorts ignored; (iii) net-only.</p>
