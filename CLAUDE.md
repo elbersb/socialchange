@@ -26,7 +26,7 @@ pkgdown::build_site()     # build docs website
 Three main decomposition approaches, all using `data.table`, formula interfaces (`Outcome ~ Unit + Time`), and S3 classes with custom `print()`/`plot()`:
 
 1. **Event-based** (`R/decompose_events.R`) — `decompose_events()`: units enter/exit at discrete times. Two datasets (events + outcomes). Separates "change" (within-unit) from "replacement" (turnover) with counterfactuals. → class `decompose_events`
-2. **Aggregated** (`R/decompose_aggregated.R`) — `decompose_aggregated()`: data aggregated by age + covariates. Microsimulation randomly orders demographic events. Needs stacked panel data (age, period, cell counts) and a fitted `model` (`lm`/`glm`/`gam`) predicting outcome from age/period/cells. Decomposes into intraindividual change, coming-of-age, mortality, net in-migration. Optional `population` arg supplies a true cell × period count frame (overrides survey counts). `R > 0` adds model-uncertainty SEs via Dirichlet bootstrap. → class `social_change_decomp`. `print` and `plot` methods live in `R/decompose_aggregated_output.R`.
+2. **Aggregated** (`R/decompose_aggregated.R`) — `decompose_aggregated()`: data aggregated by age + covariates. Microsimulation randomly orders demographic events. Needs stacked panel data (age, period, cell counts) and a fitted `model` (`lm`/`glm`/`gam`) predicting outcome from age/period/cells. Decomposes into intraindividual change, coming-of-age, mortality, net in-migration. Optional `population` arg supplies a true cell × period count frame (overrides survey counts). `R > 0` adds bootstrap SEs (combined ordering + model uncertainty). → class `social_change_decomp`. `print` and `plot` methods live in `R/decompose_aggregated_output.R`.
 3. **Simulation** (`R/simulate.R`) — `sim_social_change()`: forward simulation. User supplies functions for outcome (`fun_y`), mortality, coming-of-age, migration, state transitions. Returns event-by-event records. → class `social_change_sim`
 
 Additional methods:
@@ -64,29 +64,43 @@ Events are derived from cell-count differences ("never a residual"): for survivo
 
 Profiled on GSS homosexuality (34,026 rows, 26 periods, ages 21–89). **With a GAM `fun_y` (`s(age)+s(period)`) ~75% of wall time is the user's model prediction, not simulation logic:** GAM call ~1.43 s (of which ~1.08 s is `predict.gam`/`PredictMat`), lm call ~0.35 s; simulation machinery ~0.35 s. `simulate_schedule()` evaluates `fun_y` once over an `n_cells × (n_ev+1)` stacked frame, so cost scales `n_cells × n_ev × cost(fun_y)` — and the bootstrap multiplies by `R`.
 
-Remaining leverage: the `O(n_ev × n_cells × R)` replay loop in `replay_schedule()`. The R-level wins (lpmatrix basis reuse across replicates, draw-vectorized replay) are spent; the deterministic (no-RNG) replay is the natural unit for a C++ port. The period loop is embarrassingly parallel but the wrong axis (breaks RNG reproducibility, lowest leverage); for the bootstrap, parallelize over `R` draws instead.
+**Bootstrap breakdown (`cells="sex"`, `R=100`, GAM `s(age)+s(period)`, model pre-fit, ~19.5 s total, `Rprof`):**
+
+| Chunk | ~Time | Nature |
+|---|---|---|
+| 100 GAM refits (`y_replicates`) | ~7 s | `mgcv::gam` REML/penalized fit (`.C`/`.Fortran`/`magic`/`am.fit`) — compiled, not our R |
+| GAM surface prediction (`predict.gam`/`PredictMat`) | ~4.5 s | lpmatrix build, once per transition — compiled, not our R |
+| `replay_schedule` | ~5.8 s (3.96 self) | the deterministic per-event replay loop — **our pure R** |
+| data.table + matrix glue | ~2 s | surface assembly, aggregation — our R |
+
+**~11.5 s of the 19.5 s is mgcv's own compiled code (refit + predict); C++ on our side cannot touch it.** Floor with every optimization below: ~10–11 s, then ~90% mgcv. Moving past that means cutting the mgcv cost itself (lower `R`, fix `sp`, `bam`/discretization), not R-vs-C++.
+
+Remaining leverage, highest first:
+- **C++ port of `replay_schedule` (~5 s, the one big win on our side).** The `O(n_ev × n_cells × K)` replay loop (`K = max(R, 1)` columns, one per `(ordering, draw)` replicate); no RNG, deterministic — the natural Rcpp unit. Runs 2×(n_periods−1) times at K=R. Per-column vectorized replay is already spent; ~5.8 s → <1 s in C++.
+- **Pure-R: share the stack lpmatrix between point and draws (~2 s).** Each transition hits `PredictMat` twice on the *same* `stack` — `predict_y(model, stack)` (point) and `make_X(stack)` inside `replicate_predict` (draws). Build `X` once, then `point = linkinv(X %*% coef(model))`, `draws = linkinv(X %*% beta)`. `make_predictor()`'s probe already guarantees `linkinv(X%*%coef)==predict`, so the point stays byte-identical.
+- **Pure-R: fix smoothing params in refits, `sp = model$sp` (~1.5–2 s, ~25% off refit).** Conditions the bootstrap on the selected smoothness — defensible, but shifts SEs, so gate behind a flag rather than change the default silently.
+- Micro-opts in `replay_schedule` (~1 s): hoist `rep(sum_n, each=n_cells)`, fold the two per-iteration `colSums`.
+
+The period loop is embarrassingly parallel but the wrong axis (breaks RNG reproducibility, lowest leverage); for the bootstrap, parallelize over the `K` columns instead.
 
 ## Planned features for `decompose_aggregated()`
 
 Remaining: the demographic-uncertainty branch of (a), and the rest of (b). Architecture keeps three inputs decoupled with a pluggable event generator between them:
 
 ```
-[survey data] --fun_y--> Y(cell,time)          <- (a) perturbs (model draws)
-[population frame] n per cell per period        <- shipped; (a) perturbs (demographic draws)
+[survey data] --fun_y--> Y(cell,time)
+[population frame] n per cell per period        <- (a) demographic draws perturb here (TODO)
         v
-[event generator] derive {mortality, coming_of_age, inmigration, outmigration}  <- (b): pluggable
+[event generator] derive {mortality, coming_of_age, inmigration, outmigration}  <- (b): make pluggable (TODO)
         v
-[simulation core] random ordering + interleaved IC change  <- (a): repeat for ordering uncertainty
+[simulation core] random ordering + interleaved IC change
         v
 [summarize] point estimate + SE/CI, per-period & cumulative, optional split by cell & event
 ```
 
 Reference (untested, may have bugs): `old_scripts/functions/functions_clean.R` — `eventDecompositionMat`, `fitBSModels`/`splineForBS`, `createPopFrame`/`calcSurvivingPop`, `prepComponentData`/`decomposeChangeByVar`.
 
-**Feature (a): Standard errors.** Three uncertainty sources:
-1. **Model uncertainty — implemented.** `R > 0` refits `model` on `R` Dirichlet-reweighted copies of its training data (`y_replicates()` generic in `R/y_model.R`), replaying the *same* event schedule (common random numbers). Returns a long per-(draw, period, cell) `draws` table; print/plot derive the cumulative 95% CI (`cumulative_series()`). Reweighting microdata (not `vcov()` posterior sim) is deliberate — captures misspecification and survey-weight variance.
-2. **Simulation uncertainty** — Monte Carlo noise from random ordering; averaged out via common random numbers, not reported.
-3. **Demographic uncertainty — unimplemented.** Sampling error in `n1`/`n2` and supplied mortality/migration. With `population`, the bootstrap reweights only the survey, so external counts carry no uncertainty.
+**Feature (a): Standard errors.** Model and ordering uncertainty ship via `R > 0`. Remaining is **demographic uncertainty** — sampling error in `n1`/`n2` and supplied mortality/migration. With `population`, the bootstrap reweights only the survey, so external counts carry no uncertainty.
 
 Deferred limitations of the bootstrap: survey design ignored (reweights rows not PSUs); refit reads original data by name (`getCall()$data`), breaks if out of scope; refitting transiently holds all `R` refits at once (the predictor itself keeps only their coefficients); replicates reuse one design matrix, so a model whose prediction isn't a fixed `linkinv(Xβ)` (a weight-dependent basis) errors rather than falling back to per-replicate prediction.
 

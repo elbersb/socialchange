@@ -11,16 +11,18 @@
 #'   from \code{age}, \code{period}, and any \code{cells}. Predictions are taken on the response scale
 #'   via \code{predict()}.
 #' @param cells Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")
-#' @param R Number of Dirichlet-bootstrap replicates used to attach standard errors capturing
-#'   \code{model} uncertainty (default 0, point estimate only). When \code{R > 0}, \code{model} is
-#'   refit \code{R} times on Dirichlet-reweighted copies of its training data; the spread of the
-#'   resulting decompositions (under common random numbers, so event-ordering noise is differenced
-#'   out) gives per-component standard errors and cumulative confidence bands. This captures model
-#'   uncertainty only -- the dominant source -- not demographic uncertainty in the cell counts. For
-#'   \code{gam} models each replicate is a full refit plus prediction, so large \code{R} can be slow.
+#' @param R Number of paired (event-ordering, model-draw) replicates used to attach standard
+#'   errors (default 0, point estimate only). When \code{R > 0}, each replicate draws its own
+#'   random event ordering and pairs it with a Dirichlet-reweighted refit of \code{model}; the
+#'   spread of the resulting decompositions gives per-component standard errors and cumulative
+#'   confidence bands. The band is the \emph{combined} event-ordering and model uncertainty, not
+#'   demographic uncertainty in the cell counts. For \code{gam} models
+#'   each replicate is a full refit plus prediction, so large \code{R} can be slow.
 #' @param seed Optional integer seed for reproducible bootstrap replicates (default \code{NULL}).
-#'   The Dirichlet draw is always isolated from the global RNG stream, so passing \code{R > 0} never
-#'   changes the point estimate relative to \code{R = 0} under the same outer seed.
+#'   The Dirichlet refit draw is isolated from the global RNG stream, so the replicate refits are
+#'   reproducible via \code{seed} while the event orderings follow the outer \code{set.seed()}.
+#'   Only \code{R = 0} reproduces the legacy single-ordering point estimate; with \code{R > 0} the
+#'   point is the mean over the \code{R} orderings (see Details).
 #' @param tol Maximum tolerated absolute deviation between observed and modeled period means, in the
 #'   outcome's own units (default 0.05). Checks that \code{model} reproduces the observed period means;
 #'   if the largest deviation exceeds \code{tol}, the function errors. The default suits outcomes on a
@@ -61,7 +63,11 @@
 #' The function estimates mortality, coming-of-age, and net in-migration from period-to-period
 #' population differences within cells, then uses microsimulation to randomly order demographic
 #' events -- placed at evenly spaced times within each inter-period gap -- and track their
-#' contribution to aggregate change. Unequal and multi-year gaps
+#' contribution to aggregate change. The ordering is itself an uncertainty source (it stands in
+#' for the unobserved true event sequence): the point estimate is the mean decomposition over
+#' \code{max(R, 1)} random orderings, and when \code{R > 0} each replicate carries its own
+#' ordering (paired with its own model refit), so the reported band folds ordering and model
+#' uncertainty together. Unequal and multi-year gaps
 #' between periods are supported: when the gap exceeds one year, each entering cohort is
 #' assigned to the specific calendar year within the gap when it crosses the minimum age,
 #' so that post-entry aging is correctly attributed to intraindividual change rather than
@@ -283,10 +289,10 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
         # is always 0 (see derive_events()).
         data <- derive_events(data, min_age)
 
-        # The schedule is the only stochastic step; replicates replay the same one
-        # (common random numbers), so cross-draw spread is model uncertainty alone.
-        sched <- schedule_events(data, min_age, gap)
-        sim <- simulate_schedule(data, model, reps, gap, sched)
+        # Event ordering is the stochastic step. Each replicate draws its own ordering
+        # (paired with its own model refit), so cross-draw spread is combined
+        # ordering + model uncertainty; the point estimate is the mean over orderings.
+        sim <- simulate_schedule(data, model, reps, gap, min_age)
 
         change_record <- tag_cells(sim$point, data, cells)
         if (!is.null(sim$draws)) {
@@ -454,96 +460,93 @@ build_event_stack <- function(data, gap, eval_ticks) {
     data_stack
 }
 
-# Deterministic replay of a fixed schedule against precomputed outcome surfaces, vectorized
-# across R outcome draws (R = 1 for the point estimate, R = #replicates for the bootstrap). No
-# model call, no RNG, so the same (schedule, surface) always yields the same record. The
-# demographic trajectory (n_vec, sum_n) is fixed by the schedule alone, so it is shared across
-# draws; only the y-dependent quantities carry the draw axis as a matrix column -- one R-level
-# pass replaces the per-replicate loop. Fires events in time order, attributing the
+# Deterministic replay of K event orderings against precomputed outcome surfaces, vectorized
+# across the K columns (each column = one (ordering, outcome-draw) replicate). No model call, no
+# RNG, so the same (orderings, surface) always yields the same record. Every ordering shares the
+# deterministic tick grid (fixed slot positions and event counts; only which event lands in which
+# slot varies), so all K schedules have identical length n_ev and share the surface's tick-slice
+# row blocks. Unlike the prior shared-schedule form, each column now carries its OWN demographic
+# trajectory (n_mat, sum_n per column): the orderings diverge, so the running counts become
+# per-column state rather than shared scalars. Fires events in time order, attributing the
 # weighted-mean change to a component: intraindividual drift between events, then the event.
 # Inputs:
-#   n_vec   - per-cell period-start counts (data$n)
-#   y_start - n_cells x R per-cell tick-0 outcomes (one column per draw)
-#   surface - (n_cells * n_eval) x R per-cell outcomes stacked by eval tick then draw; tick
-#             slice i is rows ((i-1)*n_cells + 1):(i*n_cells), with n_eval = n_ev + 1 and the
-#             final tick (1) last.
+#   n_vec       - per-cell period-start counts (data$n); shared start point for every column
+#   y_start     - n_cells x K per-cell tick-0 outcomes (one column per replicate)
+#   surface     - (n_cells * n_eval) x K per-cell outcomes stacked by eval tick then column; tick
+#                 slice i is rows ((i-1)*n_cells + 1):(i*n_cells), with n_eval = n_ev + 1 and the
+#                 final tick (1) last.
+#   ev_type_mat - n_ev x K event types; column k is ordering k (point: K identical orderings)
+#   ev_cell_mat - n_ev x K firing cells (row indices into `data`); column k is ordering k
 # Returns one row per (draw, component, cell) the component touched: every cell for intra-
-# individual change, the firing cells for turnover.
-replay_schedule <- function(n_vec, y_start, surface, sched) {
-    ev_type <- sched$ev_type
-    ev_cell <- sched$ev_cell
-
-    n_ev <- length(ev_type)
+# individual change, the firing cells for turnover. draw indexes the K columns.
+replay_schedule <- function(n_vec, y_start, surface, ev_type_mat, ev_cell_mat) {
+    n_ev <- nrow(ev_type_mat)
     n_cells <- length(n_vec)
-    R <- ncol(surface)
+    K <- ncol(surface)
 
-    # Per-event turnover deltas (n_ev x R) and per-cell intraindividual deltas (n_cells x R),
-    # accumulated then aggregated to (draw, component, cell). cr_cell records which cell each
-    # event fired in (a row index into `data`); the caller uses it to attach covariates. The
-    # per-cell IC delta at each tick is sum_c (y_cur[c] - y_prev[c]) * n_vec[c] / sum_n, an
-    # exact split across cells (its column sum is the scalar IC delta).
-    cr_component <- character(n_ev)
-    cr_cell <- integer(n_ev)
-    cr_delta <- matrix(0, n_ev, R)
-    ic_by_cell <- matrix(0, n_cells, R)
+    # Per-event turnover deltas (n_ev x K) and per-cell intraindividual deltas (n_cells x K),
+    # accumulated then aggregated to (draw, component, cell). The per-cell IC delta at each tick
+    # is sum_c (y_cur[c] - y_prev[c]) * n[c] / sum_n, an exact split across cells (its column sum
+    # is the scalar IC delta).
+    cr_delta <- matrix(0, n_ev, K)
+    ic_by_cell <- matrix(0, n_cells, K)
 
-    # Running weighted sums. n_vec / sum_n are shared scalars (the schedule fixes the demography
-    # across draws); sum_yn is a length-R vector. The demographic-event update is O(1) (one cell
-    # changes by one person), but the intraindividual step re-sums y_cur * n_vec each iteration
-    # because every cell's y drifts with aging, so the loop is O(n_ev * n_cells * R).
-    sum_n <- sum(n_vec)
+    # Per-column running state: each ordering evolves on its own demographic trajectory, so n_mat
+    # (n_cells x K) and sum_n / sum_yn (length K) carry the column axis. The demographic-event
+    # update is O(K) (one cell per column changes by one person), but the intraindividual step
+    # re-sums y_cur * n_mat each iteration because every cell's y drifts with aging, so the loop
+    # is O(n_ev * n_cells * K).
+    n_mat <- matrix(n_vec, n_cells, K)
+    sum_n <- rep.int(sum(n_vec), K)
     y_prev <- y_start
-    sum_yn <- colSums(y_prev * n_vec)
+    sum_yn <- colSums(y_prev * n_mat)
 
     for (i_ev in seq_len(n_ev)) {
-        # Intraindividual drift since the previous tick, accumulated per cell (n_vec recycles
-        # down the matrix columns). Its column sum is the scalar IC delta per draw.
+        # Intraindividual drift since the previous tick, accumulated per cell. Divide each column
+        # by its own sum_n (rep'd down the n_cells rows). Its column sum is the scalar IC delta.
         rows <- ((i_ev - 1L) * n_cells + 1L):(i_ev * n_cells)
         y_cur <- surface[rows, , drop = FALSE]
-        ic_by_cell <- ic_by_cell + (y_cur - y_prev) * n_vec / sum_n
+        ic_by_cell <- ic_by_cell + (y_cur - y_prev) * n_mat / rep(sum_n, each = n_cells)
         y_prev <- y_cur
-        sum_yn <- colSums(y_cur * n_vec)
+        sum_yn <- colSums(y_cur * n_mat)
         post_ic_mean <- sum_yn / sum_n
 
-        event <- ev_type[i_ev]
-        pick_idx <- ev_cell[i_ev]
-        y_pick <- y_cur[pick_idx, ] # length-R draw vector
+        # The firing cell/type/sign are length-K vectors (one per column). A 2-D index gathers
+        # and scatters the per-column firing cell out of the n_cells x K matrices.
+        cell_k <- ev_cell_mat[i_ev, ]
+        type_k <- ev_type_mat[i_ev, ]
+        idx <- cbind(cell_k, seq_len(K))
+        y_pick <- y_cur[idx] # length-K vector
 
-        # Exits (mortality, out-migration) remove an individual from the cell;
-        # entries (coming-of-age, in-migration) add one at the cell's current y.
-        if (event == "mortality" || event == "outmigration") {
-            n_vec[pick_idx] <- n_vec[pick_idx] - 1
-            sum_yn <- sum_yn - y_pick
-            sum_n <- sum_n - 1
-        } else if (event == "coming_of_age" || event == "inmigration") {
-            n_vec[pick_idx] <- n_vec[pick_idx] + 1
-            sum_yn <- sum_yn + y_pick
-            sum_n <- sum_n + 1
-        }
+        # Exits (mortality, out-migration) remove an individual from the cell (sgn -1); entries
+        # (coming-of-age, in-migration) add one at the cell's current y (sgn +1).
+        sgn <- ifelse(type_k == "mortality" | type_k == "outmigration", -1, 1)
+        n_mat[idx] <- n_mat[idx] + sgn
+        sum_yn <- sum_yn + sgn * y_pick
+        sum_n <- sum_n + sgn
 
-        cr_component[i_ev] <- event
-        cr_cell[i_ev] <- pick_idx
         cr_delta[i_ev, ] <- sum_yn / sum_n - post_ic_mean
     }
 
     # Final intraindividual drift to the end of the period (tick = 1, the last surface slice).
     rows <- (n_ev * n_cells + 1L):((n_ev + 1L) * n_cells)
     y_cur <- surface[rows, , drop = FALSE]
-    ic_by_cell <- ic_by_cell + (y_cur - y_prev) * n_vec / sum_n
+    ic_by_cell <- ic_by_cell + (y_cur - y_prev) * n_mat / rep(sum_n, each = n_cells)
 
     # Combine the per-cell intraindividual deltas with the per-event turnover deltas and
     # aggregate to one row per (draw, component, cell). as.vector() unrolls each matrix
-    # column-major (cell/event fastest, draw outer), matching draw = rep(seq_len(R), each = .).
+    # column-major (cell/event fastest, column outer), matching draw = rep(seq_len(K), each = .).
+    # The per-event component/cell are the ordering matrices themselves.
     ev_dt <- data.table(
-        draw = rep(seq_len(R), each = n_ev),
-        component = rep(cr_component, R),
-        cell = rep(cr_cell, R),
+        draw = rep(seq_len(K), each = n_ev),
+        component = as.vector(ev_type_mat),
+        cell = as.vector(ev_cell_mat),
         delta = as.vector(cr_delta)
     )
     ic_dt <- data.table(
-        draw = rep(seq_len(R), each = n_cells),
+        draw = rep(seq_len(K), each = n_cells),
         component = "intraindividual",
-        cell = rep(seq_len(n_cells), R),
+        cell = rep(seq_len(n_cells), K),
         delta = as.vector(ic_by_cell)
     )
     out <- rbind(ev_dt, ic_dt)[, .(delta = sum(delta)), by = .(draw, component, cell)]
@@ -557,34 +560,59 @@ tag_cells <- function(dt, data, cells) {
     dt[, cell := NULL][]
 }
 
-# Build the outcome surface once, replay the shared schedule for the point estimate and
-# every replicate. Returns list(point, draws) (draws NULL when reps is NULL, i.e. R = 0).
+# Draw K = max(R, 1) event orderings, build the outcome surface once, and replay every ordering
+# against it for the point estimate and the replicates. Returns list(point, draws) (draws NULL
+# when reps is NULL, i.e. R = 0). The K orderings share one deterministic tick grid, so the
+# surface (the dominant cost, ~75% of wall time) is built once and replayed against cheap
+# arithmetic orderings -- ordering uncertainty is nearly free.
 #
-# align_periods() set data$y = predict_y(model, data) at tick 0, and nothing since has
-# touched age/period/y (derive_events only adds event-count columns the model ignores), so
-# data$y is an *exact* cache of the point model's tick-0 surface -- the point path reuses it
-# rather than re-predicting. Replicates have no such cache, so they predict tick 0 (y_start).
-# The replicate prediction (replicate_predict) is reached only when reps is non-NULL, so the
-# R = 0 path makes exactly one model call (the point surface) and allocates no draw machinery.
-simulate_schedule <- function(data, model, reps, gap, sched) {
-    eval_ticks <- c(sched$events_tick, 1)
+# Point estimate: the fitted-model surface, replayed across the K orderings and averaged (the
+# expected decomposition at the fitted model). align_periods() set data$y = predict_y(model, data)
+# at tick 0, and nothing since has touched age/period/y (derive_events only adds event-count
+# columns the model ignores), so data$y is an *exact* cache of the point model's tick-0 surface --
+# the point path reuses it rather than re-predicting. Replicates have no such cache, so they
+# predict tick 0 (y_start). The replicate prediction (replicate_predict) is reached only when
+# reps is non-NULL, so the R = 0 path makes exactly one model call (the point surface), draws a
+# single ordering, and allocates no draw machinery -- byte-identical to the legacy single-ordering
+# point.
+#
+# Each replicate pairs ordering k with model refit k by column index: the ordering stream (global
+# RNG) and the Dirichlet refit stream (isolated in y_replicates) are independent, so any index
+# pairing yields valid joint (ordering, model) samples. The reported band is the combined
+# ordering + model uncertainty.
+simulate_schedule <- function(data, model, reps, gap, min_age) {
+    has_draws <- !is.null(reps)
+    R <- if (has_draws) ncol(reps$beta) else 0L
+    n_ord <- max(1L, R) # R orderings; 1 when R = 0 (legacy single-ordering fast path)
+
+    # K orderings sharing ONE deterministic tick grid -> one surface build. events_tick and n_ev
+    # are deterministic across orderings; only ev_type/ev_cell (the interleaving) are randomized.
+    scheds <- lapply(seq_len(n_ord), function(k) schedule_events(data, min_age, gap))
+    n_ev <- length(scheds[[1L]]$ev_type)
+    ev_type_mat <- matrix(vapply(scheds, `[[`, character(n_ev), "ev_type"), nrow = n_ev, ncol = n_ord)
+    ev_cell_mat <- matrix(vapply(scheds, `[[`, integer(n_ev), "ev_cell"), nrow = n_ev, ncol = n_ord)
+    eval_ticks <- c(scheds[[1L]]$events_tick, 1)
     stack <- build_event_stack(data, gap, eval_ticks)
 
-    # The point estimate is the R = 1 case: tick-0 outcomes from data$y, the surface from the
-    # model's own predict(). Its single draw column is dropped after replay.
-    point <- replay_schedule(
-        data$n, matrix(data$y, ncol = 1L),
-        matrix(predict_y(model, stack), ncol = 1L), sched
-    )
-    point[, draw := NULL]
+    # Point: fitted-model surface replicated across the orderings, then averaged. Computed and
+    # freed before the draw surface, so peak memory holds one n_ord-column surface. mean(delta)
+    # is exact: every ordering fires the identical (component, cell) key set (event counts fixed,
+    # only order varies), so each group has n_ord rows.
+    pt_surface <- matrix(predict_y(model, stack), ncol = 1L)[, rep(1L, n_ord), drop = FALSE]
+    pt_y <- matrix(data$y, ncol = 1L)[, rep(1L, n_ord), drop = FALSE]
+    point <- replay_schedule(data$n, pt_y, pt_surface, ev_type_mat, ev_cell_mat)[
+        , .(delta = mean(delta)),
+        by = .(component, cell)
+    ]
+    setorder(point, component, cell)
 
     draws <- NULL
-    if (!is.null(reps)) {
+    if (has_draws) { # ordering k paired with refit k
         surface <- replicate_predict(reps, stack) # (n_cells * n_eval) x R
         y_start <- replicate_predict(reps, data) # n_cells x R, replicate tick-0 outcomes
-        draws <- replay_schedule(data$n, y_start, surface, sched)
+        draws <- replay_schedule(data$n, y_start, surface, ev_type_mat, ev_cell_mat)
     }
-    list(point = point, draws = draws)
+    list(point = point[], draws = draws)
 }
 
 # Stack the per-transition draw records into one long per-(draw, period, cell) delta table

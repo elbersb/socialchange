@@ -52,10 +52,11 @@ y_replicates.default <- function(object, R, seed = NULL) {
 
 # Covers lm, glm, gam (glm/gam inherit through their class vector).
 #
-# The Dirichlet draw always save/restores .Random.seed: otherwise rexp() would advance the
-# global stream before schedule_events(), so R > 0 and R = 0 under one outer set.seed()
-# would draw different schedules and different point estimates. `seed` (optional) only sets
-# cross-run reproducibility of the replicates.
+# The Dirichlet draw always save/restores .Random.seed, keeping the refit stream independent of
+# the global stream that schedule_events() draws orderings from: so under one outer set.seed()
+# the R > 0 orderings begin from the same global state as R = 0 (R = 0 takes the first ordering),
+# and the refits don't perturb them. `seed` (optional) only sets cross-run reproducibility of the
+# replicate refits.
 #' @exportS3Method
 y_replicates.lm <- function(object, R, seed = NULL) {
     if (exists(".Random.seed", envir = .GlobalEnv)) {

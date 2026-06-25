@@ -174,14 +174,27 @@ The mortality contribution, which the survey cells had loaded almost entirely on
 
 ### Standard errors
 
+Passing `R > 0` attaches standard errors and 95% confidence bands to every component. Each replicate re-runs the decomposition under a fresh random ordering of the interleaved demographic events and a refit of the outcome `model` on a reweighted bootstrap sample of the survey; the spread across the `R` replicates is the band that `print()` reports and `plot()` shades.
+
 ```{r}
 result <- decompose_aggregated(gss_all, model, cells = "sex",
                                weight = "wtssall", population = pop, R = 100)
 print(result, detailed = FALSE)
 plot(result)
+```
+
+Two things are worth reading off these bands. First, they are narrow relative to the point estimates: the total change and each major component sit well away from zero, so the near-even intraindividual/turnover split — and the comparable sizes of the mortality and coming-of-age terms — are real features of the data rather than artifacts of the random event ordering or model fit. The within-person and coming-of-age terms carry the widest intervals, while mortality and the small net in-migration term are pinned down comparatively tightly.
+
+Second, the bands combine model uncertainty with event-ordering uncertainty only. Because the population frame supplies the cell counts, those counts are treated as fixed, so the intervals do not include demographic sampling error in the turnover the counts drive — they would understate total uncertainty if the cell sizes were themselves noisy (as they are when the counts come from the survey, for instance, rather than a population frame).
+
+Standard errors can also be obtained when we split by covariate:
+
+```{r}
 print(result, detailed = FALSE, covariate = "sex")
 plot(result, covariate = "sex")
 ```
+
+The female and male intervals overlap for the total change and for every component except net in-migration, so the apparent difference in intraindividual change, mortality, and coming-of-age is within sampling noise rather than a distinguishable difference. Net in-migration is the exception (the component for women being clearly more negative).
 
 ## Further reading
 

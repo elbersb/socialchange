@@ -30,13 +30,13 @@ via \code{predict()}.}
 
 \item{cells}{Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")}
 
-\item{R}{Number of Dirichlet-bootstrap replicates used to attach standard errors capturing
-\code{model} uncertainty (default 0, point estimate only). When \code{R > 0}, \code{model} is
-refit \code{R} times on Dirichlet-reweighted copies of its training data; the spread of the
-resulting decompositions (under common random numbers, so event-ordering noise is differenced
-out) gives per-component standard errors and cumulative confidence bands. This captures model
-uncertainty only -- the dominant source -- not demographic uncertainty in the cell counts. For
-\code{gam} models each replicate is a full refit plus prediction, so large \code{R} can be slow.}
+\item{R}{Number of paired (event-ordering, model-draw) replicates used to attach standard
+errors (default 0, point estimate only). When \code{R > 0}, each replicate draws its own
+random event ordering and pairs it with a Dirichlet-reweighted refit of \code{model}; the
+spread of the resulting decompositions gives per-component standard errors and cumulative
+confidence bands. The band is the \emph{combined} event-ordering and model uncertainty, not
+demographic uncertainty in the cell counts. For \code{gam} models
+each replicate is a full refit plus prediction, so large \code{R} can be slow.}
 
 \item{tol}{Maximum tolerated absolute deviation between observed and modeled period means, in the
 outcome's own units (default 0.05). Checks that \code{model} reproduces the observed period means;
@@ -61,8 +61,10 @@ minimum age and the level set of each \code{cells} column, and cover every surve
 dropped); these are compared over rows with \code{n > 0}.}
 
 \item{seed}{Optional integer seed for reproducible bootstrap replicates (default \code{NULL}).
-The Dirichlet draw is always isolated from the global RNG stream, so passing \code{R > 0} never
-changes the point estimate relative to \code{R = 0} under the same outer seed.}
+The Dirichlet refit draw is isolated from the global RNG stream, so the replicate refits are
+reproducible via \code{seed} while the event orderings follow the outer \code{set.seed()}.
+Only \code{R = 0} reproduces the legacy single-ordering point estimate; with \code{R > 0} the
+point is the mean over the \code{R} orderings (see Details).}
 
 \item{x}{A `social_change_decomp` object returned by [decompose_aggregated()].}
 
@@ -97,7 +99,11 @@ that predicts the outcome as a function of age, period, and covariates.
 The function estimates mortality, coming-of-age, and net in-migration from period-to-period
 population differences within cells, then uses microsimulation to randomly order demographic
 events -- placed at evenly spaced times within each inter-period gap -- and track their
-contribution to aggregate change. Unequal and multi-year gaps
+contribution to aggregate change. The ordering is itself an uncertainty source (it stands in
+for the unobserved true event sequence): the point estimate is the mean decomposition over
+\code{max(R, 1)} random orderings, and when \code{R > 0} each replicate carries its own
+ordering (paired with its own model refit), so the reported band folds ordering and model
+uncertainty together. Unequal and multi-year gaps
 between periods are supported: when the gap exceeds one year, each entering cohort is
 assigned to the specific calendar year within the gap when it crosses the minimum age,
 so that post-entry aging is correctly attributed to intraindividual change rather than

@@ -1,7 +1,8 @@
-# Tests for the Dirichlet-bootstrap standard errors of decompose_aggregated()
-# (Feature (a): model uncertainty). The model is refit R times on Dirichlet-reweighted
-# microdata; under common random numbers the point estimate is unchanged and the spread
-# across draws (the `draws` table) gives the cumulative CI band print/plot render.
+# Tests for the bootstrap standard errors of decompose_aggregated() (Feature (a):
+# combined event-ordering + model uncertainty). Each of the R replicates pairs its own
+# random event ordering with a Dirichlet-reweighted model refit; the point estimate is the
+# mean over the orderings and the spread across draws (the `draws` table) gives the
+# cumulative CI band print/plot render.
 
 # A small stacked individual-level dataset with a near-linear age/period signal, a common
 # minimum age, and a binary covariate, so an lm reproduces the period means within tol.
@@ -83,10 +84,9 @@ test_that("y_replicates always restores the caller's RNG stream (seeded and unse
   expect_identical(a2, b)
 })
 
-test_that("point estimate is preserved when R > 0 (CRN); summary carries no SE columns", {
+test_that("R = 0 point is single-ordering; R > 0 point is the mean over orderings", {
   d <- make_se_data()
   m <- make_se_model(d)
-
   set.seed(7)
   r0 <- decompose_aggregated(d, m, cells = "gender", tol = 0.2)
   set.seed(7)
@@ -94,10 +94,13 @@ test_that("point estimate is preserved when R > 0 (CRN); summary carries no SE c
     decompose_aggregated(d, m, cells = "gender", R = 25, tol = 0.2, seed = 11)
   )
 
-  comps <- c("intraindividual", "coming_of_age", "mortality", "inmigration", "outmigration")
-  for (cc in comps) {
-    expect_equal(r0$summary[[cc]], r1$summary[[cc]], tolerance = 1e-12, info = cc)
-  }
+  # The components sum to the (ordering-invariant) total modeled change, but their split is
+  # ordering-dependent: a turnover term's contribution depends on the running mean at the
+  # moment each event fires. The R > 0 mean-over-orderings mortality term no longer matches
+  # the R = 0 single-ordering one (the equality the old CRN design guaranteed is now false).
+  mort0 <- sum(r0$summary$mortality, na.rm = TRUE)
+  mort1 <- sum(r1$summary$mortality, na.rm = TRUE)
+  expect_false(isTRUE(all.equal(mort0, mort1)))
 
   # R = 0: no draws. All uncertainty lives in the on-demand cumulative band, so neither
   # path writes per-period SE columns onto summary.
@@ -106,7 +109,59 @@ test_that("point estimate is preserved when R > 0 (CRN); summary carries no SE c
   expect_false(any(grepl("_se", names(r1$summary))))
 })
 
-test_that("draws table is balanced under CRN and carries the cell covariates", {
+test_that("the mean-over-orderings point is more stable across seeds than a single ordering", {
+  d <- make_se_data()
+  m <- make_se_model(d)
+
+  # A turnover term carries the ordering noise (its contribution depends on the running mean
+  # at each firing time); averaging over many orderings should shrink its seed-to-seed
+  # variance well below that of the single-ordering (R = 0) point.
+  mort_total <- function(res) sum(res$summary$mortality, na.rm = TRUE)
+  seeds <- 1:8
+
+  pt0 <- vapply(seeds, function(s) {
+    set.seed(s)
+    mort_total(decompose_aggregated(d, m, cells = "gender", tol = 0.2))
+  }, numeric(1))
+  ptR <- vapply(seeds, function(s) {
+    set.seed(s)
+    mort_total(suppressMessages(
+      decompose_aggregated(d, m, cells = "gender", R = 40, tol = 0.2, seed = 11)
+    ))
+  }, numeric(1))
+
+  expect_lt(stats::sd(ptR), stats::sd(pt0))
+})
+
+test_that("draw indices span 1:R", {
+  d <- make_se_data()
+  m <- make_se_model(d)
+  set.seed(7)
+  r1 <- suppressMessages(
+    decompose_aggregated(d, m, cells = "gender", R = 15, tol = 0.2, seed = 11)
+  )
+  expect_setequal(r1$draws$draw, 1:15)
+})
+
+test_that("each replicate gets a distinct ordering on a shared tick grid", {
+  # simulate_schedule() stacks max(R, 1) independent schedule_events() draws into the
+  # n_ev x K ordering matrices. The primitive must yield a fresh interleaving each call
+  # (distinct ev_type/ev_cell) while the tick grid stays deterministic (identical
+  # events_tick), so the stacked surface row blocks are shared across columns.
+  cells <- data.table(
+    age = 30:34, coming_of_age = 0,
+    mortality = c(2, 3, 1, 2, 4), inmigration = c(1, 2, 3, 1, 2), outmigration = 0
+  )
+  s1 <- socialchange:::schedule_events(cells, min_age = 20, gap = 1)
+  s2 <- socialchange:::schedule_events(cells, min_age = 20, gap = 1)
+
+  expect_identical(s1$events_tick, s2$events_tick) # deterministic grid (shared row blocks)
+  expect_equal(length(s1$ev_type), length(s2$ev_type)) # fixed total event count n_ev
+  # The interleaving differs: at least one slot fires a different (type, cell).
+  expect_false(identical(s1$ev_type, s2$ev_type) && identical(s1$ev_cell, s2$ev_cell))
+})
+
+test_that("draws table is balanced (ordering-invariant key set) and carries the cell covariates", {
   d <- make_se_data()
   m <- make_se_model(d)
   set.seed(7)
@@ -120,7 +175,8 @@ test_that("draws table is balanced under CRN and carries the cell covariates", {
   expect_true(all(c("draw", "period", "component", "delta", "age", "gender") %in% names(dr)))
 
   # Balanced: every draw fires the identical (period, component, cell) row set, only
-  # the delta differs. Equal row counts per draw and an identical key set per draw.
+  # the delta differs. The key set is ordering-invariant (event counts are fixed, only
+  # their order varies), so each draw has equal row counts and an identical key set.
   per_draw <- dr[, .N, by = draw]
   expect_equal(uniqueN(per_draw$N), 1L)
   key_of <- function(g) {
