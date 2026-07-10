@@ -155,7 +155,7 @@ decompose_events <- function(
   ctf <- rbindlist(list(ctf, forward, backward))
 
   ret <- list(long = summ, wide = wide, decomp = decomp, ctf = ctf)
-  class(ret) <- c("list", "decompose_events")
+  class(ret) <- c("decompose_events", "list")
   ret
 }
 

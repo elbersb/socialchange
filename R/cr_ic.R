@@ -248,7 +248,7 @@ cr_ic = function(data, formula, weight = NULL, model = NULL) {
         periods = periods,
         cohort = by_cohort,
         model = model)
-    class(ret) = c("list", "cr_ic_decomposition")
+    class(ret) = c("cr_ic_decomposition", "list")
     ret
 }
 

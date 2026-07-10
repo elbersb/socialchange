@@ -56,7 +56,7 @@ apc <- function(data, formula) {
         contrasts = contrasts,
         values = values
     )
-    class(ret) <- c("list", "apc_model")
+    class(ret) <- c("apc_model", "list")
     ret
 }
 

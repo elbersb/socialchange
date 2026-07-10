@@ -277,7 +277,7 @@ sim_social_change <- function(periods, data, fun_y,
     }
 
     ret <- list(summary = summary, snapshot = snapshot, record = record)
-    class(ret) <- c("list", "social_change_sim")
+    class(ret) <- c("social_change_sim", "list")
     ret
 }
 
