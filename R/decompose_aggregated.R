@@ -515,7 +515,6 @@ replay_schedule <- function(n_vec, y_start, surface, ev_type_mat, ev_cell_mat) {
     n_mat <- matrix(n_vec, n_cells, K)
     sum_n <- rep.int(sum(n_vec), K)
     y_prev <- y_start
-    sum_yn <- colSums(y_prev * n_mat)
 
     for (i_ev in seq_len(n_ev)) {
         # Intraindividual drift since the previous tick, accumulated per cell. Divide each column
