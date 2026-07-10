@@ -123,7 +123,7 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
     # NAs here would otherwise crash deep in the simulation or silently drop a wave.
     checkmate::assert_numeric(stacked_data$age, any.missing = FALSE, .var.name = "age")
     checkmate::assert_numeric(stacked_data$y, any.missing = FALSE, .var.name = "y")
-    checkmate::assert_atomic_vector(stacked_data$period, any.missing = FALSE, .var.name = "period")
+    checkmate::assert_numeric(stacked_data$period, any.missing = FALSE, .var.name = "period")
     checkmate::assert_character(cells, any.missing = FALSE, null.ok = TRUE)
     checkmate::assert_number(tol, lower = 0)
     checkmate::assert_string(weight, null.ok = TRUE)
@@ -135,6 +135,17 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
     }
     if (!is.null(weight) && weight %in% reserved) {
         stop("`weight` must not name a reserved column: ", weight, ".")
+    }
+    # The frame collapse and align_periods() predict on tables carrying only the
+    # grouping columns, so the model must not use predictors beyond them.
+    model_vars <- all.vars(stats::delete.response(stats::terms(model)))
+    unknown <- setdiff(model_vars, c("age", "period", cells))
+    if (length(unknown) > 0) {
+        stop(
+            "`model` must only use `age`, `period`, and `cells` columns as predictors, ",
+            "but also uses: ", paste(unknown, collapse = ", "),
+            ". Add the column(s) to `cells` or refit the model without them."
+        )
     }
 
     stacked_data <- copy(as.data.table(stacked_data))
@@ -159,7 +170,7 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
         checkmate::assert_subset(c("period", "age", "n", cells), names(population))
         checkmate::assert_numeric(population$n, lower = 0, any.missing = FALSE, .var.name = "population$n")
         checkmate::assert_numeric(population$age, any.missing = FALSE, .var.name = "population$age")
-        checkmate::assert_atomic_vector(population$period, any.missing = FALSE, .var.name = "population$period")
+        checkmate::assert_numeric(population$period, any.missing = FALSE, .var.name = "population$period")
 
         # Frame and survey must share structure
         survey_nz <- stacked_data[n > 0]

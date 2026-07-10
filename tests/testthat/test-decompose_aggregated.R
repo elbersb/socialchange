@@ -465,6 +465,34 @@ test_that("decompose_aggregated validates input", {
   )
 })
 
+test_that("decompose_aggregated rejects model predictors outside age/period/cells", {
+  # the frame collapse takes y_pred[1L] per (period, cells, age) group, so an
+  # extra model covariate would silently pick an arbitrary prediction (or crash
+  # later in align_periods with "object not found")
+  stacked <- data.table(
+    age = rep(20:22, 2), period = rep(0:1, each = 3),
+    y = rnorm(6), g = rnorm(6)
+  )
+  model <- lm(y ~ age + period + g, data = stacked)
+  expect_error(
+    decompose_aggregated(stacked[, .(age, period, y)], model),
+    "also uses: g"
+  )
+})
+
+test_that("decompose_aggregated rejects non-numeric period", {
+  # a character period would fail later with "non-numeric argument to binary
+  # operator" in the gap computation
+  stacked <- data.table(
+    age = rep(20:22, 2), period = rep(c("w1", "w2"), each = 3), y = rnorm(6)
+  )
+  placeholder <- lm(y ~ age, data = stacked)
+  expect_error(
+    decompose_aggregated(stacked, placeholder),
+    "period.*numeric|numeric.*period"
+  )
+})
+
 test_that("decompose_aggregated errors on fractional directly-supplied n", {
   # The microsimulation is integer-based; fractional n would be silently
   # truncated by runif()/indexing and leave an empty trailing record row.
