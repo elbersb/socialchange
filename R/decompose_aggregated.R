@@ -225,22 +225,6 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
     }
     min_age <- min_ages$min_age[1L]
 
-    # Bootstrap replicates for model-uncertainty SEs.
-    if (R > 0L) message("Computing ", R, " bootstrap replicate(s); this can take a while for gam models.")
-    reps <- if (R > 0L) y_replicates(model, R, seed) else NULL
-    draws_record <- if (R > 0L) vector("list", length(periods) - 1L) else NULL
-
-    record <- vector("list", length(periods) - 1)
-    summary <- data.table(
-        period = periods,
-        observed_mean = NA_real_,
-        modeled_mean = NA_real_,
-        intraindividual = NA_real_,
-        coming_of_age = NA_real_,
-        mortality = NA_real_,
-        outmigration = NA_real_,
-        inmigration = NA_real_
-    )
     # Model-fit diagnostic, always computed on the survey's own structure, so it stays
     # a meaningful check even when an external frame is used.
     survey_means <- stacked_data[, .(observed = stats::weighted.mean(y, n), modeled = stats::weighted.mean(y_pred, n)), by = .(period)]
@@ -259,6 +243,23 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
             max_dev, tol
         ))
     }
+
+    # Bootstrap replicates for model-uncertainty SEs.
+    if (R > 0L) message("Computing ", R, " bootstrap replicate(s); this can take a while for gam models.")
+    reps <- if (R > 0L) y_replicates(model, R, seed) else NULL
+    draws_record <- if (R > 0L) vector("list", length(periods) - 1L) else NULL
+
+    record <- vector("list", length(periods) - 1)
+    summary <- data.table(
+        period = periods,
+        observed_mean = NA_real_,
+        modeled_mean = NA_real_,
+        intraindividual = NA_real_,
+        coming_of_age = NA_real_,
+        mortality = NA_real_,
+        outmigration = NA_real_,
+        inmigration = NA_real_
+    )
     if (is.null(population)) {
         means <- survey_means
     } else {

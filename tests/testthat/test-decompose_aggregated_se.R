@@ -311,3 +311,23 @@ test_that("refit_weighted folds the model's prior weights into the Dirichlet dra
   expected <- stats::lm(y ~ age + period, data = transform(d, sw = w * d$wt), weights = sw)
   expect_equal(coef(rw), coef(expected))
 })
+
+test_that("tol check fires before bootstrap refits", {
+  set.seed(1)
+  d <- CJ(age = 20:60, period = 2000:2005, i = 1:20)[, i := NULL]
+  d[, y := 0.02 * age + 0.5 * sin(period) + stats::rnorm(.N, 0, 0.01)]
+  m <- stats::lm(y ~ age, data = d) # ignores period, so it must fail tol
+
+  msgs <- character()
+  expect_error(
+    withCallingHandlers(
+      decompose_aggregated(d, model = m, R = 5, tol = 0.01),
+      message = function(msg) {
+        msgs <<- c(msgs, conditionMessage(msg))
+        invokeRestart("muffleMessage")
+      }
+    ),
+    "deviate"
+  )
+  expect_false(any(grepl("bootstrap replicate", msgs)))
+})
