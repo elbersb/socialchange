@@ -340,3 +340,43 @@ test_that("sim_social_change handles missing optional dynamics", {
   expect_s3_class(result, "social_change_sim")
   expect_equal(nrow(result$summary), 3)  # initial + 2 periods
 })
+
+test_that("sim_social_change rejects event counts exceeding cell sizes", {
+  data <- data.table(age = 20:24, n = rep(10, 5))
+  fun_y <- function(data, time) data[, age / 40]
+
+  expect_error(
+    sim_social_change(
+      periods = 2, data = data, fun_y = fun_y,
+      fun_mortality = function(data, period) rep(25, nrow(data))
+    ),
+    "exceed cell size"
+  )
+  expect_error(
+    sim_social_change(
+      periods = 2, data = data, fun_y = fun_y,
+      fun_mortality = function(data, period) rep(6, nrow(data)),
+      fun_outmigration = function(data, period) rep(6, nrow(data))
+    ),
+    "exceed cell size"
+  )
+})
+
+test_that("sim_social_change accepts a plain data.frame and requires an n column", {
+  fun_y <- function(data, time) data[, age / 40]
+
+  # stray `n` in the calling environment must not leak into subsetting
+  n <- c(TRUE, FALSE)
+  result <- sim_social_change(
+    periods = 2,
+    data = data.frame(age = 20:24, n = rep(10, 5)),
+    fun_y = fun_y
+  )
+  expect_s3_class(result, "social_change_sim")
+  expect_equal(result$summary[.N, N], 50)
+
+  expect_error(
+    sim_social_change(periods = 2, data = data.frame(age = 20:24), fun_y = fun_y),
+    "n"
+  )
+})

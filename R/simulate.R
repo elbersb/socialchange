@@ -47,7 +47,7 @@ sim_social_change <- function(periods, data, fun_y,
                               fun_coming_of_age = NULL, fun_mortality = NULL,
                               fun_inmigration = NULL, fun_outmigration = NULL, fun_transitions = NULL) {
     checkmate::assert_data_frame(data)
-    checkmate::assert_subset(c("age"), names(data))
+    checkmate::assert_subset(c("age", "n"), names(data))
     checkmate::assert_function(fun_y, nargs = 2)
     checkmate::assert_function(fun_coming_of_age, nargs = 2, null.ok = TRUE)
     checkmate::assert_function(fun_mortality, nargs = 2, null.ok = TRUE)
@@ -55,6 +55,7 @@ sim_social_change <- function(periods, data, fun_y,
     checkmate::assert_function(fun_outmigration, nargs = 2, null.ok = TRUE)
     checkmate::assert_function(fun_transitions, nargs = 2, null.ok = TRUE)
 
+    data <- as.data.table(data)
     data <- data[n > 0]
     data[, age := as.double(age)]
     data[, y := fun_y(data, 0)]
@@ -90,6 +91,13 @@ sim_social_change <- function(periods, data, fun_y,
             data[, n_outmigration := 0]
         } else {
             data[, n_outmigration := fun_outmigration(data, i_period)]
+        }
+        n_excess <- data[, sum(n_mortality + n_outmigration > n)]
+        if (n_excess > 0) {
+            stop(sprintf(
+                "Period %d: mortality + out-migration counts exceed cell size in %d cell(s).",
+                i_period, n_excess
+            ))
         }
         if (is.null(fun_coming_of_age)) {
             coming_of_age <- data.table(n = 0)
