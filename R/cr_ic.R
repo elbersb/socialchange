@@ -148,10 +148,6 @@ cr_ic = function(data, formula, weight = NULL, model = NULL) {
 
     # check
     names(data) = c("y", "p", "c", "w")
-    periods = data[, sort(unique(p))]
-    if (length(periods) < 2) {
-        stop("not enough periods")
-    }
     nrow = nrow(data)
     data = stats::na.omit(data)
     if (nrow(data) < nrow) {
@@ -159,13 +155,32 @@ cr_ic = function(data, formula, weight = NULL, model = NULL) {
                        " rows due to NA"))
     }
 
+    # periods and cohorts must parse as integers; labels would otherwise
+    # NA-coerce silently (surfacing much later as "0 (non-NA) cases") and
+    # fractional values would silently truncate
+    for (col in c("p", "c")) {
+        parsed = suppressWarnings(as.numeric(as.character(data[[col]])))
+        invalid = is.na(parsed) | parsed != trunc(parsed)
+        if (any(invalid)) {
+            bad = unique(as.character(data[[col]])[invalid])
+            stop(sprintf(
+                "Column '%s' must contain integer values, but has: %s",
+                if (col == "p") vars[2] else vars[3],
+                paste(utils::head(bad, 5L), collapse = ", ")
+            ))
+        }
+        data[, (col) := as.integer(parsed)]
+    }
+
+    periods = data[, sort(unique(p))]
+    if (length(periods) < 2) {
+        stop("not enough periods")
+    }
+
     # prepare data
     data = data[, list(y = stats::weighted.mean(y, w), w = sum(w)), by = c("p", "c")]
     data[, prop := w / sum(w), by = "p"]
     data[, w := NULL]
-    # TODO: make sure year and cohort are numeric (not factors) or warn?
-    data[, p := as.integer(as.character(p))]
-    data[, c := as.integer(as.character(c))]
 
     # estimate model
     if (!is.null(model)) {
