@@ -125,7 +125,7 @@ extract_nl <- function(model, set, contrasts, values, intercept) {
     # remove linear effect
     extract_coefs <- extract_coefs[2:length(extract_coefs)]
     extract_coefs[is.na(extract_coefs)] <- 0 # why is this line here?
-    deviations <- contrasts[, 2:(1 + length(extract_coefs))] %*% extract_coefs
+    deviations <- contrasts[, 2:(1 + length(extract_coefs)), drop = FALSE] %*% extract_coefs
     if (intercept == TRUE) {
         coefs <- stats::coef(model)["(Intercept)"] + deviations[, 1]
     } else {
@@ -142,6 +142,16 @@ extract_nl <- function(model, set, contrasts, values, intercept) {
 #' @return List of non-linear effect estimates
 #' @export
 apc_nonlinearities <- function(apc, intercept = FALSE) {
+    # a dimension with < 3 levels carries only an intercept and a linear
+    # contrast, so there are no non-linearities to extract
+    n_levels <- lengths(apc[["values"]])
+    if (any(n_levels < 3)) {
+        bad <- names(n_levels)[n_levels < 3]
+        stop(
+            "Non-linear effects require at least 3 levels in each dimension, but ",
+            paste0(bad, " has only ", n_levels[bad], " levels", collapse = " and "), "."
+        )
+    }
     m <- apc[["model_period_zero"]]
     list(
         age = extract_nl(m, "^a", apc[["contrasts"]]$age, apc[["values"]]$age, intercept),
@@ -169,29 +179,35 @@ apc_plot_nonlinearities <- function(model) {
 #' Compute total APC effects under assumption
 #'
 #' @param model APC model object from \code{apc()}
-#' @param assumption Character specifying linear trend assumption
+#' @param assumption Named numeric of length 1 giving the assumed linear trend:
+#'   one of \code{c(age_linear = x)}, \code{c(period_linear = x)}, or
+#'   \code{c(cohort_linear = x)}.
 #' @return List of total effect estimates
 #' @seealso [apc()] for model estimation, [apc_nonlinearities()] for the non-linear effects
 #'   that are combined with the linear trend assumption here.
 #' @export
 apc_total <- function(model, assumption) {
-    age_l <- NULL
-    period_l <- NULL
-    cohort_l <- NULL
-    if (length(assumption) == 1 && names(assumption) == "age_linear") {
+    checkmate::assert_numeric(assumption, len = 1, any.missing = FALSE)
+    valid <- c("age_linear", "period_linear", "cohort_linear")
+    if (is.null(names(assumption)) || !names(assumption) %in% valid) {
+        stop(
+            "`assumption` must be a named numeric of length 1, e.g. c(age_linear = 0.01); ",
+            "valid names: ", paste(valid, collapse = ", "), "."
+        )
+    }
+
+    if (names(assumption) == "age_linear") {
         age_l <- assumption[["age_linear"]]
         period_l <- model[["thetas"]][1] - age_l
         cohort_l <- model[["thetas"]][2] - period_l
-    } else if (length(assumption) == 1 && names(assumption) == "period_linear") {
+    } else if (names(assumption) == "period_linear") {
         period_l <- assumption[["period_linear"]]
         age_l <- model[["thetas"]][1] - period_l
         cohort_l <- model[["thetas"]][2] - period_l
-    } else if (length(assumption) == 1 && names(assumption) == "cohort_linear") {
+    } else {
         cohort_l <- assumption[["cohort_linear"]]
         period_l <- model[["thetas"]][2] - cohort_l
         age_l <- model[["thetas"]][1] - period_l
-    } else {
-        stop("assumption must be list of length 1")
     }
 
     nl <- apc_nonlinearities(model)
@@ -205,7 +221,8 @@ apc_total <- function(model, assumption) {
 #' Plot total APC effects under assumption
 #'
 #' @param model APC model object from \code{apc()}
-#' @param assumption Character specifying linear trend assumption
+#' @param assumption Named numeric of length 1 giving the assumed linear trend;
+#'   see [apc_total()].
 #' @return ggplot2 object showing total effects
 #' @export
 apc_plot_total <- function(model, assumption) {

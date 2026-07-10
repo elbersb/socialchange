@@ -9,7 +9,8 @@ apc_plot_total(model, assumption)
 \arguments{
 \item{model}{APC model object from \code{apc()}}
 
-\item{assumption}{Character specifying linear trend assumption}
+\item{assumption}{Named numeric of length 1 giving the assumed linear trend;
+see [apc_total()].}
 }
 \value{
 ggplot2 object showing total effects

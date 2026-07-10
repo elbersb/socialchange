@@ -9,7 +9,9 @@ apc_total(model, assumption)
 \arguments{
 \item{model}{APC model object from \code{apc()}}
 
-\item{assumption}{Character specifying linear trend assumption}
+\item{assumption}{Named numeric of length 1 giving the assumed linear trend:
+one of \code{c(age_linear = x)}, \code{c(period_linear = x)}, or
+\code{c(cohort_linear = x)}.}
 }
 \value{
 List of total effect estimates
