@@ -244,14 +244,18 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
     survey_means[, deviation := abs(observed - modeled)]
     max_dev <- survey_means[, max(deviation)]
     if (max_dev > tol) {
-        print(survey_means)
+        worst <- survey_means[order(-deviation)][deviation > tol][seq_len(min(.N, 5L))]
         stop(sprintf(
             paste0(
                 "Modeled means deviate from observed by up to %.3f (tol = %.3f), in the ",
-                "outcome's own units, evaluated on the survey's own age structure. Consider ",
-                "a more flexible model or increase tol."
+                "outcome's own units, evaluated on the survey's own age structure. ",
+                "Worst periods:\n%s\nConsider a more flexible model or increase tol."
             ),
-            max_dev, tol
+            max_dev, tol,
+            paste(sprintf(
+                "  period %s: observed %.3f, modeled %.3f (deviation %.3f)",
+                worst$period, worst$observed, worst$modeled, worst$deviation
+            ), collapse = "\n")
         ))
     }
 
