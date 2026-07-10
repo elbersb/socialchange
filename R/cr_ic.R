@@ -1,34 +1,34 @@
-map_predict = function(period, cohort, model) {
-    predict_data = data.table(period, cohort)
-    names(predict_data) = attr(model, "period_cohort")
+map_predict <- function(period, cohort, model) {
+    predict_data <- data.table(period, cohort)
+    names(predict_data) <- attr(model, "period_cohort")
     stats::predict(model, newdata = predict_data)
 }
 
 #' @import data.table
-cr_ic_compute = function(data, model = NULL) {
-    period1 = min(data$p)
-    period2 = max(data$p)
+cr_ic_compute <- function(data, model = NULL) {
+    period1 <- min(data$p)
+    period2 <- max(data$p)
 
-    comp = merge(data[p == period1, !"p"], data[p == period2, !"p"], by = "c",
+    comp <- merge(data[p == period1, !"p"], data[p == period2, !"p"], by = "c",
                   all = TRUE, suffixes = c("1", "2"))
     comp[, cclass := "spanning"]
     comp[, cclass := ifelse(!is.na(y1) & is.na(y2), "replaced", cclass)]
     comp[, cclass := ifelse(is.na(y1) & !is.na(y2), "new", cclass)]
-    diff_replaced = comp[cclass == "replaced", -sum(prop1 * y1)]
-    diff_new = comp[cclass == "new", sum(prop2 * y2)]
-    diff_spanning = comp[cclass == "spanning", sum(prop2 * y2) - sum(prop1 * y1)]
+    diff_replaced <- comp[cclass == "replaced", -sum(prop1 * y1)]
+    diff_new <- comp[cclass == "new", sum(prop2 * y2)]
+    diff_spanning <- comp[cclass == "spanning", sum(prop2 * y2) - sum(prop1 * y1)]
 
-    y1 = comp[, sum(prop1 * y1, na.rm = TRUE)]
-    y2 = comp[, sum(prop2 * y2, na.rm = TRUE)]
+    y1 <- comp[, sum(prop1 * y1, na.rm = TRUE)]
+    y2 <- comp[, sum(prop2 * y2, na.rm = TRUE)]
 
     # algebraic decomposition
-    ic_ad = comp[cclass == "spanning", sum((prop1 + prop2) / 2 * (y2 - y1))]
-    cr_ad = comp[cclass == "spanning", sum((y1 + y2) / 2 * (prop2 - prop1))]
+    ic_ad <- comp[cclass == "spanning", sum((prop1 + prop2) / 2 * (y2 - y1))]
+    cr_ad <- comp[cclass == "spanning", sum((y1 + y2) / 2 * (prop2 - prop1))]
     # linear decomposition
-    mod = stats::lm(y ~ p + c, weight = prop, data = data)
-    ic_ld = unname(stats::coef(mod)[2]) * (period2 - period1)
-    diff_c = comp[, sum(prop2 * c, na.rm = TRUE)] - comp[, sum(prop1 * c, na.rm = TRUE)]
-    cr_ld = unname(stats::coef(mod)[3]) * diff_c
+    mod <- stats::lm(y ~ p + c, weight = prop, data = data)
+    ic_ld <- unname(stats::coef(mod)[2]) * (period2 - period1)
+    diff_c <- comp[, sum(prop2 * c, na.rm = TRUE)] - comp[, sum(prop1 * c, na.rm = TRUE)]
+    cr_ld <- unname(stats::coef(mod)[3]) * diff_c
 
     # model-based
     if (!is.null(model)) {
@@ -41,24 +41,24 @@ cr_ic_compute = function(data, model = NULL) {
         comp[, y2 := ifelse(is.na(y2), pred_y2, y2)]
 
         # compute AD+
-        ic_adplus = comp[, sum((prop1 + prop2) / 2 * (y2 - y1))]
-        cr_adplus = comp[, sum((y1 + y2) / 2 * (prop2 - prop1))]
+        ic_adplus <- comp[, sum((prop1 + prop2) / 2 * (y2 - y1))]
+        cr_adplus <- comp[, sum((y1 + y2) / 2 * (prop2 - prop1))]
         # compute Model
-        ic_model = comp[, sum((prop1 + prop2) / 2 * (pred_y2 - pred_y1))]
-        cr_model = comp[, sum((pred_y1 + pred_y2) / 2 *  (prop2 - prop1))]
+        ic_model <- comp[, sum((prop1 + prop2) / 2 * (pred_y2 - pred_y1))]
+        cr_model <- comp[, sum((pred_y1 + pred_y2) / 2 *  (prop2 - prop1))]
 
         # cohort details
-        comp = comp[, `:=`(
+        comp <- comp[, `:=`(
             ic = (prop1 + prop2) / 2 * (pred_y2 - pred_y1),
             cr = (pred_y1 + pred_y2) / 2 * (prop2 - prop1),
             y_diff = (pred_y2 - pred_y1))]
 
-        comp = comp[, c("c", "ic", "cr", "y_diff")]
+        comp <- comp[, c("c", "ic", "cr", "y_diff")]
         setnames(comp, "c", "cohort")
     }
 
-    terms = c("total", "IC", "CR", "resid")
-    ret = data.table(
+    terms <- c("total", "IC", "CR", "resid")
+    ret <- data.table(
         group = c(rep("Outcome", 2), rep("Difference", 4), rep("LD", 4), rep("AD", 4)),
         factor = c(as.character(period1), as.character(period2),
             "total", "replaced", "new", "spanning",
@@ -74,7 +74,7 @@ cr_ic_compute = function(data, model = NULL) {
     if (is.null(model)) {
         list(ret, NULL)
     } else {
-        model_results = data.table(
+        model_results <- data.table(
             group = c(rep("AD+", 4), rep("Model", 4)),
             factor = rep(terms, 2),
             value = c(
@@ -136,20 +136,20 @@ cr_ic_compute = function(data, model = NULL) {
 #' *Population Research and Policy Review*, 11(1), 61--74.
 #' @import data.table
 #' @export
-cr_ic = function(data, formula, weight = NULL, model = NULL) {
-    data = data.table::as.data.table(data)
-    vars = all.vars(formula)
+cr_ic <- function(data, formula, weight = NULL, model = NULL) {
+    data <- data.table::as.data.table(data)
+    vars <- all.vars(formula)
     if (is.null(weight)) {
-        data = data[, vars, with = FALSE]
+        data <- data[, vars, with = FALSE]
         data[, weight := 1]
     } else {
-        data = data[, c(vars, weight), with = FALSE]
+        data <- data[, c(vars, weight), with = FALSE]
     }
 
     # check
-    names(data) = c("y", "p", "c", "w")
-    nrow = nrow(data)
-    data = stats::na.omit(data)
+    names(data) <- c("y", "p", "c", "w")
+    nrow <- nrow(data)
+    data <- stats::na.omit(data)
     if (nrow(data) < nrow) {
         warning(paste0("dropped ", nrow - nrow(data),
                        " rows due to NA"))
@@ -159,10 +159,10 @@ cr_ic = function(data, formula, weight = NULL, model = NULL) {
     # NA-coerce silently (surfacing much later as "0 (non-NA) cases") and
     # fractional values would silently truncate
     for (col in c("p", "c")) {
-        parsed = suppressWarnings(as.numeric(as.character(data[[col]])))
-        invalid = is.na(parsed) | parsed != trunc(parsed)
+        parsed <- suppressWarnings(as.numeric(as.character(data[[col]])))
+        invalid <- is.na(parsed) | parsed != trunc(parsed)
         if (any(invalid)) {
-            bad = unique(as.character(data[[col]])[invalid])
+            bad <- unique(as.character(data[[col]])[invalid])
             stop(sprintf(
                 "Column '%s' must contain integer values, but has: %s",
                 if (col == "p") vars[2] else vars[3],
@@ -172,13 +172,13 @@ cr_ic = function(data, formula, weight = NULL, model = NULL) {
         data[, (col) := as.integer(parsed)]
     }
 
-    periods = data[, sort(unique(p))]
+    periods <- data[, sort(unique(p))]
     if (length(periods) < 2) {
         stop("not enough periods")
     }
 
     # prepare data
-    data = data[, list(y = stats::weighted.mean(y, w), w = sum(w)), by = c("p", "c")]
+    data <- data[, list(y = stats::weighted.mean(y, w), w = sum(w)), by = c("p", "c")]
     data[, prop := w / sum(w), by = "p"]
     data[, w := NULL]
 
@@ -187,87 +187,87 @@ cr_ic = function(data, formula, weight = NULL, model = NULL) {
         # a formula is supplied
         if (inherits(model, "formula")) {
             # replace variables in model (which is a formula here)
-            model = stats::update.formula(model, "y ~ .")
-            renames = list(quote(p), quote(c))
-            names(renames) = all.vars(model)[2:3]
-            model = do.call("substitute", list(model, renames))
+            model <- stats::update.formula(model, "y ~ .")
+            renames <- list(quote(p), quote(c))
+            names(renames) <- all.vars(model)[2:3]
+            model <- do.call("substitute", list(model, renames))
             # estimate model (overwrite formula)
-            model = stats::lm(model, weights = prop, data = data)
-            attr(model, "period_cohort") = c("p", "c")
+            model <- stats::lm(model, weights = prop, data = data)
+            attr(model, "period_cohort") <- c("p", "c")
         } else {
             # store the names of the period and cohort variable for prediction
-            attr(model, "period_cohort") = all.vars(formula)[2:3]
+            attr(model, "period_cohort") <- all.vars(formula)[2:3]
         }
     }
 
     # detailed period-over-period comparison
-    decomp = list()
-    by_cohort = list()
+    decomp <- list()
+    by_cohort <- list()
     for (i in 1:(length(periods) - 1)) {
-        data_subset = data[p %in% c(periods[i], periods[i+1])]
-        res = cr_ic_compute(data_subset, model = model)
-        tab = data.table(period1 = periods[i], period2 = periods[i + 1], res[[1]])
-        decomp[[i]] = tab
-        bc = data.table(period1 = periods[i], period2 = periods[i + 1], res[[2]])
-        by_cohort[[i]] = bc
+        data_subset <- data[p %in% c(periods[i], periods[i+1])]
+        res <- cr_ic_compute(data_subset, model = model)
+        tab <- data.table(period1 = periods[i], period2 = periods[i + 1], res[[1]])
+        decomp[[i]] <- tab
+        bc <- data.table(period1 = periods[i], period2 = periods[i + 1], res[[2]])
+        by_cohort[[i]] <- bc
     }
-    detailed = rbindlist(decomp)
-    by_cohort = rbindlist(by_cohort)
+    detailed <- rbindlist(decomp)
+    by_cohort <- rbindlist(by_cohort)
 
     # summarize complete period
-    complete = detailed[, .SD[1:2], by = c("period1", "period2")][,
+    complete <- detailed[, .SD[1:2], by = c("period1", "period2")][,
         .SD[c(1, .N)]][,
         c("group", "factor", "value", "pct_explained")]
-    diff = data.table(group = "Difference", factor = "total",
+    diff <- data.table(group = "Difference", factor = "total",
         value = diff(complete[, value]), pct_explained = NA)
-    methods = detailed[!(group %in% c("Outcome", "Difference")),
+    methods <- detailed[!(group %in% c("Outcome", "Difference")),
         list(value = sum(value)), by = c("group", "factor")]
     methods[, pct_explained := 100 * value /
         (value[factor == "IC"] + value[factor == "CR"]), by = "group"]
     methods[factor == "resid", pct_explained := NA]
     # summarize by_cohort
     if (is.null(model)) {
-        by_cohort = NULL
+        by_cohort <- NULL
     } else {
-        cohort_type = data[, list(type = fcase(
+        cohort_type <- data[, list(type = fcase(
             !(max(periods) %in% p), "removed",
             !(min(periods) %in% p), "new",
             default = "spanning")), by = "c"]
         setnames(cohort_type, "c", "cohort")
-        by_cohort = merge(by_cohort, cohort_type, by = "cohort", all.x = TRUE)
-        by_cohort = by_cohort[, list(
+        by_cohort <- merge(by_cohort, cohort_type, by = "cohort", all.x = TRUE)
+        by_cohort <- by_cohort[, list(
             type = first(type),
             ic = sum(ic),
             cr = sum(cr),
             y_diff_mean = mean(y_diff)), by = "cohort"]
     }
-    summary = rbindlist(list(complete, diff, methods))
+    summary <- rbindlist(list(complete, diff, methods))
 
-    ret = list(summary = summary,
+    ret <- list(summary = summary,
         detailed = detailed,
         periods = periods,
         cohort = by_cohort,
         model = model)
-    class(ret) = c("cr_ic_decomposition", "list")
+    class(ret) <- c("cr_ic_decomposition", "list")
     ret
 }
 
 #' @export
-print.cr_ic_decomposition = function(x, digits = getOption("digits"), ...) {
-    n_periods = length(x$periods)
+print.cr_ic_decomposition <- function(x, digits = getOption("digits"), ...) {
+    n_periods <- length(x$periods)
     cat(paste0("Cohort decomposition (year-over-year) with ", n_periods, " periods:\n"))
     cat(paste0("   ", paste0(x$periods, collapse = ", "), "\n\n"))
     cat("Summary for entire period:\n")
-    tab1 = x[["summary"]][1:3, c("group", "factor", "value")]
-    tab1 = dcast(tab1[, -c("group")], . ~ factor)[, 2:4]
-    tab1[1, ] = round(tab1, digits = digits)
-    names(tab1)[3] = "Difference"
+    tab1 <- x[["summary"]][1:3, c("group", "factor", "value")]
+    tab1 <- dcast(tab1[, -c("group")], . ~ factor)[, 2:4]
+    tab1[1, ] <- round(tab1, digits = digits)
+    names(tab1)[3] <- "Difference"
     print(tab1, digits = digits, row.names = FALSE)
     cat("\nDecompositions:\n")
-    tab2 = x[["summary"]][4:.N, ]
+    tab2 <- x[["summary"]][4:.N, ]
     tab2[, value := round(value, digits = digits)]
     tab2[, pct_explained := round(pct_explained, digits = digits)]
-    names(tab2) = c("method", "factor", "value", "%")
+    names(tab2) <- c("method", "factor", "value", "%")
     print(tab2, digits = digits, row.names = FALSE)
 }
 
@@ -287,29 +287,29 @@ print.cr_ic_decomposition = function(x, digits = getOption("digits"), ...) {
 #' @import data.table
 #' @import ggplot2
 #' @export
-plot.cr_ic_decomposition = function(x, total = TRUE, methods = NULL, ...) {
-    x = data.table::as.data.table(x[["detailed"]])
+plot.cr_ic_decomposition <- function(x, total = TRUE, methods = NULL, ...) {
+    x <- data.table::as.data.table(x[["detailed"]])
 
     if (total == TRUE) {
-        total_dt = x[group == "Outcome"][,
+        total_dt <- x[group == "Outcome"][,
             list(period = as.integer(factor), value)][,
             list(value = first(value)), by = "period"]
         total_dt[, `:=`(value_change = value - value[1],
             factor = "Total", method = "Total")]
     }
 
-    methods_dt = x[factor %in% c("CR", "IC", "resid")][,
+    methods_dt <- x[factor %in% c("CR", "IC", "resid")][,
             list(period = period2, method = group, factor, value)]
     if (!is.null(methods)) {
-        methods_dt = methods_dt[method %in% methods]
+        methods_dt <- methods_dt[method %in% methods]
     }
     methods_dt[, value_change := cumsum(value), by = c("method", "factor")]
-    methods_dt = methods_dt[!(factor == "resid" & value_change == 0)]
+    methods_dt <- methods_dt[!(factor == "resid" & value_change == 0)]
 
     if (total == TRUE) {
-        combine = rbindlist(list(total_dt, methods_dt), use.names = TRUE)
+        combine <- rbindlist(list(total_dt, methods_dt), use.names = TRUE)
     } else {
-        combine = methods_dt
+        combine <- methods_dt
     }
     combine[, method := factor(method,
         c("Total", "LD", "AD", "AD+", "Model"),

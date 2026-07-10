@@ -124,7 +124,6 @@ extract_nl <- function(model, set, contrasts, values, intercept) {
     extract_coefs <- stats::coef(model)[grepl(set, names(stats::coef(model)))]
     # remove linear effect
     extract_coefs <- extract_coefs[2:length(extract_coefs)]
-    extract_coefs[is.na(extract_coefs)] <- 0 # why is this line here?
     deviations <- contrasts[, 2:(1 + length(extract_coefs)), drop = FALSE] %*% extract_coefs
     if (intercept == TRUE) {
         coefs <- stats::coef(model)["(Intercept)"] + deviations[, 1]
