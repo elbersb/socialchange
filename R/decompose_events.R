@@ -61,7 +61,9 @@ decompose_events <- function(
     steps[[length(steps) + 1]] <- data.table(index = end_period)
     names(steps)[[length(steps)]] <- end_period
   }
-  current_pop <- steps[[1]][["unit"]]
+  # founding population: any non-exit event at the first time point
+  # (the package's own eu_membership data uses "initial" alongside "entry")
+  current_pop <- steps[[1]][event_type != "exit", unit]
   pairwise <- list()
   ix <- 1
   for (i in 1:(length(steps) - 1)) {
@@ -98,8 +100,8 @@ decompose_events <- function(
         )
       ))
       ix <- ix + 1
+      current_pop <- next_pop
     }
-    current_pop <- next_pop
   }
   # core decomposition
   pairwise <- rbindlist(pairwise)
