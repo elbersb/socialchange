@@ -161,18 +161,12 @@ sim_social_change <- function(periods, data, fun_y,
             # process single event
             event <- sample(names(event_counts), 1, prob = event_counts)
 
-            if (event == "mortality") {
-                pick_idx <- sample.int(nrow(data), 1L, prob = data$n_mortality)
+            if (event %in% c("mortality", "outmigration")) {
+                count_col <- paste0("n_", event)
+                pick_idx <- sample.int(nrow(data), 1L, prob = data[[count_col]])
                 y_pick <- data$y[pick_idx]
                 set(data, pick_idx, "n", data$n[pick_idx] - 1)
-                set(data, pick_idx, "n_mortality", data$n_mortality[pick_idx] - 1)
-                sum_yn <- sum_yn - y_pick
-                sum_n <- sum_n - 1
-            } else if (event == "outmigration") {
-                pick_idx <- sample.int(nrow(data), 1L, prob = data$n_outmigration)
-                y_pick <- data$y[pick_idx]
-                set(data, pick_idx, "n", data$n[pick_idx] - 1)
-                set(data, pick_idx, "n_outmigration", data$n_outmigration[pick_idx] - 1)
+                set(data, pick_idx, count_col, data[[count_col]][pick_idx] - 1)
                 sum_yn <- sum_yn - y_pick
                 sum_n <- sum_n - 1
             } else if (event == "transitions") {
@@ -203,15 +197,11 @@ sim_social_change <- function(periods, data, fun_y,
                 sum_yn <- sum_yn - y_source + y_dest
                 # sum_n unchanged: one person leaves a cell, one enters a new cell
             } else {
-                if (event == "coming_of_age") {
-                    pick_id <- sample.int(nrow(coming_of_age), 1L, prob = coming_of_age$n)
-                    set(coming_of_age, pick_id, "n", coming_of_age$n[pick_id] - 1)
-                    pick <- coming_of_age[pick_id, -"n"]
-                } else if (event == "inmigration") {
-                    pick_id <- sample.int(nrow(inmigration), 1L, prob = inmigration$n)
-                    set(inmigration, pick_id, "n", inmigration$n[pick_id] - 1)
-                    pick <- inmigration[pick_id, -"n"]
-                }
+                # coming_of_age and inmigration differ only in the entrant table
+                entrants <- if (event == "coming_of_age") coming_of_age else inmigration
+                pick_id <- sample.int(nrow(entrants), 1L, prob = entrants$n)
+                set(entrants, pick_id, "n", entrants$n[pick_id] - 1)
+                pick <- entrants[pick_id, -"n"]
                 # TODO: check that pick has the correct columns, including covariates
 
                 pick[, `:=`(
