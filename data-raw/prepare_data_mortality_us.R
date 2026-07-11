@@ -4,17 +4,26 @@ library("HMDHFDplus")
 hmd_user <- "fill-in"
 hmd_pw <- "fill-in"
 
-# Mx_1x1 is the central death rate m(x) (deaths / exposure), not a probability.
-mortality_us <- setDT(readHMDweb(CNTRY = "USA", username = hmd_user, password = hmd_pw, item = "Mx_1x1"))
+# Build central death rates m(x) = deaths / exposure from the raw counts, so
+# that the top-coded 89+ group (to match GSS) is exposure-weighted:
+# m(89+) = sum(deaths) / sum(exposure). For single ages this equals Mx_1x1.
+deaths <- setDT(readHMDweb(CNTRY = "USA", username = hmd_user, password = hmd_pw, item = "Deaths_1x1"))
+exposures <- setDT(readHMDweb(CNTRY = "USA", username = hmd_user, password = hmd_pw, item = "Exposures_1x1"))
 
-mortality_us[, Total := NULL]
-names(mortality_us) <- c("year", "age", "female", "male")
-mortality_us[, age := as.numeric(ifelse(age == "110+", "110", age))]
-mortality_us <- melt(mortality_us, id.vars = c("year", "age"), variable.name = "sex", value.name = "death_rate")
+prep <- function(d, value.name) {
+    d <- d[, .(year = Year, age = as.numeric(Age), female = Female, male = Male)]
+    melt(d, id.vars = c("year", "age"), variable.name = "sex", value.name = value.name)
+}
 
-# tricky: top-coded age categories (match to GSS)
-# TODO: we're taking the mean here which is a questionable assumption
+mortality_us <- merge(prep(deaths, "deaths"), prep(exposures, "exposure"),
+    by = c("year", "age", "sex")
+)
+
+# top-coded age categories (match to GSS)
 mortality_us[age > 89, age := 89]
-mortality_us <- mortality_us[, .(death_rate = mean(death_rate)), by = .(year, age, sex)]
+mortality_us <- mortality_us[,
+    .(death_rate = sum(deaths) / sum(exposure)),
+    by = .(year, age, sex)
+]
 
 save(mortality_us, file = "../data/mortality_us.rda", version = 2, compress = "bzip2")
