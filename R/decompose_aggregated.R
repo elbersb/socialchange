@@ -4,12 +4,12 @@
 #' components using microsimulation on stacked cross-sectional data. Requires a fitted model
 #' that predicts the outcome as a function of age, period, and covariates.
 #'
-#' @param stacked_data Data frame with columns \code{age}, \code{period}, and \code{y}, plus optional cell identifiers.
+#' @param stacked_data Data frame with columns \code{age}, \code{period} (numeric), and \code{y}, plus optional cell identifiers.
 #'   If a column \code{n} is present the data is treated as already aggregated to cells; otherwise individual-level
 #'   rows are aggregated internally using \code{weight}.
 #' @param model A fitted model object (\code{lm}, \code{glm}, or \code{gam}) predicting the outcome
-#'   from \code{age}, \code{period}, and any \code{cells}. Predictions are taken on the response scale
-#'   via \code{predict()}.
+#'   from \code{age}, \code{period}, and any \code{cells}; it must use no predictors beyond these.
+#'   Predictions are taken on the response scale via \code{predict()}.
 #' @param cells Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")
 #' @param R Number of paired (event-ordering, model-draw) replicates used to attach standard
 #'   errors (default 0, point estimate only). When \code{R > 0}, each replicate draws its own

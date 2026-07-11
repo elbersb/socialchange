@@ -33,7 +33,7 @@ Additional methods:
 - **CR-IC** (`R/cr_ic.R`) — classical cohort-replacement vs. intraindividual change (algebraic, linear, model-based). → class `cr_ic_decomposition`
 - **APC** (`R/apc.R`) — APC models via orthogonal polynomial contrasts; includes `plot_gam_surface()`. → class `apc_model`
 
-Functions rename input columns to standardized names internally; period columns are coerced to numeric.
+Functions rename input columns to standardized names internally. `decompose_aggregated()` requires numeric `period`; `cr_ic()` validates that periods/cohorts parse as integers and errors otherwise.
 
 ## Dependencies
 

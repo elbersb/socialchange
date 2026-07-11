@@ -7,7 +7,9 @@
 #' @param outcomes data.frame with outcome values by unit and time period
 #' @param formula Formula specifying \code{Outcome ~ Unit + Time} structure
 #' @param end_period Optional numeric end period; defaults to maximum event time
-#' @param event_type Character name of column indicating event type (entry/exit)
+#' @param event_type Character name of column indicating event type. Units enter with
+#'   \code{"entry"} and leave with \code{"exit"}; at the earliest time point, any non-exit
+#'   event (e.g. \code{"initial"}) marks a unit as part of the founding population.
 #' @param fun Aggregation function to compute period-level outcomes (default: mean)
 #'
 #' @return S3 object of class \code{decompose_events} containing decomposition results

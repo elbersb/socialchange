@@ -20,13 +20,13 @@ decompose_aggregated(
 \method{plot}{social_change_decomp}(x, covariate = NULL, ...)
 }
 \arguments{
-\item{stacked_data}{Data frame with columns \code{age}, \code{period}, and \code{y}, plus optional cell identifiers.
+\item{stacked_data}{Data frame with columns \code{age}, \code{period} (numeric), and \code{y}, plus optional cell identifiers.
 If a column \code{n} is present the data is treated as already aggregated to cells; otherwise individual-level
 rows are aggregated internally using \code{weight}.}
 
 \item{model}{A fitted model object (\code{lm}, \code{glm}, or \code{gam}) predicting the outcome
-from \code{age}, \code{period}, and any \code{cells}. Predictions are taken on the response scale
-via \code{predict()}.}
+from \code{age}, \code{period}, and any \code{cells}; it must use no predictors beyond these.
+Predictions are taken on the response scale via \code{predict()}.}
 
 \item{cells}{Character vector of additional cell identifier columns beyond age (e.g., "gender", "smoking")}
 

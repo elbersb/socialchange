@@ -10,7 +10,8 @@ cr_ic(data, formula, weight = NULL, model = NULL)
 \item{data}{A data frame with one row per respondent (or one row per
 cohort-period cell if `weight` is supplied).}
 
-\item{formula}{A formula of the form `outcome ~ period + cohort`.}
+\item{formula}{A formula of the form `outcome ~ period + cohort`. Period and
+cohort values must be integer-valued (factors with integer labels are accepted).}
 
 \item{weight}{Name of the weight variable as a string. If `NULL`, all
 observations are weighted equally.}

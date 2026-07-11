@@ -22,7 +22,9 @@ decompose_events(
 
 \item{end_period}{Optional numeric end period; defaults to maximum event time}
 
-\item{event_type}{Character name of column indicating event type (entry/exit)}
+\item{event_type}{Character name of column indicating event type. Units enter with
+\code{"entry"} and leave with \code{"exit"}; at the earliest time point, any non-exit
+event (e.g. \code{"initial"}) marks a unit as part of the founding population.}
 
 \item{fun}{Aggregation function to compute period-level outcomes (default: mean)}
 }

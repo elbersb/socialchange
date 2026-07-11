@@ -112,7 +112,8 @@ cr_ic_compute <- function(data, model = NULL) {
 #'
 #' @param data A data frame with one row per respondent (or one row per
 #'   cohort-period cell if `weight` is supplied).
-#' @param formula A formula of the form `outcome ~ period + cohort`.
+#' @param formula A formula of the form `outcome ~ period + cohort`. Period and
+#'   cohort values must be integer-valued (factors with integer labels are accepted).
 #' @param weight Name of the weight variable as a string. If `NULL`, all
 #'   observations are weighted equally.
 #' @param model Either a model formula (e.g., `~ period * cohort`) or a fitted
