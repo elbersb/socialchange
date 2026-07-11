@@ -245,14 +245,9 @@ sim_social_change <- function(periods, data, fun_y,
         record[[i_period]] <- change_record
         summary[i_period + 1, mean := sum_yn / sum_n]
         summary[i_period + 1, N := sum_n]
-        for (comp in c("intraindividual", "mortality", "outmigration", "coming_of_age", "inmigration")) {
-            delta <- by_component[component == comp, "delta"][[1]]
-            if (length(delta) == 1) {
-                summary[i_period + 1, (comp) := delta]
-            } else {
-                summary[i_period + 1, (comp) := 0]
-            }
-        }
+        comps <- names(component_labels)
+        deltas <- by_component$delta[match(comps, by_component$component)]
+        summary[i_period + 1, (comps) := as.list(nafill(deltas, fill = 0))]
 
         # clean up
         data <- data[n > 0, -c("cell_id", "n_mortality", "n_outmigration")]

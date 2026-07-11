@@ -318,14 +318,9 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
         # summarize period change
         by_component <- change_record[, .(delta = sum(delta)), by = .(component)]
         record[[i_period]] <- change_record
-        for (comp in names(component_labels)) {
-            delta <- by_component[component == comp, "delta"][[1]]
-            if (length(delta) == 1) {
-                summary[i_period + 1, (comp) := delta]
-            } else {
-                summary[i_period + 1, (comp) := 0]
-            }
-        }
+        comps <- names(component_labels)
+        deltas <- by_component$delta[match(comps, by_component$component)]
+        summary[i_period + 1, (comps) := as.list(nafill(deltas, fill = 0))]
     } # i_period loop
 
     draws_long <- if (!is.null(draws_record)) build_draws_long(draws_record, periods) else NULL
