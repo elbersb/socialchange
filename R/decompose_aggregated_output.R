@@ -29,26 +29,10 @@ print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, dig
     meanN <- x$summary[.N][["modeled_mean"]]
     total_change <- meanN - mean0
 
-    # `type` keys each row to its cumulative_series() component (NA for header rows); all
-    # value/percent/CI/per-level columns join on it, never row position. Dropped before print.
-    decomp <- data.table(
-        Component = c(
-            "At initial (modeled)", "At end (modeled)", "Total change",
-            "- Intraindividual change", "- Population turnover",
-            "  - Mortality", "  - Out-migration", "  - Coming-of-age", "  - In-migration"
-        ),
-        type = c(
-            NA, NA, "Total change", "Intraindividual change", "Population turnover",
-            "Mortality", "Out-migration", "Coming-of-age", "In-migration"
-        )
-    )
+    # All value/percent/CI/per-level columns join on `type`, never row position.
+    comp <- vapply(component_labels, val, numeric(1))
+    decomp <- build_decomp_table(mean0, meanN, comp, "At initial (modeled)", "At end (modeled)")
     component <- !is.na(decomp$type) & decomp$type != "Total change"
-    decomp[, Value := fcase(
-        Component == "At initial (modeled)", mean0,
-        Component == "At end (modeled)", meanN,
-        Component == "Total change", total_change,
-        default = vapply(type, val, numeric(1), USE.NAMES = FALSE)
-    )]
     # Percentages are undefined when total change is zero, so leave them blank.
     pct <- if (total_change == 0) rep("", nrow(decomp)) else formatC(100 * decomp$Value / total_change, format = "f", digits = 1, width = 5)
     decomp[, Percent := fifelse(
@@ -87,8 +71,8 @@ print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, dig
 
     # Show a migration row only for whichever migration type was actually inferred.
     # In-migration is a residual from cell growth; out-migration is always zero here.
-    if (val("In-migration") == 0) decomp <- decomp[Component != "  - In-migration"]
-    if (val("Out-migration") == 0) decomp <- decomp[Component != "  - Out-migration"]
+    if (comp[["inmigration"]] == 0) decomp <- decomp[Component != "  - In-migration"]
+    if (comp[["outmigration"]] == 0) decomp <- decomp[Component != "  - Out-migration"]
 
     decomp[, type := NULL]
     print(decomp[], row.names = FALSE, class = FALSE, justify = "left", na.print = "")
@@ -225,6 +209,31 @@ component_labels <- c(
     mortality = "Mortality", outmigration = "Out-migration",
     coming_of_age = "Coming-of-age", inmigration = "In-migration"
 )
+
+# "Decomposition of total change" table shared by the social_change_decomp and
+# social_change_sim print methods: initial/end/total rows, then intraindividual,
+# the turnover aggregate, and one row per turnover component. `comp` is a named
+# numeric vector over names(component_labels). `type` keys component rows (NA
+# for the mean rows) for downstream joins; callers drop it before printing.
+build_decomp_table <- function(mean0, meanN, comp, initial_label, end_label) {
+    turnover <- setdiff(names(component_labels), "intraindividual")
+    data.table(
+        Component = c(
+            initial_label, end_label, "Total change",
+            "- Intraindividual change", "- Population turnover",
+            paste("  -", component_labels[turnover])
+        ),
+        type = c(
+            NA, NA, "Total change", "Intraindividual change", "Population turnover",
+            unname(component_labels[turnover])
+        ),
+        Value = c(
+            mean0, meanN, meanN - mean0,
+            comp[["intraindividual"]], sum(comp[turnover]),
+            unname(comp[turnover])
+        )
+    )
+}
 
 # Tag long component rows with display `type` (factor in print/plot order) and the
 # optional covariate `level` (NA for the unsplit, one-series-per-component case).

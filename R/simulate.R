@@ -275,43 +275,17 @@ print.social_change_sim <- function(x, detailed = TRUE, ...) {
         cat("Overview by period:\n")
         print(x$summary, row.names = FALSE, class = FALSE, na.print = "")
     }
-    intraindividual <- x$summary[period > 0, round(sum(intraindividual), 6)]
-    mortality <- x$summary[period > 0, round(sum(mortality), 6)]
-    outmigration <- x$summary[period > 0, round(sum(outmigration), 6)]
-    coming_of_age <- x$summary[period > 0, round(sum(coming_of_age), 6)]
-    inmigration <- x$summary[period > 0, round(sum(inmigration), 6)]
-    pt <- mortality + outmigration + coming_of_age + inmigration
-
-    mean0 <- round(x$summary[1][["mean"]], 6)
-    meanN <- round(x$summary[.N][["mean"]], 6)
+    comp <- unlist(x$summary[period > 0, lapply(.SD, sum), .SDcols = names(component_labels)])
+    mean0 <- x$summary[1][["mean"]]
+    meanN <- x$summary[.N][["mean"]]
 
     if (detailed) {
         cat("\nDecomposition of total change:\n")
     }
-    decomp <- data.table(
-        Component = c(
-            "At initial",
-            "At end",
-            "Total change",
-            "- Intraindividual change",
-            "- Population turnover",
-            "  - Mortality",
-            "  - Out-migration",
-            "  - Coming-of-age",
-            "  - In-migration"
-        ),
-        Value = c(
-            mean0,
-            meanN,
-            meanN - mean0,
-            intraindividual,
-            pt,
-            mortality,
-            outmigration,
-            coming_of_age,
-            inmigration
-        )
-    )
+    decomp <- build_decomp_table(mean0, meanN, comp, "At initial", "At end")
+    if (comp[["inmigration"]] == 0) decomp <- decomp[Component != "  - In-migration"]
+    if (comp[["outmigration"]] == 0) decomp <- decomp[Component != "  - Out-migration"]
+    decomp[, type := NULL]
 
     print(decomp, row.names = FALSE, class = FALSE, justify = "left")
     invisible(x)
