@@ -118,8 +118,6 @@ print(result)
 #>  - Intraindividual change  0.12500
 #>  - Population turnover    -0.11316
 #>    - Mortality            -0.04730
-#>    - Out-migration         0.00000
 #>    - Coming-of-age        -0.06585
-#>    - In-migration          0.00000
 # }
 ```

@@ -38,7 +38,10 @@ decompose_events(
 
 - event_type:
 
-  Character name of column indicating event type (entry/exit)
+  Character name of column indicating event type. Units enter with
+  `"entry"` and leave with `"exit"`; at the earliest time point, any
+  non-exit event (e.g. `"initial"`) marks a unit as part of the founding
+  population.
 
 - fun:
 

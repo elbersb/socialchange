@@ -73,15 +73,15 @@ that predicts the outcome as a function of age, period, and covariates.</p>
 
 
 <dl><dt id="arg-stacked-data">stacked_data<a class="anchor" aria-label="anchor" href="#arg-stacked-data"></a></dt>
-<dd><p>Data frame with columns <code>age</code>, <code>period</code>, and <code>y</code>, plus optional cell identifiers.
+<dd><p>Data frame with columns <code>age</code>, <code>period</code> (numeric), and <code>y</code>, plus optional cell identifiers.
 If a column <code>n</code> is present the data is treated as already aggregated to cells; otherwise individual-level
 rows are aggregated internally using <code>weight</code>.</p></dd>
 
 
 <dt id="arg-model">model<a class="anchor" aria-label="anchor" href="#arg-model"></a></dt>
 <dd><p>A fitted model object (<code>lm</code>, <code>glm</code>, or <code>gam</code>) predicting the outcome
-from <code>age</code>, <code>period</code>, and any <code>cells</code>. Predictions are taken on the response scale
-via <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>.</p></dd>
+from <code>age</code>, <code>period</code>, and any <code>cells</code>; it must use no predictors beyond these.
+Predictions are taken on the response scale via <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>.</p></dd>
 
 
 <dt id="arg-cells">cells<a class="anchor" aria-label="anchor" href="#arg-cells"></a></dt>
@@ -302,7 +302,7 @@ effects are absorbed into the intraindividual change component.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

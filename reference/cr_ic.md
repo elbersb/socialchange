@@ -19,7 +19,9 @@ cr_ic(data, formula, weight = NULL, model = NULL)
 
 - formula:
 
-  A formula of the form \`outcome ~ period + cohort\`.
+  A formula of the form \`outcome ~ period + cohort\`. Period and cohort
+  values must be integer-valued (factors with integer labels are
+  accepted).
 
 - weight:
 

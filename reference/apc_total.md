@@ -17,7 +17,9 @@ apc_total(model, assumption)
 
 - assumption:
 
-  Character specifying linear trend assumption
+  Named numeric of length 1 giving the assumed linear trend: one of
+  `c(age_linear = x)`, `c(period_linear = x)`, or
+  `c(cohort_linear = x)`.
 
 ## Value
 

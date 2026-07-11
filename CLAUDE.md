@@ -70,8 +70,11 @@ models via orthogonal polynomial contrasts; includes
 [`plot_gam_surface()`](https://elbersb.github.io/socialchange/reference/plot_gam_surface.md).
 → class `apc_model`
 
-Functions rename input columns to standardized names internally; period
-columns are coerced to numeric.
+Functions rename input columns to standardized names internally.
+[`decompose_aggregated()`](https://elbersb.github.io/socialchange/reference/decompose_aggregated.md)
+requires numeric `period`;
+[`cr_ic()`](https://elbersb.github.io/socialchange/reference/cr_ic.md)
+validates that periods/cohorts parse as integers and errors otherwise.
 
 ## Dependencies
 

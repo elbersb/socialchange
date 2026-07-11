@@ -27,16 +27,16 @@ plot(x, covariate = NULL, ...)
 
 - stacked_data:
 
-  Data frame with columns `age`, `period`, and `y`, plus optional cell
-  identifiers. If a column `n` is present the data is treated as already
-  aggregated to cells; otherwise individual-level rows are aggregated
-  internally using `weight`.
+  Data frame with columns `age`, `period` (numeric), and `y`, plus
+  optional cell identifiers. If a column `n` is present the data is
+  treated as already aggregated to cells; otherwise individual-level
+  rows are aggregated internally using `weight`.
 
 - model:
 
   A fitted model object (`lm`, `glm`, or `gam`) predicting the outcome
-  from `age`, `period`, and any `cells`. Predictions are taken on the
-  response scale via
+  from `age`, `period`, and any `cells`; it must use no predictors
+  beyond these. Predictions are taken on the response scale via
   [`predict()`](https://rdrr.io/r/stats/predict.html).
 
 - cells:

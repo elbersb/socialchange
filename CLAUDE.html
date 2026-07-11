@@ -69,7 +69,7 @@
 <strong>Simulation</strong> (<code>R/simulate.R</code>) — <code><a href="reference/sim_social_change.html">sim_social_change()</a></code>: forward simulation. User supplies functions for outcome (<code>fun_y</code>), mortality, coming-of-age, migration, state transitions. Returns event-by-event records. → class <code>social_change_sim</code>
 </li>
 </ol><p>Additional methods: - <strong>CR-IC</strong> (<code>R/cr_ic.R</code>) — classical cohort-replacement vs. intraindividual change (algebraic, linear, model-based). → class <code>cr_ic_decomposition</code> - <strong>APC</strong> (<code>R/apc.R</code>) — APC models via orthogonal polynomial contrasts; includes <code><a href="reference/plot_gam_surface.html">plot_gam_surface()</a></code>. → class <code>apc_model</code></p>
-<p>Functions rename input columns to standardized names internally; period columns are coerced to numeric.</p>
+<p>Functions rename input columns to standardized names internally. <code><a href="reference/decompose_aggregated.html">decompose_aggregated()</a></code> requires numeric <code>period</code>; <code><a href="reference/cr_ic.html">cr_ic()</a></code> validates that periods/cohorts parse as integers and errors otherwise.</p>
 </div>
 <div class="section level2">
 <h2 id="dependencies">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies"></a></h2>
@@ -162,7 +162,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

@@ -34,7 +34,7 @@ apc_plot_nonlinearities(apc_model)
 
 ``` r
 
-apc_plot_total(apc_model, list("age_linear" = 0)) +
+apc_plot_total(apc_model, c(age_linear = 0)) +
     ggtitle("Total effects assuming age linear trend is zero")
 ```
 
@@ -43,7 +43,7 @@ apc_plot_total(apc_model, list("age_linear" = 0)) +
 ``` r
 
 
-apc_plot_total(apc_model, list("period_linear" = 0)) +
+apc_plot_total(apc_model, c(period_linear = 0)) +
     ggtitle("Total effects assuming period linear trend is zero")
 ```
 
@@ -52,7 +52,7 @@ apc_plot_total(apc_model, list("period_linear" = 0)) +
 ``` r
 
 
-apc_plot_total(apc_model, list("cohort_linear" = 0)) +
+apc_plot_total(apc_model, c(cohort_linear = 0)) +
     ggtitle("Total effects assuming cohort linear trend is zero")
 ```
 

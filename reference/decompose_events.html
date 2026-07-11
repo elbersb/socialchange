@@ -81,7 +81,9 @@ Separates aggregate change into within-unit change and population replacement co
 
 
 <dt id="arg-event-type">event_type<a class="anchor" aria-label="anchor" href="#arg-event-type"></a></dt>
-<dd><p>Character name of column indicating event type (entry/exit)</p></dd>
+<dd><p>Character name of column indicating event type. Units enter with
+<code>"entry"</code> and leave with <code>"exit"</code>; at the earliest time point, any non-exit
+event (e.g. <code>"initial"</code>) marks a unit as part of the founding population.</p></dd>
 
 
 <dt id="arg-fun">fun<a class="anchor" aria-label="anchor" href="#arg-fun"></a></dt>
@@ -132,7 +134,7 @@ Separates aggregate change into within-unit change and population replacement co
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

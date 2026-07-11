@@ -17,7 +17,8 @@ apc_plot_total(model, assumption)
 
 - assumption:
 
-  Character specifying linear trend assumption
+  Named numeric of length 1 giving the assumed linear trend; see
+  \[apc_total()\].
 
 ## Value
 
