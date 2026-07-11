@@ -308,7 +308,7 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
         # Event ordering is the stochastic step. Each replicate draws its own ordering
         # (paired with its own model refit), so cross-draw spread is combined
         # ordering + model uncertainty; the point estimate is the mean over orderings.
-        sim <- simulate_schedule(data, model, reps, gap, min_age)
+        sim <- simulate_schedule(data, model, reps, gap, min_age, cells)
 
         change_record <- tag_cells(sim$point, data, cells)
         if (!is.null(sim$draws)) {
@@ -453,13 +453,14 @@ schedule_events <- function(data, min_age, gap) {
     list(events_tick = ev_time, ev_type = ev_type, ev_cell = ev_cell)
 }
 
-# One prediction slice per evaluation tick: stack `data`, advancing only age and period
-# by tick * gap (other covariates carried through). n_cells * length(eval_ticks) rows.
-build_event_stack <- function(data, gap, eval_ticks) {
+# One prediction slice per evaluation tick: stack the prediction columns of `data`
+# (cells + period, the only predictors the model may use), advancing age and period
+# by tick * gap. n_cells * length(eval_ticks) rows.
+build_event_stack <- function(data, gap, eval_ticks, cells) {
     n_cells <- nrow(data)
     n_eval <- length(eval_ticks)
     idx_rep <- rep.int(seq_len(n_cells), n_eval)
-    data_stack <- data[idx_rep]
+    data_stack <- data[idx_rep, c(cells, "period"), with = FALSE]
     set(
         data_stack, NULL, "age",
         rep.int(data$age, n_eval) + rep(eval_ticks * gap, each = n_cells)
@@ -590,7 +591,7 @@ tag_cells <- function(dt, data, cells) {
 # RNG) and the Dirichlet refit stream (isolated in y_replicates) are independent, so any index
 # pairing yields valid joint (ordering, model) samples. The reported band is the combined
 # ordering + model uncertainty.
-simulate_schedule <- function(data, model, reps, gap, min_age) {
+simulate_schedule <- function(data, model, reps, gap, min_age, cells) {
     has_draws <- !is.null(reps)
     R <- if (has_draws) ncol(reps$beta) else 0L
     n_ord <- max(1L, R) # R orderings; 1 when R = 0 (legacy single-ordering fast path)
@@ -602,7 +603,7 @@ simulate_schedule <- function(data, model, reps, gap, min_age) {
     ev_type_mat <- matrix(vapply(scheds, `[[`, character(n_ev), "ev_type"), nrow = n_ev, ncol = n_ord)
     ev_cell_mat <- matrix(vapply(scheds, `[[`, integer(n_ev), "ev_cell"), nrow = n_ev, ncol = n_ord)
     eval_ticks <- c(scheds[[1L]]$events_tick, 1)
-    stack <- build_event_stack(data, gap, eval_ticks)
+    stack <- build_event_stack(data, gap, eval_ticks, cells)
 
     # Point: fitted-model surface replicated across the orderings, then averaged. Computed and
     # freed before the draw surface, so peak memory holds one n_ord-column surface. mean(delta)
