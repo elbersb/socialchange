@@ -40,8 +40,8 @@
 #'   are available alongside survey data, as it sidesteps survey age-structure noise. \code{n} is rounded to whole
 #'   counts for the microsimulation, so rescale large frames (e.g. raw population counts in the millions) to a
 #'   tractable per-period total first -- only the relative cell structure matters. The frame must match the survey's
-#'   minimum age and the level set of each \code{cells} column, and cover every survey period (extra periods are
-#'   dropped); these are compared over rows with \code{n > 0}.
+#'   minimum and maximum ages and the level set of each \code{cells} column, and cover every survey period (extra
+#'   periods are dropped); these are compared over rows with \code{n > 0}.
 #'
 #' @return S3 object of class \code{social_change_decomp} with components:
 #'   \itemize{
@@ -75,6 +75,17 @@
 #' non-zero count); this single threshold separates entering cohorts from survivors, and a
 #' mismatch across periods is an error.
 #'
+#' All waves must likewise share a common maximum age, and it is treated as an open
+#' interval (the demographic top-code, "T+"): the cell recorded at the maximum age pools
+#' everyone that old or older, so between two waves the survivor cohorts within one gap of
+#' the top are matched to that pool as a single group, and a cohort reaching the top stays
+#' there rather than aging out of the observed range (the model is never asked to predict
+#' past the maximum age). If the raw maxima are ragged (e.g. sparse oldest respondents),
+#' top-code each wave to a common maximum first, \code{age = pmin(age, T)}. In breakdowns
+#' by age the pooled group's contribution appears at the maximum age. For designs whose
+#' top age is a hard eligibility cutoff rather than a top-code, survivors leaving through
+#' the top of the window are still booked as mortality, now pooled at the maximum age.
+#'
 #' By default the survey itself supplies both the cell counts and the outcomes. Supplying
 #' \code{population} decouples these: the population frame supplies the cell counts \code{n}
 #' (and hence the inferred demographic events), while \code{model} supplies the outcomes. The
@@ -102,8 +113,10 @@
 #' \donttest{
 #' library(data.table)
 #' data("gss_homosex", package = "socialchange")
-#' # restrict to age >= 21 so every wave shares a common minimum age
-#' stacked <- as.data.table(gss_homosex)[age >= 21, .(age, period = year, y = homosex)]
+#' # restrict to age >= 21 and top-code at 81 ("81+") so every wave shares a
+#' # common minimum and maximum age
+#' stacked <- as.data.table(gss_homosex)[
+#'     age >= 21, .(age = pmin(age, 81), period = year, y = homosex)]
 #' model <- stats::lm(y ~ age + period, data = stacked)
 #' result <- decompose_aggregated(stacked, model, tol = 0.1)
 #' print(result)
@@ -182,6 +195,12 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
                 min(survey_nz$age), min(pop_nz$age)
             ))
         }
+        if (max(survey_nz$age) != max(pop_nz$age)) {
+            stop(sprintf(
+                "Survey and population must share a maximum age, but it is %g for the survey and %g for the population.",
+                max(survey_nz$age), max(pop_nz$age)
+            ))
+        }
         # Per-column level sets, not unique combinations (the survey may be sparser).
         for (col in cells) {
             survey_levels <- sort(unique(as.character(survey_nz[[col]])))
@@ -235,6 +254,24 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
         ))
     }
     min_age <- min_ages$min_age[1L]
+
+    # One maximum age too, shared by every wave: it is treated as an open interval
+    # "T+" (the demographic top-code), so align_periods() can pool the survivors
+    # reaching it. Ragged maxima would make the pool's membership period-dependent.
+    max_ages <- frame[, .(max_age = max(age)), by = period]
+    if (uniqueN(max_ages$max_age) > 1L) {
+        setorder(max_ages, period)
+        stop(sprintf(
+            paste0(
+                "All waves must share a common maximum age, but it varies across periods:\n%s\n",
+                "Top-code each wave to a common maximum age before decomposing ",
+                "(e.g. age = pmin(age, %g)); the shared maximum is treated as an open interval."
+            ),
+            paste(sprintf("  period %s: maximum age %g", max_ages$period, max_ages$max_age), collapse = "\n"),
+            min(max_ages$max_age)
+        ))
+    }
+    top_age <- max_ages$max_age[1L]
 
     # Model-fit diagnostic, always computed on the survey's own structure, so it stays
     # a meaningful check even when an external frame is used.
@@ -297,7 +334,7 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
         checkmate::assert_integerish(gap, lower = 1, .var.name = "period gap")
 
         # Align the two waves into one per-cell table with start/end counts n1/n2.
-        data <- align_periods(frame, periods, i_period, gap, cells, model)
+        data <- align_periods(frame, periods, i_period, gap, cells, model, top_age)
 
         # Derive the per-cell, four-type event table. Ages below min_age are
         # cohorts that entered during the gap; all others are survivors from the prior
@@ -308,7 +345,7 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
         # Event ordering is the stochastic step. Each replicate draws its own ordering
         # (paired with its own model refit), so cross-draw spread is combined
         # ordering + model uncertainty; the point estimate is the mean over orderings.
-        sim <- simulate_schedule(data, model, reps, gap, min_age, cells)
+        sim <- simulate_schedule(data, model, reps, gap, min_age, cells, top_age)
 
         change_record <- tag_cells(sim$point, data, cells)
         if (!is.null(sim$draws)) {
@@ -352,20 +389,41 @@ aggregate_to_cells <- function(stacked_data, cells, weight) {
 # pairs each cell's start count n1 with its end count n2 (0-filled where a cell is
 # absent from one wave). Carries the period-1 age/period and the predicted outcome
 # y, ready for derive_events() and the simulation loop.
-align_periods <- function(frame, periods, i_period, gap, cells, model) {
+#
+# The shared maximum age T is an open interval "T+": the period-2 cell recorded at
+# T pools the survivors of period-1 ages T-gap..T, so the aging map is many-to-one
+# there. Those period-1 cells collapse into one open-group cell labeled T (n1
+# summed) whose n2 is the period-2 pool; below T-gap the map is one-to-one and the
+# shift-back alignment applies. The open cell's tick-0 y is the n-weighted mean of
+# its constituents' predictions -- not the prediction at T -- so the transition's
+# start mean equals the period's modeled mean exactly (the accounting identity);
+# the constituents' remaining climb to y(T) then lands in intraindividual change,
+# which is what their within-gap aging is. The pre-collapse constituent rows are
+# attached as attribute "open_constituents" (with `cell` = merged row index) so
+# the bootstrap can apply the same weighting per replicate.
+align_periods <- function(frame, periods, i_period, gap, cells, model, top_age) {
     # frame is already one row per cell per period, so a plain subset
     # (no re-aggregation) gives the period's cell counts.
-    data1 <- frame[period == periods[i_period], c(cells, "n"), with = FALSE]
+    data1 <- frame[period == periods[i_period], c(cells, "n", "y_pred"), with = FALSE]
     data2 <- frame[period == periods[i_period + 1], c(cells, "n"), with = FALSE]
-    data2[, age := age - gap]
-    setnames(data1, "n", "n1")
+    open <- copy(data1[age >= top_age - gap])
+    data1[age >= top_age - gap, age := top_age]
+    data1 <- data1[, .(n1 = sum(n), y = stats::weighted.mean(y_pred, n)), by = cells]
+    data2[age < top_age, age := age - gap] # the pool recorded at T stays at T
     setnames(data2, "n", "n2")
     data <- merge(data1, data2, all = TRUE, by = cells)
     data[, n1 := nafill(n1, fill = 0)]
     data[, n2 := nafill(n2, fill = 0)]
     data[, n := n1]
     data[, period := periods[i_period]]
-    data[, y := predict_y(model, data)]
+    # cells absent from period 1 (entering cohorts) have no constituent
+    # prediction; their tick-0 y is never n-weighted (n = 0) but must be finite
+    idx <- which(is.na(data$y))
+    if (length(idx) > 0L) set(data, idx, "y", predict_y(model, data[idx]))
+    open[, period := periods[i_period]]
+    open_key <- copy(open)[, age := top_age]
+    open[, cell := data[open_key, on = cells, which = TRUE]]
+    setattr(data, "open_constituents", open[, c(cells, "period", "n", "cell"), with = FALSE])
     data
 }
 
@@ -455,15 +513,17 @@ schedule_events <- function(data, min_age, gap) {
 
 # One prediction slice per evaluation tick: stack the prediction columns of `data`
 # (cells + period, the only predictors the model may use), advancing age and period
-# by tick * gap. n_cells * length(eval_ticks) rows.
-build_event_stack <- function(data, gap, eval_ticks, cells) {
+# by tick * gap. n_cells * length(eval_ticks) rows. Ages are clamped at top_age:
+# the open-interval cell stays at "T+" as it ages, and the model is never asked to
+# extrapolate past the data's age support. period advances unclamped.
+build_event_stack <- function(data, gap, eval_ticks, cells, top_age) {
     n_cells <- nrow(data)
     n_eval <- length(eval_ticks)
     idx_rep <- rep.int(seq_len(n_cells), n_eval)
     data_stack <- data[idx_rep, c(cells, "period"), with = FALSE]
     set(
         data_stack, NULL, "age",
-        rep.int(data$age, n_eval) + rep(eval_ticks * gap, each = n_cells)
+        pmin(rep.int(data$age, n_eval) + rep(eval_ticks * gap, each = n_cells), top_age)
     )
     set(
         data_stack, NULL, "period",
@@ -591,7 +651,7 @@ tag_cells <- function(dt, data, cells) {
 # RNG) and the Dirichlet refit stream (isolated in y_replicates) are independent, so any index
 # pairing yields valid joint (ordering, model) samples. The reported band is the combined
 # ordering + model uncertainty.
-simulate_schedule <- function(data, model, reps, gap, min_age, cells) {
+simulate_schedule <- function(data, model, reps, gap, min_age, cells, top_age) {
     has_draws <- !is.null(reps)
     R <- if (has_draws) ncol(reps$beta) else 0L
     n_ord <- max(1L, R) # R orderings; 1 when R = 0 (legacy single-ordering fast path)
@@ -603,7 +663,7 @@ simulate_schedule <- function(data, model, reps, gap, min_age, cells) {
     ev_type_mat <- matrix(vapply(scheds, `[[`, character(n_ev), "ev_type"), nrow = n_ev, ncol = n_ord)
     ev_cell_mat <- matrix(vapply(scheds, `[[`, integer(n_ev), "ev_cell"), nrow = n_ev, ncol = n_ord)
     eval_ticks <- c(scheds[[1L]]$events_tick, 1)
-    stack <- build_event_stack(data, gap, eval_ticks, cells)
+    stack <- build_event_stack(data, gap, eval_ticks, cells, top_age)
 
     # Point: fitted-model surface replicated across the orderings, then averaged. Computed and
     # freed before the draw surface, so peak memory holds one n_ord-column surface. mean(delta)
@@ -621,6 +681,15 @@ simulate_schedule <- function(data, model, reps, gap, min_age, cells) {
     if (has_draws) { # ordering k paired with refit k
         surface <- replicate_predict(reps, stack) # (n_cells * n_eval) x R
         y_start <- replicate_predict(reps, data) # n_cells x R, replicate tick-0 outcomes
+        # The open-group cells' tick-0 outcome is the n-weighted mean over their
+        # pre-merge constituents (see align_periods()); apply the same weighting
+        # per replicate so the draws start from each refit's own weighted mean.
+        oc <- attr(data, "open_constituents")
+        if (nrow(oc) > 0L) {
+            y_const <- replicate_predict(reps, oc) # n_const x R
+            y_start[sort(unique(oc$cell)), ] <-
+                rowsum(y_const * oc$n, oc$cell) / as.vector(rowsum(oc$n, oc$cell))
+        }
         draws <- replay_schedule(data$n, y_start, surface, ev_type_mat, ev_cell_mat)
     }
     list(point = point[], draws = draws)

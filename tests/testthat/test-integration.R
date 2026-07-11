@@ -140,8 +140,10 @@ test_that("Full pipeline: smoking scenario with transitions", {
     fun_transitions = fun_transitions
   )
 
-  # Extract snapshots, fit model, decompose
+  # Extract snapshots, fit model, decompose. Some nonsmokers survive past 39 in
+  # later snapshots, so top-code to the shared maximum age (the open interval).
   stacked_data <- rbindlist(simresult$snapshot)
+  stacked_data[, age := pmin(age, 39)]
   model <- lm(y ~ age + period * smoking, data = stacked_data)
 
   # ACT

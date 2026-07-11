@@ -56,9 +56,10 @@ Functions rename input columns to standardized names internally. `decompose_aggr
 Events are derived from cell-count differences ("never a residual"): for survivors `mortality = pmax(0, n1 - n2)`, `inmigration = pmax(0, n2 - n1)`; for new cohorts `coming_of_age = pmax(0, n2 - n1)`. Consequences:
 
 - **Migration: only net in-migration, as a residual.** Out-migration is never separately identified (a survivor loss could be death or exit, so it's folded into mortality; reported `outmigration` is always 0). On raw survey cells the in-migration term is mostly sampling noise (~1.9% on the GSS homosexuality example); meaningful only with a true `population` frame. Migration among coming-of-age cohorts is not modeled.
-- **Top-coding → mortality.** A survivor cohort aging past the observed age range is booked as deaths (GSS top-codes age at 89; an 18–65 sample sends everyone aging past 65 to mortality). Design choice, not a bug — same `n1 - n2` accounting. *In practice:* use an open-ended top age, or read mortality as "deaths + exits past the window top".
+- **Open top age ("T+").** The shared maximum age is always treated as an open interval: `align_periods()` pools period-1 survivor ages `T−gap…T` into one cell at `T`, matched to the period-2 pool recorded at `T` (tick-0 `y` = constituents' n-weighted prediction mean, kept per-replicate via the `"open_constituents"` attribute; `build_event_stack()` clamps ages at `T`, so the model never predicts past the data). All waves must share a maximum age (`pmin(age, T)` on input if ragged), and a `population` frame must share it too. Residual caveat, hard-truncation designs only (sample stops at 65 by eligibility, not top-coding): window exits still read as mortality, pooled at `T`.
 - **Transitions misattributed.** Within-cell transitions (e.g. smokers → non-smokers) are not separately identified and get absorbed into intraindividual change; the `pmax(0, …)` guard masks offsetting flows (a cell with net transition inflow shows 0 mortality even if deaths occurred). Use only on data without significant transitions. `sim_social_change()` tracks transitions properly but can't recover them from aggregated data.
 - **Survey weights are an approximation.** With individual-level `weight`, weights are normalized within period to sum to `.N`, then `n = round(sum(normalized_weight))`. Adjusts *relative* structure correctly and keeps event counts tractable, but doesn't recover absolute population sizes; rounding adds small errors. Prefer supplying true `population` counts when available.
+- **Limitations of the bootstrap**: Survey design ignored (reweights rows not PSUs); refit reads original data by name (`getCall()$data`), breaks if out of scope; refitting transiently holds all `R` refits at once (the predictor itself keeps only their coefficients); replicates reuse one design matrix, so a model whose prediction isn't a fixed `linkinv(Xβ)` (a weight-dependent basis) errors rather than falling back to per-replicate prediction.
 
 ## Performance profile of `decompose_aggregated()`
 
@@ -82,36 +83,3 @@ Remaining leverage, highest first:
 - Micro-opts in `replay_schedule` (~1 s): hoist `rep(sum_n, each=n_cells)`, fold the two per-iteration `colSums`.
 
 The period loop is embarrassingly parallel but the wrong axis (breaks RNG reproducibility, lowest leverage); for the bootstrap, parallelize over the `K` columns instead.
-
-## Planned features for `decompose_aggregated()`
-
-Remaining: the demographic-uncertainty branch of (a), and the rest of (b). Architecture keeps three inputs decoupled with a pluggable event generator between them:
-
-```
-[survey data] --fun_y--> Y(cell,time)
-[population frame] n per cell per period        <- (a) demographic draws perturb here (TODO)
-        v
-[event generator] derive {mortality, coming_of_age, inmigration, outmigration}  <- (b): make pluggable (TODO)
-        v
-[simulation core] random ordering + interleaved IC change
-        v
-[summarize] point estimate + SE/CI, per-period & cumulative, optional split by cell & event
-```
-
-Reference (untested, may have bugs): `old_scripts/functions/functions_clean.R` — `eventDecompositionMat`, `fitBSModels`/`splineForBS`, `createPopFrame`/`calcSurvivingPop`, `prepComponentData`/`decomposeChangeByVar`.
-
-**Feature (a): Standard errors.** Model and ordering uncertainty ship via `R > 0`. Remaining is **demographic uncertainty** — sampling error in `n1`/`n2` and supplied mortality/migration. With `population`, the bootstrap reweights only the survey, so external counts carry no uncertainty.
-
-Deferred limitations of the bootstrap: survey design ignored (reweights rows not PSUs); refit reads original data by name (`getCall()$data`), breaks if out of scope; refitting transiently holds all `R` refits at once (the predictor itself keeps only their coefficients); replicates reuse one design matrix, so a model whose prediction isn't a fixed `linkinv(Xβ)` (a weight-dependent basis) errors rather than falling back to per-replicate prediction.
-
-**Feature (b): Migration estimation.** Per cell the identity is `n2 = n1 + coming_of_age + inmigration − deaths − outmigration`. For survivors that's 1 equation, 3 unknowns — only *net* migration is identified. User closes the system by which inputs they supply:
-- Default (current): net change → coming-of-age / mortality (shrinking) / net in-migration (growing); out-migration = 0.
-- Supply mortality (recommended): `deaths = fun_mortality(cell)`, then `net_migration = n2 − (n1 − deaths)`; positive ⇒ in, negative ⇒ out.
-- Supply net migration → back out deaths.
-- Supply both → over-determined; reconcile / warn beyond tolerance.
-
-Proposed API: `fun_mortality = NULL`, `fun_migration = NULL`, consumed by `derive_events()`. Default `NULL` = current `pmax()` strategy. Print/plot already render migration rows when non-zero; supplying inputs makes out-migration appear. Modeling choices to document: (i) migrants take receiving cell's mean Y; (ii) migration among coming-of-age cohorts ignored; (iii) net-only.
-
-**Overlap & sequencing:** (b) defines the event table; (a)'s demographic branch perturbs it. Both converge on `derive_events()`. Do (b)'s remaining half first, then (a)'s bootstrap over the pluggable inputs.
-
-**Possible future helper — raking.** Only adds value when you have *marginal* population targets but not their joint distribution (can't supply a `population` frame). IPF reconstructs an adjusted joint `n` as preprocessing (`survey::rake`/`anesrake`/`autumn`); sketch `harmonize_cells(data, targets, by, within="period")`. The value-add is enforcing: rake *within* wave, and re-rake *inside* each bootstrap draw or the SE is wrong. Not near-term.

@@ -57,8 +57,8 @@ diagnostic. This is the preferred input when true population counts (e.g. from a
 are available alongside survey data, as it sidesteps survey age-structure noise. \code{n} is rounded to whole
 counts for the microsimulation, so rescale large frames (e.g. raw population counts in the millions) to a
 tractable per-period total first -- only the relative cell structure matters. The frame must match the survey's
-minimum age and the level set of each \code{cells} column, and cover every survey period (extra periods are
-dropped); these are compared over rows with \code{n > 0}.}
+minimum and maximum ages and the level set of each \code{cells} column, and cover every survey period (extra
+periods are dropped); these are compared over rows with \code{n > 0}.}
 
 \item{seed}{Optional integer seed for reproducible bootstrap replicates (default \code{NULL}).
 The Dirichlet refit draw is isolated from the global RNG stream, so the replicate refits are
@@ -111,6 +111,17 @@ coming-of-age. All waves must share a common minimum age (the youngest age obser
 non-zero count); this single threshold separates entering cohorts from survivors, and a
 mismatch across periods is an error.
 
+All waves must likewise share a common maximum age, and it is treated as an open
+interval (the demographic top-code, "T+"): the cell recorded at the maximum age pools
+everyone that old or older, so between two waves the survivor cohorts within one gap of
+the top are matched to that pool as a single group, and a cohort reaching the top stays
+there rather than aging out of the observed range (the model is never asked to predict
+past the maximum age). If the raw maxima are ragged (e.g. sparse oldest respondents),
+top-code each wave to a common maximum first, \code{age = pmin(age, T)}. In breakdowns
+by age the pooled group's contribution appears at the maximum age. For designs whose
+top age is a hard eligibility cutoff rather than a top-code, survivors leaving through
+the top of the window are still booked as mortality, now pooled at the maximum age.
+
 By default the survey itself supplies both the cell counts and the outcomes. Supplying
 \code{population} decouples these: the population frame supplies the cell counts \code{n}
 (and hence the inferred demographic events), while \code{model} supplies the outcomes. The
@@ -138,8 +149,10 @@ effects are absorbed into the intraindividual change component.
 \donttest{
 library(data.table)
 data("gss_homosex", package = "socialchange")
-# restrict to age >= 21 so every wave shares a common minimum age
-stacked <- as.data.table(gss_homosex)[age >= 21, .(age, period = year, y = homosex)]
+# restrict to age >= 21 and top-code at 81 ("81+") so every wave shares a
+# common minimum and maximum age
+stacked <- as.data.table(gss_homosex)[
+    age >= 21, .(age = pmin(age, 81), period = year, y = homosex)]
 model <- stats::lm(y ~ age + period, data = stacked)
 result <- decompose_aggregated(stacked, model, tol = 0.1)
 print(result)
