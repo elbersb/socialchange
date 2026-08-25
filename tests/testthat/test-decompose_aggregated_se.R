@@ -281,10 +281,10 @@ test_that("gam bootstrap refits preserve effective df (no oversmoothing bias)", 
   data("gss_homosex", package = "socialchange")
   # mgcv resets the formula environment to the global env, so the by-name refit lookup
   # needs the training data there (the documented gam contract). Fit globally, clean up.
-  gss_edf_dat <- gss_homosex[age >= 21, .(age, period = year, y = homosex, wtssall)]
+  gss_edf_dat <- gss_homosex[age >= 21, .(age, period = year, y = homosex, wtssps)]
   assign(".gss_edf_dat", gss_edf_dat, envir = globalenv())
   on.exit(rm(".gss_edf_dat", envir = globalenv()), add = TRUE)
-  m <- mgcv::gam(y ~ s(age) + s(period), data = .gss_edf_dat, weights = wtssall)
+  m <- mgcv::gam(y ~ s(age) + s(period), data = .gss_edf_dat, weights = wtssps)
 
   edf <- function(mod) sum(summary(mod)$edf)
   orig_edf <- edf(m)

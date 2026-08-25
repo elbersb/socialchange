@@ -148,12 +148,11 @@
 #' \donttest{
 #' library(data.table)
 #' data("gss_homosex", package = "socialchange")
-#' # restrict to age >= 21 and top-code at 81 ("81+") so every wave shares a
-#' # common minimum and maximum age
-#' stacked <- as.data.table(gss_homosex)[
-#'     age >= 21, .(age = pmin(age, 81), period = year, y = homosex)]
+#' # Top-code at 81 ("81+") so sparse older ages form one open group.
+#' stacked <- as.data.table(gss_homosex)[,
+#'     .(age = pmin(age, 81), period = year, y = homosex)]
 #' model <- stats::lm(y ~ age + period, data = stacked)
-#' result <- decompose_aggregated(stacked, model, tol = 0.1)
+#' result <- decompose_aggregated(stacked, model, tol = 0.11)
 #' print(result)
 #' }
 #'

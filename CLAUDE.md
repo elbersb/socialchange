@@ -44,7 +44,7 @@ Functions rename input columns to standardized names internally. `decompose_aggr
 ## Datasets (`data/`, docs in `R/data.R`, prep in `data-raw/`)
 
 - `gss_rac.rda` — GSS racial attitudes, white Americans (1972–1984)
-- `gss_homosex.rda` — GSS attitudes toward homosexual sex (1973–2016)
+- `gss_homosex.rda` — GSS attitudes toward homosexual sex (1973–2024)
 - `eu_membership.rda` — EU entry/exit dates
 - `wpp_data.rda` — UN World Population Prospects (1950+)
 - `mortality_us.rda` — US mortality rates (1933–2024)
@@ -66,7 +66,7 @@ Events are derived from cell-count differences ("never a residual"). New cohorts
 
 ## Performance profile of `decompose_aggregated()`
 
-Profiled on GSS homosexuality (34,081 rows, 26 periods, ages 21–89). **With a GAM `fun_y` (`s(age)+s(period)`) ~75% of wall time is the user's model prediction, not simulation logic:** GAM call ~1.43 s (of which ~1.08 s is `predict.gam`/`PredictMat`), lm call ~0.35 s; simulation machinery ~0.35 s. `simulate_schedule()` evaluates `fun_y` once over an `n_cells × (n_ev+1)` stacked frame, so cost scales `n_cells × n_ev × cost(fun_y)` — and the bootstrap multiplies by `R`.
+Earlier profile on the 1973–2016 GSS homosexuality subset (34,081 rows, 26 periods, ages 21–89). **With a GAM `fun_y` (`s(age)+s(period)`) ~75% of wall time is the user's model prediction, not simulation logic:** GAM call ~1.43 s (of which ~1.08 s is `predict.gam`/`PredictMat`), lm call ~0.35 s; simulation machinery ~0.35 s. `simulate_schedule()` evaluates `fun_y` once over an `n_cells × (n_ev+1)` stacked frame, so cost scales `n_cells × n_ev × cost(fun_y)` — and the bootstrap multiplies by `R`.
 
 **Bootstrap breakdown (`cells="sex"`, `R=100`, GAM `s(age)+s(period)`, model pre-fit, ~19.5 s total, `Rprof`):**
 

@@ -1,30 +1,28 @@
-library("tidywpp")
 library("data.table")
 
 # US population by single year of age and sex, from UN World Population
 # Prospects (WPP) 2022. Counts are in thousands and are *not* rescaled here:
-# the decompose_aggregated() population frame only uses the relative cell
-# structure, and the vignette rescales each wave to the survey sample size.
+# decompose_aggregated() uses only the relative cell structure, and the
+# vignette rescales each wave to the survey sample size.
 
-d <- get_wpp(
-    indicator = "pop", pop_age = "single", pop_sex = "all",
-    pop_freq = "annual", clean_names = TRUE, tidy_pop_sex = TRUE,
-    messages = FALSE
+base_url <- paste0(
+    "https://raw.githubusercontent.com/guyabel/tidywpp/main/",
+    "data-host/WPP2022/PopulationBySingleAgeSex/2/"
 )
-setDT(d)
+base <- readRDS(url(paste0(base_url, "base.rds")))[[1L]]
+keep <- base$LocID == 840 & base$Time %in% 1973:2024 # UN M49 code for the US
+base <- base[keep, ]
+male <- readRDS(url(paste0(base_url, "PopMale.rds")))[keep, 1L, drop = TRUE]
+female <- readRDS(url(paste0(base_url, "PopFemale.rds")))[keep, 1L, drop = TRUE]
+age <- suppressWarnings(as.integer(base$AgeGrp))
+age[base$AgeGrp == "100+"] <- 100L
 
-# all years spanning the gss_homosex survey waves
-years <- 1973:2016
-
-wpp_us <- d[
-    location == "United States of America" & sex %in% c("Male", "Female") & time %in% years,
-    .(period = time, age = age_grp_start, sex, n = pop)
-]
-
-# match gss_homosex coding/structure
-wpp_us[, sex := fcase(sex == "Male", "male", sex == "Female", "female")]
-wpp_us[age >= 89L, age := 89L]   # GSS top-codes age at "89 or older"
-wpp_us <- wpp_us[age >= 21L, .(n = sum(n)), by = .(period, age, sex)]   # GSS example restricted to 21+
+wpp_us <- rbind(
+    data.table(period = base$Time, age, sex = "male", n = male),
+    data.table(period = base$Time, age, sex = "female", n = female)
+)
+wpp_us[age >= 89L, age := 89L] # GSS top-codes age at "89 or older"
+wpp_us <- wpp_us[age >= 18L, .(n = sum(n)), by = .(period, age, sex)]
 setkey(wpp_us, period, age, sex)
 
 save(wpp_us, file = "../data/wpp_us.rda", version = 2, compress = "bzip2")

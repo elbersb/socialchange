@@ -5,12 +5,11 @@
 \alias{gss_homosex}
 \title{GSS attitudes toward homosexual sex relations}
 \format{
-A data.table with 35,189 rows and 19 variables:
+A data.table with 44,153 rows and 18 variables:
 \describe{
   \item{id}{Respondent ID number.}
   \item{year}{GSS survey year.}
-  \item{wtssall}{Survey weight.}
-  \item{sample}{Sampling frame and method code.}
+  \item{wtssps}{Post-stratification survey weight.}
   \item{vstrat}{Variance stratum (NA for many years).}
   \item{vpsu}{Variance primary sampling unit (NA for many years).}
   \item{homosex}{Attitude toward sexual relations between two adults of the
@@ -39,7 +38,7 @@ A data.table with 35,189 rows and 19 variables:
 }
 \source{
 Smith, Tom W., Davern, Michael, Freese, Jeremy, and Morgan,
-  Stephen L. General Social Surveys, 1972--2018. NORC, Chicago.
+  Stephen L. General Social Surveys, 1972--2024. NORC, Chicago.
   Accessed via the \href{https://cran.r-project.org/package=gssr}{gssr}
   R package.
 }
@@ -49,9 +48,11 @@ gss_homosex
 \description{
 A subset of the General Social Survey (GSS) containing respondents with
 valid responses to the \code{homosex} question, covering survey years
-1973--2016 and birth cohorts 1884--1998. Oversample designs (samples 4, 5,
-and 7) are excluded. The outcome variable has been rescaled from its
-original 1--4 coding to a 0--1 scale. Prepared from the
+1973--2024 and birth cohorts 1884--2006. The question was not asked in 1972,
+1975, 1978, 1983, or 1986, so those years are omitted. Within included years,
+rows without a valid response are excluded; these include planned questionnaire
+non-assignment and item nonresponse. The outcome variable has been rescaled from
+its original 1--4 coding to a 0--1 scale. Prepared from the
 \href{https://cran.r-project.org/package=gssr}{gssr} package.
 }
 \keyword{datasets}
