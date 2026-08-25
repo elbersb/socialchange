@@ -15,6 +15,7 @@ print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, dig
     checkmate::assert_string(covariate, null.ok = TRUE)
     old <- options(digits = digits, scipen = 999)
     on.exit(options(old))
+    cat("Strategy: ", x$strategy, "\n\n", sep = "")
     if (detailed) {
         cat("Overview by period:\n")
         print(x$summary[], row.names = FALSE, class = FALSE, na.print = "")
@@ -69,8 +70,8 @@ print.social_change_decomp <- function(x, detailed = TRUE, covariate = NULL, dig
         }
     }
 
-    # Show a migration row only for whichever migration type was actually inferred.
-    # In-migration is a residual from cell growth; out-migration is always zero here.
+    # Show a migration row only for whichever migration type was actually inferred
+    # (under sign attribution out-migration is always zero).
     if (comp[["inmigration"]] == 0) decomp <- decomp[Component != "  - In-migration"]
     if (comp[["outmigration"]] == 0) decomp <- decomp[Component != "  - Out-migration"]
 

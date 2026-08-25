@@ -27,6 +27,8 @@ mortality_us
 }
 \description{
 Mortality rates by sex and age. Used in examples for
-\code{\link{decompose_aggregated}}.
+\code{\link{decompose_aggregated}}; its \code{mortality} argument expects
+annual death probabilities, so convert with
+\code{prob = 1 - exp(-death_rate)} (and rename \code{year} to \code{period}).
 }
 \keyword{datasets}

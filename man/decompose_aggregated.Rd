@@ -14,6 +14,7 @@ decompose_aggregated(
   tol = 0.05,
   weight = NULL,
   population = NULL,
+  mortality = NULL,
   seed = NULL
 )
 
@@ -35,7 +36,8 @@ errors (default 0, point estimate only). When \code{R > 0}, each replicate draws
 random event ordering and pairs it with a Dirichlet-reweighted refit of \code{model}; the
 spread of the resulting decompositions gives per-component standard errors and cumulative
 confidence bands. The band is the \emph{combined} event-ordering and model uncertainty, not
-demographic uncertainty in the cell counts. For \code{gam} models
+demographic uncertainty: the cell counts and any supplied \code{population} or
+\code{mortality} inputs are held fixed across replicates. For \code{gam} models
 each replicate is a full refit plus prediction, so large \code{R} can be slow.}
 
 \item{tol}{Maximum tolerated absolute deviation between observed and modeled period means, in the
@@ -56,9 +58,27 @@ continues to supply every cell's outcome and \code{stacked_data} is used only fo
 diagnostic. This is the preferred input when true population counts (e.g. from a census or official statistics)
 are available alongside survey data, as it sidesteps survey age-structure noise. \code{n} is rounded to whole
 counts for the microsimulation, so rescale large frames (e.g. raw population counts in the millions) to a
-tractable per-period total first -- only the relative cell structure matters. The frame must match the survey's
-minimum and maximum ages and the level set of each \code{cells} column, and cover every survey period (extra
-periods are dropped); these are compared over rows with \code{n > 0}.}
+tractable per-period total first -- only the relative cell structure matters. The frame must share the survey's
+minimum age, reach at least its maximum age, share the level set of each \code{cells} column, and cover every
+survey period (extra periods are dropped); these are compared over rows with \code{n > 0}. Population ages above
+the survey maximum remain separate for demographic calculations, but their outcome predictions and reported
+contributions are pooled into the survey's open maximum-age cell. Ages from the survey maximum through the
+frame's terminal age must be gap-free in every period. The final age must be common across periods and is
+treated as the terminal open age.}
+
+\item{mortality}{Optional data frame of annual death probabilities; supplying it switches the
+attribution of survivor-cell change from sign attribution to residual migration (see Details).
+Columns \code{period}, \code{age}, \code{prob}, plus optionally any subset of the \code{cells}
+columns: probabilities are joined on the columns present and broadcast over the rest (e.g.
+rates by age and sex apply to all age x sex x education cells). \code{prob} is the annual
+death probability q(x) in [0, 1]; convert central death rates m(x) (e.g.
+\code{mortality_us$death_rate}) via \code{prob = 1 - exp(-death_rate)}. The table must cover
+every calendar year from the first survey period up to (but not including) the last and every
+age from the shared minimum through the terminal age in \code{population}, or in
+\code{stacked_data} when \code{population} is omitted, without gaps. The mortality table
+must have the same terminal age; both final rows are interpreted as the same open group. Works with or without
+\code{population}, but is most meaningful with it: on raw survey counts the expected deaths
+round to zero for most small cells and the migration residual mostly reflects sampling noise.}
 
 \item{seed}{Optional integer seed for reproducible bootstrap replicates (default \code{NULL}).
 The Dirichlet refit draw is isolated from the global RNG stream, so the replicate refits are
@@ -88,6 +108,8 @@ S3 object of class \code{social_change_decomp} with components:
       component deltas (columns \code{draw}, \code{period}, \code{component}, \code{delta}, and
       the cell covariates) from which any aggregate's confidence band can be computed; \code{NULL}
       when \code{R = 0}.
+    \item \code{strategy}: how survivor-cell change was attributed -- \code{"sign attribution"}
+      (default) or \code{"residual migration"} (when \code{mortality} is supplied).
   }
 }
 \description{
@@ -111,16 +133,15 @@ coming-of-age. All waves must share a common minimum age (the youngest age obser
 non-zero count); this single threshold separates entering cohorts from survivors, and a
 mismatch across periods is an error.
 
-All waves must likewise share a common maximum age, and it is treated as an open
-interval (the demographic top-code, "T+"): the cell recorded at the maximum age pools
-everyone that old or older, so between two waves the survivor cohorts within one gap of
-the top are matched to that pool as a single group, and a cohort reaching the top stays
-there rather than aging out of the observed range (the model is never asked to predict
-past the maximum age). If the raw maxima are ragged (e.g. sparse oldest respondents),
-top-code each wave to a common maximum first, \code{age = pmin(age, T)}. In breakdowns
-by age the pooled group's contribution appears at the maximum age. For designs whose
-top age is a hard eligibility cutoff rather than a top-code, survivors leaving through
-the top of the window are still booked as mortality, now pooled at the maximum age.
+Survey waves must also share a common maximum outcome age T, interpreted as an open
+cell T+. If raw maxima are ragged, create a genuine common open group first with
+\code{age = pmin(age, T)}; a hard eligibility cutoff is not an open group and is unsupported.
+A supplied population frame can extend above T. Its single-age constituents remain separate
+for aging and mortality, while the outcome model receives \code{pmin(age, T)} and all reported
+contributions at ages T and above appear at T. Between waves, all constituents reaching T are
+matched to the period-2 T+ pool, so they do not age out of the observed range. The population
+frame's final age is itself treated as an open demographic group and must be common across
+periods. When mortality is supplied, its final age must represent the same open group.
 
 By default the survey itself supplies both the cell counts and the outcomes. Supplying
 \code{population} decouples these: the population frame supplies the cell counts \code{n}
@@ -129,18 +150,34 @@ reported \code{modeled_mean} is then weighted by the population frame, whereas
 \code{observed_mean} remains the survey's own observed mean, so the two lines may diverge
 when the survey and population age structures differ.
 
-Within a cell, a survivor cohort that shrinks between periods loses people to mortality,
-while one that grows gains people through net in-migration. Only \emph{net} migration is
-recovered: gross out-migration is not separable from deaths (a survivor loss could be either),
-so it is folded into mortality and the reported out-migration is always zero. Each cell's net
-change is attributed to a single event type by sign: a shrinking cell records only mortality
-(any concurrent in-migration is invisible) and a growing cell records only net in-migration
-(any concurrent deaths are folded in), so offsetting flows within a cell cannot be seen. New
-cohorts (below the minimum age) attribute all their growth to coming-of-age;
-migration among entering cohorts is not modeled. On noisy survey cells this strategy relabels
-sampling fluctuation as in-migration and mortality, so the inferred in-migration is most
-meaningful when \code{population} supplies a true population frame, where growing cohorts reflect
-genuine net immigration rather than survey noise.
+Within each survivor cell the balancing identity is \code{n2 = n1 - deaths + net migration}:
+one equation, two unknowns. The supplied inputs determine the strategy recorded on the result:
+\itemize{
+  \item \strong{Sign attribution} (default; no mortality input): each survivor cell's net
+    change is routed by sign. A shrinking cell records only mortality (any concurrent
+    in-migration is invisible) and a growing cell records only net in-migration (any
+    concurrent deaths are folded in), so offsetting flows within a cell cannot be seen and
+    the reported out-migration is always zero. On noisy survey cells this relabels sampling
+    fluctuation as in-migration and mortality, so the inferred in-migration is most
+    meaningful when \code{population} supplies a true population frame, where growing cohorts
+    reflect genuine net immigration rather than survey noise.
+  \item \strong{Residual migration} (\code{mortality} supplied): deaths come from the supplied
+    probabilities. A survivor cell aged \code{a} in year \code{t} compounds annual survival
+    over the gap years, \code{qtilde = 1 - prod_j (1 - q(a + j, t + j))} for
+    \code{j = 0..gap-1} (lookup ages clamped at the mortality table's maximum age), and books
+    \code{deaths = round(n1 * qtilde)}; annual death events are assigned to the year implied
+    by that survival path. When \code{population} extends above the survey maximum, the
+    survey's open outcome group sums expected deaths over those separate constituent ages,
+    each compounding its own path; only the terminal constituent uses the terminal open-group
+    probability. Migration is then the
+    \emph{signed} residual \code{n2 - (n1 - deaths)}, so out-migration appears and a cell can
+    carry both deaths and in-migration. Approximations: deaths are computed on the
+    period-start count \code{n1} (within-gap mortality of migrants and entrants is ignored),
+    migrants take the receiving cell's mean outcome, and migration remains net per cell.
+    Bootstrap replicates (\code{R > 0}) hold the mortality input fixed.
+}
+Under either strategy, new cohorts (below the minimum age) attribute all their growth to
+coming-of-age; migration among entering cohorts is not modeled.
 
 \strong{Limitation}: Does not properly handle within-cell state transitions. Transition
 effects are absorbed into the intraindividual change component.

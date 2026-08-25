@@ -2,12 +2,12 @@
 #'
 #' A subset of the General Social Survey (GSS) containing respondents with
 #' valid responses to the \code{homosex} question, covering survey years
-#' 1973--2018 and birth cohorts 1892--1995. Oversample designs (samples 4, 5,
+#' 1973--2016 and birth cohorts 1884--1998. Oversample designs (samples 4, 5,
 #' and 7) are excluded. The outcome variable has been rescaled from its
 #' original 1--4 coding to a 0--1 scale. Prepared from the
 #' \href{https://cran.r-project.org/package=gssr}{gssr} package.
 #'
-#' @format A data.table with 36,494 rows and 19 variables:
+#' @format A data.table with 35,189 rows and 19 variables:
 #' \describe{
 #'   \item{id}{Respondent ID number.}
 #'   \item{year}{GSS survey year.}
@@ -19,7 +19,7 @@
 #'     same sex, rescaled to 0--1 (0 = always wrong, 1 = not wrong at all).
 #'     Original 4-point scale: 1 = Always Wrong, 2 = Almost Always Wrong,
 #'     3 = Sometimes Wrong, 4 = Not Wrong at All.}
-#'   \item{age}{Age of respondent at time of interview.}
+#'   \item{age}{Age of respondent at time of interview; 89 means 89 or older.}
 #'   \item{cohort}{Birth year, computed as \code{year - age}.}
 #'   \item{sex}{Sex of respondent (\code{"male"} or \code{"female"}).}
 #'   \item{educ}{Highest year of school completed.}
@@ -127,7 +127,9 @@
 #' US mortality rates, 1933--2024
 #'
 #' Mortality rates by sex and age. Used in examples for
-#' \code{\link{decompose_aggregated}}.
+#' \code{\link{decompose_aggregated}}; its \code{mortality} argument expects
+#' annual death probabilities, so convert with
+#' \code{prob = 1 - exp(-death_rate)} (and rename \code{year} to \code{period}).
 #'
 #' @format A data frame with 16,560 rows and 4 variables:
 #' \describe{

@@ -55,7 +55,7 @@ test_that("a top-coded stationary population books honest deaths at the pool, no
 
   frame <- copy(stacked)[, y_pred := predict(model, .SD)]
   aligned <- socialchange:::align_periods(frame, 2000:2002, 1L, 1, "age", model, 30)
-  ev <- socialchange:::derive_events(aligned, 20)
+  ev <- socialchange:::derive_events(aligned, 20, 1)
   expect_equal(ev[, sum(inmigration)], 0)
   expect_equal(ev[, sum(mortality)], 100)
   expect_equal(ev[age == 30, mortality], 100)
@@ -114,16 +114,39 @@ test_that("waves must share a common maximum age", {
   )
 })
 
-test_that("population frame must share the survey's maximum age", {
+test_that("population can extend above the survey's open outcome age", {
   survey <- CJ(period = c(2000, 2004), age = 20:30)
   survey[, n := 100L]
   survey[, y := (age - 20) / 20]
   model <- lm(y ~ age, data = survey)
 
+  # Ages 31:35 are demographic constituents of the survey's 30+ outcome cell.
+  # Their predictions must be clamped to 30, not extrapolated.
   pop <- CJ(period = c(2000, 2004), age = 20:35)[, n := 100]
+  set.seed(1)
+  res <- decompose_aggregated(survey, model, population = pop)
+  expected <- weighted.mean((pmin(20:35, 30) - 20) / 20, rep(100, 16))
+  expect_equal(res$summary$modeled_mean, rep(expected, 2))
+  expect_lte(max(res$record[[1]]$age), 30)
+
+  # Bootstrap constituent predictions use the same clamp. With identical period
+  # frames and an age-only model, every draw must telescope to zero total change.
+  set.seed(1)
+  boot <- suppressMessages(decompose_aggregated(
+    survey, model, population = pop, R = 3, seed = 2
+  ))
+  expect_equal(boot$draws[, .(total = sum(delta)), by = draw]$total, rep(0, 3), tolerance = 1e-10)
+
+  short <- CJ(period = c(2000, 2004), age = 20:29)[, n := 100]
   expect_error(
-    decompose_aggregated(survey, model, population = pop),
-    "share a maximum age"
+    decompose_aggregated(survey, model, population = short),
+    "must reach at least"
+  )
+
+  gap <- pop[age != 33]
+  expect_error(
+    decompose_aggregated(survey, model, population = gap),
+    "must be gap-free"
   )
 })
 

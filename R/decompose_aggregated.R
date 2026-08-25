@@ -16,7 +16,8 @@
 #'   random event ordering and pairs it with a Dirichlet-reweighted refit of \code{model}; the
 #'   spread of the resulting decompositions gives per-component standard errors and cumulative
 #'   confidence bands. The band is the \emph{combined} event-ordering and model uncertainty, not
-#'   demographic uncertainty in the cell counts. For \code{gam} models
+#'   demographic uncertainty: the cell counts and any supplied \code{population} or
+#'   \code{mortality} inputs are held fixed across replicates. For \code{gam} models
 #'   each replicate is a full refit plus prediction, so large \code{R} can be slow.
 #' @param seed Optional integer seed for reproducible bootstrap replicates (default \code{NULL}).
 #'   The Dirichlet refit draw is isolated from the global RNG stream, so the replicate refits are
@@ -39,9 +40,26 @@
 #'   diagnostic. This is the preferred input when true population counts (e.g. from a census or official statistics)
 #'   are available alongside survey data, as it sidesteps survey age-structure noise. \code{n} is rounded to whole
 #'   counts for the microsimulation, so rescale large frames (e.g. raw population counts in the millions) to a
-#'   tractable per-period total first -- only the relative cell structure matters. The frame must match the survey's
-#'   minimum and maximum ages and the level set of each \code{cells} column, and cover every survey period (extra
-#'   periods are dropped); these are compared over rows with \code{n > 0}.
+#'   tractable per-period total first -- only the relative cell structure matters. The frame must share the survey's
+#'   minimum age, reach at least its maximum age, share the level set of each \code{cells} column, and cover every
+#'   survey period (extra periods are dropped); these are compared over rows with \code{n > 0}. Population ages above
+#'   the survey maximum remain separate for demographic calculations, but their outcome predictions and reported
+#'   contributions are pooled into the survey's open maximum-age cell. Ages from the survey maximum through the
+#'   frame's terminal age must be gap-free in every period. The final age must be common across periods and is
+#'   treated as the terminal open age.
+#' @param mortality Optional data frame of annual death probabilities; supplying it switches the
+#'   attribution of survivor-cell change from sign attribution to residual migration (see Details).
+#'   Columns \code{period}, \code{age}, \code{prob}, plus optionally any subset of the \code{cells}
+#'   columns: probabilities are joined on the columns present and broadcast over the rest (e.g.
+#'   rates by age and sex apply to all age x sex x education cells). \code{prob} is the annual
+#'   death probability q(x) in [0, 1]; convert central death rates m(x) (e.g.
+#'   \code{mortality_us$death_rate}) via \code{prob = 1 - exp(-death_rate)}. The table must cover
+#'   every calendar year from the first survey period up to (but not including) the last and every
+#'   age from the shared minimum through the terminal age in \code{population}, or in
+#'   \code{stacked_data} when \code{population} is omitted, without gaps. The mortality table
+#'   must have the same terminal age; both final rows are interpreted as the same open group. Works with or without
+#'   \code{population}, but is most meaningful with it: on raw survey counts the expected deaths
+#'   round to zero for most small cells and the migration residual mostly reflects sampling noise.
 #'
 #' @return S3 object of class \code{social_change_decomp} with components:
 #'   \itemize{
@@ -57,6 +75,8 @@
 #'       component deltas (columns \code{draw}, \code{period}, \code{component}, \code{delta}, and
 #'       the cell covariates) from which any aggregate's confidence band can be computed; \code{NULL}
 #'       when \code{R = 0}.
+#'     \item \code{strategy}: how survivor-cell change was attributed -- \code{"sign attribution"}
+#'       (default) or \code{"residual migration"} (when \code{mortality} is supplied).
 #'   }
 #'
 #' @details
@@ -75,16 +95,15 @@
 #' non-zero count); this single threshold separates entering cohorts from survivors, and a
 #' mismatch across periods is an error.
 #'
-#' All waves must likewise share a common maximum age, and it is treated as an open
-#' interval (the demographic top-code, "T+"): the cell recorded at the maximum age pools
-#' everyone that old or older, so between two waves the survivor cohorts within one gap of
-#' the top are matched to that pool as a single group, and a cohort reaching the top stays
-#' there rather than aging out of the observed range (the model is never asked to predict
-#' past the maximum age). If the raw maxima are ragged (e.g. sparse oldest respondents),
-#' top-code each wave to a common maximum first, \code{age = pmin(age, T)}. In breakdowns
-#' by age the pooled group's contribution appears at the maximum age. For designs whose
-#' top age is a hard eligibility cutoff rather than a top-code, survivors leaving through
-#' the top of the window are still booked as mortality, now pooled at the maximum age.
+#' Survey waves must also share a common maximum outcome age T, interpreted as an open
+#' cell T+. If raw maxima are ragged, create a genuine common open group first with
+#' \code{age = pmin(age, T)}; a hard eligibility cutoff is not an open group and is unsupported.
+#' A supplied population frame can extend above T. Its single-age constituents remain separate
+#' for aging and mortality, while the outcome model receives \code{pmin(age, T)} and all reported
+#' contributions at ages T and above appear at T. Between waves, all constituents reaching T are
+#' matched to the period-2 T+ pool, so they do not age out of the observed range. The population
+#' frame's final age is itself treated as an open demographic group and must be common across
+#' periods. When mortality is supplied, its final age must represent the same open group.
 #'
 #' By default the survey itself supplies both the cell counts and the outcomes. Supplying
 #' \code{population} decouples these: the population frame supplies the cell counts \code{n}
@@ -93,18 +112,34 @@
 #' \code{observed_mean} remains the survey's own observed mean, so the two lines may diverge
 #' when the survey and population age structures differ.
 #'
-#' Within a cell, a survivor cohort that shrinks between periods loses people to mortality,
-#' while one that grows gains people through net in-migration. Only \emph{net} migration is
-#' recovered: gross out-migration is not separable from deaths (a survivor loss could be either),
-#' so it is folded into mortality and the reported out-migration is always zero. Each cell's net
-#' change is attributed to a single event type by sign: a shrinking cell records only mortality
-#' (any concurrent in-migration is invisible) and a growing cell records only net in-migration
-#' (any concurrent deaths are folded in), so offsetting flows within a cell cannot be seen. New
-#' cohorts (below the minimum age) attribute all their growth to coming-of-age;
-#' migration among entering cohorts is not modeled. On noisy survey cells this strategy relabels
-#' sampling fluctuation as in-migration and mortality, so the inferred in-migration is most
-#' meaningful when \code{population} supplies a true population frame, where growing cohorts reflect
-#' genuine net immigration rather than survey noise.
+#' Within each survivor cell the balancing identity is \code{n2 = n1 - deaths + net migration}:
+#' one equation, two unknowns. The supplied inputs determine the strategy recorded on the result:
+#' \itemize{
+#'   \item \strong{Sign attribution} (default; no mortality input): each survivor cell's net
+#'     change is routed by sign. A shrinking cell records only mortality (any concurrent
+#'     in-migration is invisible) and a growing cell records only net in-migration (any
+#'     concurrent deaths are folded in), so offsetting flows within a cell cannot be seen and
+#'     the reported out-migration is always zero. On noisy survey cells this relabels sampling
+#'     fluctuation as in-migration and mortality, so the inferred in-migration is most
+#'     meaningful when \code{population} supplies a true population frame, where growing cohorts
+#'     reflect genuine net immigration rather than survey noise.
+#'   \item \strong{Residual migration} (\code{mortality} supplied): deaths come from the supplied
+#'     probabilities. A survivor cell aged \code{a} in year \code{t} compounds annual survival
+#'     over the gap years, \code{qtilde = 1 - prod_j (1 - q(a + j, t + j))} for
+#'     \code{j = 0..gap-1} (lookup ages clamped at the mortality table's maximum age), and books
+#'     \code{deaths = round(n1 * qtilde)}; annual death events are assigned to the year implied
+#'     by that survival path. When \code{population} extends above the survey maximum, the
+#'     survey's open outcome group sums expected deaths over those separate constituent ages,
+#'     each compounding its own path; only the terminal constituent uses the terminal open-group
+#'     probability. Migration is then the
+#'     \emph{signed} residual \code{n2 - (n1 - deaths)}, so out-migration appears and a cell can
+#'     carry both deaths and in-migration. Approximations: deaths are computed on the
+#'     period-start count \code{n1} (within-gap mortality of migrants and entrants is ignored),
+#'     migrants take the receiving cell's mean outcome, and migration remains net per cell.
+#'     Bootstrap replicates (\code{R > 0}) hold the mortality input fixed.
+#' }
+#' Under either strategy, new cohorts (below the minimum age) attribute all their growth to
+#' coming-of-age; migration among entering cohorts is not modeled.
 #'
 #' \strong{Limitation}: Does not properly handle within-cell state transitions. Transition
 #' effects are absorbed into the intraindividual change component.
@@ -128,8 +163,10 @@
 #' @import data.table
 #' @export
 decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
-                                 tol = 0.05, weight = NULL, population = NULL, seed = NULL) {
+                                 tol = 0.05, weight = NULL, population = NULL,
+                                 mortality = NULL, seed = NULL) {
     checkmate::assert_data_frame(stacked_data)
+    checkmate::assert_data_frame(mortality, null.ok = TRUE)
     checkmate::assert_int(R, lower = 0)
     checkmate::assert_int(seed, null.ok = TRUE)
     checkmate::assert_subset(c("age", "period", "y", cells), names(stacked_data))
@@ -172,6 +209,38 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
     }
     stacked_data[, y_pred := predict_y(model, .SD)]
 
+    # The survey defines the outcome age support. Its shared maximum is an open
+    # outcome cell T+: population ages above T can inform demography, but their
+    # model predictions are clamped to T.
+    survey_nz <- stacked_data[n > 0]
+    survey_min_ages <- survey_nz[, .(min_age = min(age)), by = period]
+    if (uniqueN(survey_min_ages$min_age) > 1L) {
+        setorder(survey_min_ages, period)
+        stop(sprintf(
+            paste0(
+                "All survey waves must share a common minimum age, but it varies across periods:\n%s\n",
+                "Restrict each wave to a common minimum age before decomposing."
+            ),
+            paste(sprintf(
+                "  period %s: minimum age %g", survey_min_ages$period, survey_min_ages$min_age
+            ), collapse = "\n")
+        ))
+    }
+    survey_max_ages <- survey_nz[, .(max_age = max(age)), by = period]
+    if (uniqueN(survey_max_ages$max_age) > 1L) {
+        setorder(survey_max_ages, period)
+        stop(sprintf(
+            paste0(
+                "All survey waves must share a common maximum age, but it varies across periods:\n%s\n",
+                "Top-code each wave to a common maximum age before decomposing."
+            ),
+            paste(sprintf(
+                "  period %s: maximum age %g", survey_max_ages$period, survey_max_ages$max_age
+            ), collapse = "\n")
+        ))
+    }
+    outcome_top_age <- survey_max_ages$max_age[1L]
+
     # The population frame supplies the cell counts n that drive event derivation
     # and weight the modeled mean. By default it is the survey itself. When a
     # `population` table is supplied it replaces the survey counts: the survey
@@ -185,8 +254,8 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
         checkmate::assert_numeric(population$age, any.missing = FALSE, .var.name = "population$age")
         checkmate::assert_numeric(population$period, any.missing = FALSE, .var.name = "population$period")
 
-        # Frame and survey must share structure
-        survey_nz <- stacked_data[n > 0]
+        # Frame and survey must share structure. The population can extend above
+        # the survey's open outcome age, but cannot end below it.
         pop_nz <- population[n > 0]
 
         if (min(survey_nz$age) != min(pop_nz$age)) {
@@ -195,10 +264,13 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
                 min(survey_nz$age), min(pop_nz$age)
             ))
         }
-        if (max(survey_nz$age) != max(pop_nz$age)) {
+        if (max(pop_nz$age) < outcome_top_age) {
             stop(sprintf(
-                "Survey and population must share a maximum age, but it is %g for the survey and %g for the population.",
-                max(survey_nz$age), max(pop_nz$age)
+                paste0(
+                    "Population must reach at least the survey's open maximum age %g, ",
+                    "but only reaches age %g."
+                ),
+                outcome_top_age, max(pop_nz$age)
             ))
         }
         # Per-column level sets, not unique combinations (the survey may be sparser).
@@ -223,9 +295,33 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
         }
         population <- population[period %in% survey_periods]
 
-        # counts must be whole numbers for the integer-based microsimulation
+        # Above the survey top-code, the population must provide a continuous
+        # single-age sequence through one terminal open age in every period.
+        pop_nz <- population[n > 0]
+        need_pop_ages <- seq(outcome_top_age, max(pop_nz$age))
+        required_ages <- CJ(period = survey_periods, age = need_pop_ages)
+        missing_ages <- required_ages[
+            !unique(pop_nz[, .(period, age)]), on = .(period, age)
+        ]
+        if (nrow(missing_ages) > 0L) {
+            show <- missing_ages[seq_len(min(.N, 5L))]
+            stop(sprintf(
+                paste0(
+                    "Population ages from the survey maximum through the terminal open age ",
+                    "must be gap-free in every period; missing %d period-age combination(s), e.g.:\n%s"
+                ),
+                nrow(missing_ages),
+                paste(sprintf("  period %g, age %g", show$period, show$age), collapse = "\n")
+            ))
+        }
+
+        # Counts must be whole numbers for the integer-based microsimulation.
+        # Predict on the survey outcome support: true ages above its top-code all
+        # receive the model prediction for the open outcome cell.
         population[, n := round(n)]
-        population[, y_pred := predict_y(model, .SD)]
+        prediction_data <- copy(population)
+        prediction_data[age > outcome_top_age, age := outcome_top_age]
+        population[, y_pred := predict_y(model, prediction_data)]
         frame <- population
     }
 
@@ -255,23 +351,28 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
     }
     min_age <- min_ages$min_age[1L]
 
-    # One maximum age too, shared by every wave: it is treated as an open interval
-    # "T+" (the demographic top-code), so align_periods() can pool the survivors
-    # reaching it. Ragged maxima would make the pool's membership period-dependent.
+    # The population frame's final age is its demographic open interval. It can
+    # exceed the survey's open outcome age, but must be stable across periods.
     max_ages <- frame[, .(max_age = max(age)), by = period]
     if (uniqueN(max_ages$max_age) > 1L) {
         setorder(max_ages, period)
         stop(sprintf(
             paste0(
-                "All waves must share a common maximum age, but it varies across periods:\n%s\n",
-                "Top-code each wave to a common maximum age before decomposing ",
-                "(e.g. age = pmin(age, %g)); the shared maximum is treated as an open interval."
+                "The population frame must share a common terminal age, but it varies across periods:\n%s\n",
+                "Pool each period to one common terminal open age before decomposing."
             ),
-            paste(sprintf("  period %s: maximum age %g", max_ages$period, max_ages$max_age), collapse = "\n"),
-            min(max_ages$max_age)
+            paste(sprintf("  period %s: maximum age %g", max_ages$period, max_ages$max_age), collapse = "\n")
         ))
     }
-    top_age <- max_ages$max_age[1L]
+    demographic_top_age <- max_ages$max_age[1L]
+
+    if (!is.null(mortality)) {
+        mortality <- prepare_mortality(
+            mortality, setdiff(cells, "age"), frame, periods, min_age,
+            demographic_top_age
+        )
+    }
+    strategy <- if (is.null(mortality)) "sign attribution" else "residual migration"
 
     # Model-fit diagnostic, always computed on the survey's own structure, so it stays
     # a meaningful check even when an external frame is used.
@@ -334,18 +435,18 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
         checkmate::assert_integerish(gap, lower = 1, .var.name = "period gap")
 
         # Align the two waves into one per-cell table with start/end counts n1/n2.
-        data <- align_periods(frame, periods, i_period, gap, cells, model, top_age)
+        data <- align_periods(frame, periods, i_period, gap, cells, model, outcome_top_age)
 
         # Derive the per-cell, four-type event table. Ages below min_age are
         # cohorts that entered during the gap; all others are survivors from the prior
-        # period. Emits coming-of-age, mortality, and net in-migration; out-migration
-        # is always 0 (see derive_events()).
-        data <- derive_events(data, min_age)
+        # period, reconciled to n2 by sign attribution or, with `mortality`, by
+        # residual migration (see derive_events()).
+        data <- derive_events(data, min_age, gap, mortality)
 
         # Event ordering is the stochastic step. Each replicate draws its own ordering
         # (paired with its own model refit), so cross-draw spread is combined
         # ordering + model uncertainty; the point estimate is the mean over orderings.
-        sim <- simulate_schedule(data, model, reps, gap, min_age, cells, top_age)
+        sim <- simulate_schedule(data, model, reps, gap, min_age, cells, outcome_top_age)
 
         change_record <- tag_cells(sim$point, data, cells)
         if (!is.null(sim$draws)) {
@@ -362,7 +463,10 @@ decompose_aggregated <- function(stacked_data, model, cells = c(), R = 0,
 
     draws_long <- if (!is.null(draws_record)) build_draws_long(draws_record, periods) else NULL
 
-    ret <- list(summary = summary, record = record, draws = draws_long, cells = cells)
+    ret <- list(
+        summary = summary, record = record, draws = draws_long, cells = cells,
+        strategy = strategy
+    )
     class(ret) <- c("social_change_decomp", "list")
     ret
 }
@@ -390,9 +494,10 @@ aggregate_to_cells <- function(stacked_data, cells, weight) {
 # absent from one wave). Carries the period-1 age/period and the predicted outcome
 # y, ready for derive_events() and the simulation loop.
 #
-# The shared maximum age T is an open interval "T+": the period-2 cell recorded at
-# T pools the survivors of period-1 ages T-gap..T, so the aging map is many-to-one
-# there. Those period-1 cells collapse into one open-group cell labeled T (n1
+# The survey maximum age T is an open outcome interval "T+". A population frame
+# can retain true ages above T; the period-2 pool combines all ages T and above,
+# while period-1 constituents from T-gap upward map to it. Those rows collapse
+# into one open-group cell labeled T (n1
 # summed) whose n2 is the period-2 pool; below T-gap the map is one-to-one and the
 # shift-back alignment applies. The open cell's tick-0 y is the n-weighted mean of
 # its constituents' predictions -- not the prediction at T -- so the transition's
@@ -409,7 +514,9 @@ align_periods <- function(frame, periods, i_period, gap, cells, model, top_age) 
     open <- copy(data1[age >= top_age - gap])
     data1[age >= top_age - gap, age := top_age]
     data1 <- data1[, .(n1 = sum(n), y = stats::weighted.mean(y_pred, n)), by = cells]
-    data2[age < top_age, age := age - gap] # the pool recorded at T stays at T
+    data2[age >= top_age, age := top_age]
+    data2[age < top_age, age := age - gap] # all population ages at T or above pool at T
+    data2 <- data2[, .(n = sum(n)), by = cells]
     setnames(data2, "n", "n2")
     data <- merge(data1, data2, all = TRUE, by = cells)
     data[, n1 := nafill(n1, fill = 0)]
@@ -427,16 +534,171 @@ align_periods <- function(frame, periods, i_period, gap, cells, model, top_age) 
     data
 }
 
+# Validate the `mortality` input against the data and return the prepared lookup
+# table: columns period, age, any cell columns (coerced to character), prob;
+# keyed for the joins in gap_death_prob(). `cells` here excludes "age".
+prepare_mortality <- function(mortality, cells, frame, periods, min_age, top_age) {
+    mortality <- as.data.table(mortality)
+    checkmate::assert_subset(c("period", "age", "prob"), names(mortality))
+    mort_cells <- setdiff(names(mortality), c("period", "age", "prob"))
+    stray <- setdiff(mort_cells, cells)
+    if (length(stray) > 0) {
+        stop("`mortality` has column(s) not in `cells`: ", paste(stray, collapse = ", "), ".")
+    }
+    checkmate::assert_numeric(mortality$prob, lower = 0, upper = 1, any.missing = FALSE, .var.name = "mortality$prob")
+    checkmate::assert_integerish(mortality$age, any.missing = FALSE, .var.name = "mortality$age")
+    checkmate::assert_integerish(mortality$period, any.missing = FALSE, .var.name = "mortality$period")
+
+    mortality <- mortality[, c("period", "age", mort_cells, "prob"), with = FALSE]
+    # character cell columns on both join sides (the frame's may be factor or character)
+    for (col in mort_cells) set(mortality, NULL, col, as.character(mortality[[col]]))
+
+    key_cols <- c("period", "age", mort_cells)
+    if (anyDuplicated(mortality, by = key_cols) > 0) {
+        stop("`mortality` has duplicate (", paste(key_cols, collapse = ", "), ") rows.")
+    }
+
+    # Broadcast direction: every level observed in the data must have a rate; the
+    # mortality frame may carry extra levels.
+    for (col in mort_cells) {
+        missing_levels <- setdiff(unique(as.character(frame[[col]])), unique(mortality[[col]]))
+        if (length(missing_levels) > 0) {
+            stop(sprintf(
+                "`mortality` is missing level(s) of cell column '%s': %s.",
+                col, paste(sort(missing_levels), collapse = ", ")
+            ))
+        }
+    }
+
+    # Coverage: the compounding steps through every calendar year in
+    # [min(periods), max(periods)) -- not just survey years -- at ages min_age..top_age.
+    # The mortality and population frames must end at the same terminal open age.
+    max_table_age <- max(mortality$age)
+    if (max_table_age != top_age) {
+        stop(sprintf(
+            paste0(
+                "`mortality` and the data supplying cell counts must share one terminal open age, ",
+                "but they end at %g and %g, respectively."
+            ),
+            max_table_age, top_age
+        ))
+    }
+    need_years <- seq(min(periods), max(periods) - 1)
+    need_ages <- seq(min_age, max_table_age)
+    if (length(mort_cells) > 0) {
+        # Require every joint cell combination in the population frame. Checking
+        # marginal levels alone misses absent combinations such as one sex x education pair.
+        combos <- unique(frame[, mort_cells, with = FALSE])
+        for (col in mort_cells) set(combos, NULL, col, as.character(combos[[col]]))
+        required <- combos[, CJ(period = need_years, age = need_ages), by = mort_cells]
+    } else {
+        required <- CJ(period = need_years, age = need_ages)
+    }
+    missing <- required[!mortality, on = key_cols]
+    if (nrow(missing) > 0) {
+        show <- missing[seq_len(min(.N, 5L))]
+        stop(sprintf(
+            paste0(
+                "`mortality` must cover every calendar year %g-%g for every age %g-%g, ",
+                "but %d combination(s) are missing, e.g.:\n%s"
+            ),
+            min(need_years), max(need_years), min_age, max_table_age, nrow(missing),
+            paste(sprintf("  period %g, age %g", show$period, show$age), collapse = "\n")
+        ))
+    }
+
+    setkeyv(mortality, key_cols)
+    mortality
+}
+
+# Per-year unconditional death probabilities over the gap for each row of `rows`.
+# A person aged a in year t is aged a + j in year t + j. Column j is survival
+# through prior years times q(a + j, t + j). Lookup ages are clamped at the
+# mortality table's maximum age.
+gap_death_profile <- function(rows, gap, mortality) {
+    mort_cells <- setdiff(names(mortality), c("period", "age", "prob"))
+    max_table_age <- max(mortality$age)
+    n_rows <- nrow(rows)
+    idx <- rep(seq_len(n_rows), gap) # evaluated outside `[` so the n column can't capture it
+    lk <- rows[idx, c(mort_cells, "age", "period"), with = FALSE]
+    for (col in mort_cells) set(lk, NULL, col, as.character(lk[[col]]))
+    offset <- rep(seq_len(gap) - 1L, each = n_rows)
+    set(lk, NULL, "age", pmin(lk$age + offset, max_table_age))
+    set(lk, NULL, "period", lk$period + offset)
+    prob <- mortality[lk, on = c("period", "age", mort_cells), prob]
+    if (anyNA(prob)) {
+        miss <- unique(lk[is.na(prob)])
+        stop(sprintf(
+            "No mortality probability for %d looked-up combination(s), e.g. period %g, age %g.",
+            nrow(miss), miss$period[1L], miss$age[1L]
+        ))
+    }
+
+    out <- matrix(0, nrow = n_rows, ncol = gap)
+    surv <- rep(1, n_rows)
+    for (j in seq_len(gap)) {
+        qj <- prob[((j - 1L) * n_rows + 1L):(j * n_rows)]
+        out[, j] <- surv * qj
+        surv <- surv * (1 - qj)
+    }
+    out
+}
+
+# Death probability compounded over the complete gap.
+gap_death_prob <- function(rows, gap, mortality) {
+    rowSums(gap_death_profile(rows, gap, mortality))
+}
+
+# Convert expected deaths by year to integer event counts. Rounding cumulative
+# deaths keeps all annual counts nonnegative and preserves round(total expected deaths).
+integerize_death_profile <- function(expected) {
+    cumulative <- expected
+    if (ncol(cumulative) > 1L) {
+        for (j in 2:ncol(cumulative)) cumulative[, j] <- cumulative[, j] + cumulative[, j - 1L]
+    }
+    cumulative <- round(cumulative)
+    previous <- cbind(0, cumulative[, -ncol(cumulative), drop = FALSE])
+    cumulative - previous
+}
+
 # Add the four per-cell event-count columns to a period-aligned cell table
-# (columns age, n1, n2). New cohorts (age < min_age) enter via coming-of-age;
-# survivor cells reconcile n1 -> n2 via mortality (shrink) or net in-migration
-# (grow). Out-migration is folded into mortality and stays 0 (see @details).
-derive_events <- function(data, min_age) {
+# (columns age, n1, n2). New cohorts (age < min_age) enter via coming-of-age.
+# Survivor cells reconcile n1 -> n2 by one of two strategies:
+#   - sign attribution (mortality = NULL): shrinkage is mortality, growth is net
+#     in-migration; out-migration is folded into mortality and stays 0.
+#   - residual migration (mortality = prepared probability table): deaths are
+#     round(n1 * qtilde) with qtilde compounded over the gap (gap_death_prob);
+#     the open-group cell at the top age instead sums expected deaths over its
+#     pre-merge constituents, each compounding its own survival path. Migration
+#     is the signed residual n2 - (n1 - deaths), so a cell can carry both deaths
+#     and in-migration, and n2 = n1 - deaths + in - out holds exactly.
+derive_events <- function(data, min_age, gap, mortality = NULL) {
     is_new <- data$age < min_age
     data[, coming_of_age := ifelse(is_new, pmax(0, n2 - n1), 0)]
-    data[, mortality := ifelse(is_new, 0, pmax(0, n1 - n2))]
-    data[, inmigration := ifelse(is_new, 0, pmax(0, n2 - n1))]
-    data[, outmigration := 0]
+    if (is.null(mortality)) {
+        data[, mortality := ifelse(is_new, 0, pmax(0, n1 - n2))]
+        data[, inmigration := ifelse(is_new, 0, pmax(0, n2 - n1))]
+        data[, outmigration := 0]
+        return(data)
+    }
+    expected <- matrix(0, nrow = nrow(data), ncol = gap)
+    surv <- which(!is_new)
+    if (length(surv) > 0L) {
+        expected[surv, ] <- gap_death_profile(data[surv], gap, mortality) * data$n1[surv]
+    }
+    oc <- attr(data, "open_constituents")
+    if (nrow(oc) > 0L) {
+        oc_expected <- gap_death_profile(oc, gap, mortality) * oc$n
+        oc_expected <- rowsum(oc_expected, oc$cell, reorder = FALSE)
+        expected[as.integer(rownames(oc_expected)), ] <- oc_expected
+    }
+    mortality_by_band <- integerize_death_profile(expected)
+    deaths <- rowSums(mortality_by_band)
+    net <- data$n2 - (data$n1 - deaths)
+    set(data, NULL, "mortality", deaths)
+    data[, inmigration := ifelse(is_new, 0, pmax(0, net))]
+    data[, outmigration := ifelse(is_new, 0, pmax(0, -net))]
+    setattr(data, "mortality_by_band", mortality_by_band)
     data
 }
 
@@ -447,8 +709,8 @@ derive_events <- function(data, min_age) {
 # The gap splits into `gap` crossing-year bands of width 1/gap. A coming-of-age cell
 # (aligned age a < min_age) crosses min_age exactly (min_age - a) years in, so its
 # entrants belong to band b = min_age - a; the band's interval ((b-1)/gap, b/gap] is
-# their entry window. Mortality and in-migration span the whole gap, so they are split
-# as evenly as possible across the bands (which event lands in which band is random).
+# their entry window. Supplied annual probabilities place mortality in its year;
+# sign-attributed mortality and migration span the full gap and are split across bands.
 #
 #   Example — gap = 2, min_age = 20:
 #     aligned age 19 (age 21 in period 2): band 1, window (0,   0.5]  (crosses in year 1)
@@ -459,28 +721,33 @@ derive_events <- function(data, min_age) {
 # at random. This keeps the random interleaving of births/deaths/migration (the
 # demographically meaningful part) and drops the Monte-Carlo noise in the exact sub-gap
 # timing. Banding (rather than one global grid) lets entrants concentrated in a single
-# year fill that year's slots without colliding with the rest of the gap. outmigration is
-# always 0, so it never enters the pool.
+# year fill that year's slots without colliding with the rest of the gap. Out-migration
+# (zero under sign attribution) joins the same whole-gap pool.
 schedule_events <- function(data, min_age, gap) {
     coa <- data$coming_of_age
     n_c <- nrow(data)
     nb <- max(1L, as.integer(round(gap))) # one band per crossing-year of the gap
 
-    # Whole-gap events (out-migration is always 0), each a (type, cell) pair, assigned to
-    # bands in round-robin over a random permutation: even counts per band, random membership.
+    # Under residual migration, annual probabilities assign mortality to its
+    # calendar-year band. Under sign attribution its timing remains unknown and
+    # joins the whole-gap pool. Migration timing is always unknown.
+    mortality_by_band <- attr(data, "mortality_by_band")
+    fixed_mortality <- !is.null(mortality_by_band)
     free_type <- c(
-        rep.int("mortality", sum(data$mortality)),
-        rep.int("inmigration", sum(data$inmigration))
+        if (!fixed_mortality) rep.int("mortality", sum(data$mortality)),
+        rep.int("inmigration", sum(data$inmigration)),
+        rep.int("outmigration", sum(data$outmigration))
     )
     free_cell <- c(
-        rep.int(seq_len(n_c), data$mortality),
-        rep.int(seq_len(n_c), data$inmigration)
+        if (!fixed_mortality) rep.int(seq_len(n_c), data$mortality),
+        rep.int(seq_len(n_c), data$inmigration),
+        rep.int(seq_len(n_c), data$outmigration)
     )
     M <- length(free_type)
     free_band <- integer(M)
     if (M > 0L) free_band[sample.int(M)] <- ((seq_len(M) - 1L) %% nb) + 1L
 
-    n_ev <- sum(coa) + M
+    n_ev <- sum(coa) + M + if (fixed_mortality) sum(mortality_by_band) else 0L
     if (n_ev == 0L) {
         return(list(events_tick = numeric(0), ev_type = character(0), ev_cell = integer(0)))
     }
@@ -493,8 +760,17 @@ schedule_events <- function(data, min_age, gap) {
     for (b in seq_len(nb)) {
         coa_cells <- which(coa > 0L & coa_band == b)
         fidx <- which(free_band == b)
-        b_type <- c(rep.int("coming_of_age", sum(coa[coa_cells])), free_type[fidx])
-        b_cell <- c(rep.int(coa_cells, coa[coa_cells]), free_cell[fidx])
+        mort_cells <- if (fixed_mortality) which(mortality_by_band[, b] > 0L) else integer(0)
+        b_type <- c(
+            rep.int("coming_of_age", sum(coa[coa_cells])),
+            rep.int("mortality", if (fixed_mortality) sum(mortality_by_band[, b]) else 0L),
+            free_type[fidx]
+        )
+        b_cell <- c(
+            rep.int(coa_cells, coa[coa_cells]),
+            if (fixed_mortality) rep.int(mort_cells, mortality_by_band[mort_cells, b]),
+            free_cell[fidx]
+        )
         nbk <- length(b_type)
         if (nbk == 0L) next
 
@@ -686,7 +962,9 @@ simulate_schedule <- function(data, model, reps, gap, min_age, cells, top_age) {
         # per replicate so the draws start from each refit's own weighted mean.
         oc <- attr(data, "open_constituents")
         if (nrow(oc) > 0L) {
-            y_const <- replicate_predict(reps, oc) # n_const x R
+            oc_predict <- copy(oc)
+            oc_predict[age > top_age, age := top_age]
+            y_const <- replicate_predict(reps, oc_predict) # n_const x R
             y_start[sort(unique(oc$cell)), ] <-
                 rowsum(y_const * oc$n, oc$cell) / as.vector(rowsum(oc$n, oc$cell))
         }

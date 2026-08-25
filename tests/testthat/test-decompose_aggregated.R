@@ -24,7 +24,8 @@ test_that("decompose_aggregated recovers Scenario 1 (perfect recovery)", {
   # ASSERT - Structure
   expect_s3_class(decomp, "social_change_decomp")
   expect_true(is.list(decomp))
-  expect_named(decomp, c("summary", "record", "draws", "cells"))
+  expect_named(decomp, c("summary", "record", "draws", "cells", "strategy"))
+  expect_equal(decomp$strategy, "sign attribution")
   expect_null(decomp$draws) # NULL without bootstrap (R = 0)
   expect_s3_class(decomp$summary, "data.table")
   expect_true(is.list(decomp$record))

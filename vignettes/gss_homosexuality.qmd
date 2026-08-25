@@ -56,7 +56,7 @@ plot_gam_surface(splinemodel)
 
 The `cr_ic()` function implements four methods for separating intracohort change (IC) from cohort replacement (CR): algebraic decomposition (AD), linear decomposition (LD), and two model-based improvements (AD+ and Model). For a detailed explanation of each method, including a replication of Firebaugh (1989), see the [Replications: Firebaugh](replicating_firebaugh.html) vignette.
 
-Acceptance rose by about 43 percentage points between 1973 and 2018 (from 0.19 to 0.62). Using the full panel, the two model-based methods both attribute the larger share to intracohort change, though they differ on the exact split: AD+ gives roughly 63% intracohort change and 37% cohort replacement, while the Model method gives roughly 56% and 44%.
+Acceptance rose by about 37 percentage points between 1973 and 2016 (from 0.19 to 0.56). Using the full panel, the two model-based methods both attribute the larger share to intracohort change, though they differ on the exact split: AD+ gives roughly 63% intracohort change and 37% cohort replacement, while the Model method gives roughly 55% and 45%.
 
 ```{r}
 # complete period
@@ -68,7 +68,7 @@ form <- homosex ~ as.factor(year) + as.factor(cohort)
 plot(res)
 ```
 
-When only the first and last survey years are used, the balance shifts slightly toward cohort replacement (~54% CR, ~46% IC). This illustrates how the choice of time points can affect decomposition results, and why the model-based AD+ and Model methods are preferred over the simpler AD.
+When only the first and last survey years are used, the model-based splits become nearly even: AD+ gives about 49% cohort replacement and 51% intracohort change, while the Model method gives 48% and 52%. This illustrates how the choice of time points can affect the decomposition and why the model-based methods are preferred over the simpler AD.
 
 ```{r}
 # only beginning and end year (also compare to Baunach 2011)
@@ -81,12 +81,10 @@ form <- homosex ~ as.factor(year) + splines::bs(cohort, 10)
 The `decompose_aggregated()` function separates change in the aggregate outcome into intraindividual change (attitude shifts within respondents already in the population) and population turnover (mortality and coming-of-age effects). We rename `year` and `homosex` to the column names the function expects, then pass the full dataset directly.
 
 ```{r}
-# decompose_aggregated() requires every wave to share a common minimum and
-# maximum age. The 2014 and 2016 waves sampled no one under 19 and 21
-# respectively, so we restrict to age >= 21; the earliest waves have no
-# respondents past 81, so we top-code age at 81. The shared maximum age is
-# treated as an open interval ("81+"): survivors reaching it stay there instead
-# of aging out of the observed range.
+# decompose_aggregated() requires every survey wave to share a common outcome-age
+# range. The 2014 and 2016 waves sampled no one under 19 and 21, respectively,
+# so we restrict to age >= 21. We pool every respondent aged 81 or older into a
+# genuine open outcome cell ("81+").
 gss_all <- gss_homosex[age >= 21,
     .(age = pmin(age, 81), period = year, sex, y = homosex, wtssall)]
 ```
@@ -109,7 +107,7 @@ print(result, detailed = FALSE)
 
 This decomposition compares cells across years, attributing shrinking cohorts to mortality and the youngest cohorts to coming-of-age. Every change in a cell's size must be attributed to *some* demographic event — the decomposition never leaves a residual — so a survivor cohort that *grows* between two waves is credited to net in-migration. With only the survey to work from, this in-migration term (about 0.005, or 1% of the total change) largely reflects sampling fluctuation in cell sizes across waves rather than genuine immigration. It becomes meaningful only once a true population frame is supplied (see below), where a growing cohort really does signal net immigration.
 
-Of the roughly 37 percentage point rise in acceptance between 1973 and 2016, the decomposition attributes about 52% to intraindividual change and 48% to population turnover (mortality of older, less accepting cohorts; coming-of-age of younger, more accepting ones; and a small net in-migration term). This is close to, though slightly above, the range spanned by the CR-IC model-based methods above (37–44% turnover).
+Of the roughly 37 percentage point rise in acceptance between 1973 and 2016, the decomposition attributes about 52% to intraindividual change and 48% to population turnover (mortality of older, less accepting cohorts; coming-of-age of younger, more accepting ones; and a small net in-migration term). This is close to the range spanned by the CR-IC model-based methods above (37–45% turnover).
 
 ```{r}
 plot(result)
@@ -155,8 +153,8 @@ data(wpp_us)
 
 survey_years <- sort(unique(gss_all$period))
 pop <- wpp_us[period %in% survey_years]
-# pool the frame's counts at 81 to match the survey's open interval ("81+")
-pop <- pop[, .(n = sum(n)), by = .(period, age = pmin(age, 81), sex)]
+# Keep ages 81--88 and the terminal 89+ group separate for demographic
+# calculations. Outcome predictions for all these ages use the survey's 81+ cell.
 scale_total <- round(mean(gss_all[, .N, by = period]$N))
 pop[, n := n / sum(n) * scale_total, by = period]
 
@@ -177,6 +175,34 @@ plot(result, covariate = "sex")
 ```
 
 The mortality contribution, which the survey cells had loaded almost entirely onto men (−0.009 for women vs 0.095 for men), now splits into demographically plausible shares (0.031 vs 0.042) once real population counts drive the events — the male edge is consistent with men's excess mortality. The large offsetting in-migration terms collapse to essentially zero for both sexes (0.003 vs 0.001). The stable quantities barely move, confirming that the earlier male-mortality / female-migration pattern was due to small cell counts.
+
+### Adding mortality data
+
+Even with a population frame, the split of each survivor cell's change between mortality and migration rests on a sign heuristic: per cell the balancing identity is $n_2 = n_1 - \text{deaths} + \text{net migration}$ — one equation, two unknowns — and the default closes it by routing the whole net change to mortality if the cell shrank and to in-migration if it grew. External mortality data closes the identity directly: deaths come from real death probabilities, and migration becomes the *signed residual*, so out-migration can appear for the first time.
+
+The package ships `mortality_us`, HMD central death rates $m(x)$ by year, age, and sex. The `mortality` argument expects annual death *probabilities* $q(x)$, so we convert with $q = 1 - e^{-m}$ and rename `year` to `period`; the `sex` column matches `cells = "sex"`. Both WPP and HMD end in a matching 89+ open group. The decomposition retains WPP's true ages 81--89 for mortality, while clamping their outcome predictions to the survey's 81+ cell.
+
+```{r}
+data(mortality_us)
+mort <- mortality_us[, .(period = year, age, sex, prob = 1 - exp(-death_rate))]
+
+set.seed(42)
+result <- decompose_aggregated(gss_all, model, cells = "sex",
+                               weight = "wtssall", population = pop,
+                               mortality = mort)
+print(result, detailed = FALSE)
+plot(result)
+```
+
+The headline split is stable, but annual death timing causes small compensating changes across the path-dependent components. Mortality falls from 0.072 under sign attribution to 0.043 with HMD probabilities, while a new out-migration term contributes 0.031. The WPP cohorts shrink across waves by more than HMD survival accounts for, so residual migration now records the difference instead of folding all shrinkage into mortality.
+
+That out-migration term is not a direct migration estimate. It combines genuine net migration with inconsistency between WPP cohort counts and HMD survival. About 0.007 of its 0.031 contribution sits in the survey's 81+ outcome cell, but deaths there are now calculated from WPP's constituent ages 81--89 rather than from an exact-age-81 rate. The remaining residual cannot be separated into migration and source inconsistency. With that qualification, supplied mortality probabilities attribute about 0.043, or 11% of total attitude change, to mortality itself.
+
+```{r}
+print(result, detailed = FALSE, covariate = "sex")
+```
+
+The mortality contribution is nearly even by sex (0.022 women and 0.021 men). Out-migration contributes more among men (0.022 versus 0.008), but this remains a residual difference rather than an identified sex difference in emigration.
 
 ### Standard errors
 
