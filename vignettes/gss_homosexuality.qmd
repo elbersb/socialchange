@@ -293,7 +293,14 @@ Proposed mechanisms for this diffusion include gay-rights movement campaigns [@e
 
 From 2021 through 2024, modeled acceptance fell by 0.056. Intraindividual change contributed −0.065, while population turnover contributed +0.009. This resembles the early period: positive turnover partly offsets negative intraindividual change.
 
-This short reversal does not establish a new sociological period. It contains only two transitions, and its boundary follows the observed 2021 peak. The 2021 round had no in-person interviews and later rounds used mixed modes. We therefore also compare 2022 and 2024, which included the same four mode categories.
+The decomposition adds a demographic qualification to accounts of recent anti-LGBTQ+ backlash. Population turnover continued to move acceptance upward after 2021, but modeled change within the surviving population moved it downward by a larger amount. Once coming-of-age, mortality, and net migration are accounted for, the most plausible substantive interpretation is that people already in the adult population became less accepting. A panel would observe such changes directly; this decomposition supports the inference indirectly through aggregate change and demographic accounting.
+
+The timing coincides with organized countermobilization. Jones [-@jones2024] identifies 543 state anti-LGBTIQ+ bills introduced from 2018 through 2022, commonly framed through parental, religious, and women's rights. McDowell and Ward [-@mcdowellward2023] show how evangelical churchgoers framed conservative Christians as marginalized to justify religious exemptions that permit denial of services to LGBTQ+ people. These studies establish a relevant political context, but they do not show that countermobilization caused the change estimated here. Much of the recent campaign targeted transgender people and youth, so its connection to attitudes toward homosexuality remains indirect.
+
+This short reversal does not establish a new sociological period. It contains only two transitions, and its boundary follows the observed 2021 peak. Survey modes also changed after 2021. A sensitivity check using the comparable 2022 and 2024 waves finds declines within each mode and after standardizing the mode distribution. Changing mode composition therefore does not explain the 2022--2024 decline, although other measurement effects remain possible.
+
+::: {.callout-note collapse="true" title="Mode-sensitivity check"}
+The 2021 round had no in-person interviews. The 2022 and 2024 rounds included the same four mode categories, which permits a more direct comparison.
 
 ```{r}
 mode_comparison <- gss_homosex[
@@ -327,7 +334,8 @@ mode_table <- rbind(
 knitr::kable(mode_table, digits = 3)
 ```
 
-Acceptance declined within every interview mode. Holding the mode distribution at its 2022 composition increases the estimated decline from 0.062 to 0.082. Changing mode composition therefore does not explain the 2022--2024 decline. Mode is a measurement condition rather than a demographic event, so it is not passed to the decomposition as a population cell.
+Acceptance declined within every interview mode. Holding the mode distribution at its 2022 composition increases the estimated decline from 0.062 to 0.082. Mode is a measurement condition rather than a demographic event, so it is not passed to the decomposition as a population cell.
+:::
 
 ### Contributions by sex
 
