@@ -56,7 +56,7 @@
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">check</span><span class="op">(</span><span class="op">)</span>         <span class="co"># check package</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install</span><span class="op">(</span><span class="op">)</span>       <span class="co"># install locally</span></span>
 <span><span class="fu">pkgdown</span><span class="fu">::</span><span class="fu"><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">build_site</a></span><span class="op">(</span><span class="op">)</span>     <span class="co"># build docs website</span></span></code></pre></div>
-<p>Use a timeout of at least 600 seconds for <code>devtools::check()</code> and Quarto renders. Vignette builds can exceed 300 seconds with little intermediate output.</p>
+<p>Use a timeout of at least 600 seconds for <code>devtools::check()</code> and Quarto renders. Vignette builds can exceed 300 seconds with little intermediate output. Direct Quarto renders read installed package data, so reinstall after changing an <code>.rda</code> file. Run a single-vignette render from <code>vignettes/</code> (for example, <code>cd vignettes &amp;&amp; quarto render gss_homosexuality.qmd --to html</code>); passing <code>vignettes/file.qmd</code> from the root fails after knitting because Quarto looks for the source in the root.</p>
 </div>
 <div class="section level2">
 <h2 id="architecture">Architecture<a class="anchor" aria-label="anchor" href="#architecture"></a></h2>
@@ -81,7 +81,7 @@
 <ul><li>
 <code>gss_rac.rda</code> — GSS racial attitudes, white Americans (1972–1984)</li>
 <li>
-<code>gss_homosex.rda</code> — GSS attitudes toward homosexual sex (1973–2024)</li>
+<code>gss_homosex.rda</code> — GSS attitudes toward homosexual sex (1973–2024). Young-adult (ages 18–24) cohort means start with the 1949 cohort; earlier cohorts reached age 24 before the GSS series.</li>
 <li>
 <code>eu_membership.rda</code> — EU entry/exit dates</li>
 <li>

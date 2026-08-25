@@ -12,22 +12,22 @@ turnover.
 > **Key findings**
 >
 > - Acceptance increased by about 42 percentage points. The model
->   attributes about 59% of this rise to modeled change within the
+>   attributes about 58% of this rise to modeled change within the
 >   surviving adult population (**intraindividual change**). The other
->   41% came from changes in who made up the population (**population
+>   42% came from changes in who made up the population (**population
 >   turnover**): more accepting younger people entered adulthood, less
 >   accepting older people died, and the population changed through
 >   migration.
 > - From 1973 through 1988, people already in the adult population
 >   became less accepting. Their opinion change pushed acceptance down,
 >   while the entry of younger people and the death of older people
->   limited the decline. From 1988 through 2018, people already in the
+>   limited the decline. From 1988 through 2021, people already in the
 >   adult population became more accepting. This broad opinion change
 >   became the main source of rising acceptance, while generational
 >   replacement continued to add to it.
 > - From 2021 through 2024, intraindividual change was negative while
->   turnover remained positive. Survey-mode changes prevent a clear
->   sociological interpretation of this short reversal.
+>   turnover remained positive. This provisional reversal forms a short
+>   third phase.
 > - The broad split is stable across the demographic inputs used below.
 >   The allocation within turnover is not stable: population estimates
 >   and mortality probabilities improve the attribution of mortality and
@@ -146,6 +146,13 @@ era and to the HIV/AIDS crisis and conservative climate of the 1980s.
 Neither this surface nor an APC model can identify that socialization
 explanation from age, period, and cohort patterns alone.
 
+The figure below provides the closest direct comparison available in the
+GSS: weighted cohort means at ages 18–24. Because the series starts in
+1973, it cannot show most of the 1942–1951 cohorts during young
+adulthood. The means also combine cohort and survey-period differences.
+
+![](gss_homosexuality_files/figure-html/unnamed-chunk-5-1.png)
+
 ## What the decomposition measures
 
 [`decompose_aggregated()`](https://elbersb.github.io/socialchange/reference/decompose_aggregated.md)
@@ -193,15 +200,19 @@ gss_all <- gss_homosex[,
 ```
 
 We model acceptance as an additive smooth function of age and period,
-with a term for sex. The outcome model supplies predicted acceptance for
-each cell; it does not determine the number of people in each cell.
+with a term for sex. We allow up to 15 basis functions for each smooth.
+This flexibility captures the sharp change in the final waves without
+materially changing the full-period split. The outcome model supplies
+predicted acceptance for each cell; it does not determine the number of
+people in each cell.
 
 ``` r
 
 model <- mgcv::gam(
-  y ~ s(age) + s(period) + sex,
+  y ~ s(age, k = 15) + s(period, k = 15) + sex,
   data = gss_all,
-  weights = wtssps
+  weights = wtssps,
+  method = "REML"
 )
 ```
 
@@ -274,14 +285,14 @@ print(survey_result, detailed = FALSE)
 #> Strategy: sign attribution
 #> 
 #>                 Component  Value Percent
-#>  At initial (modeled)      0.210        
-#>  At end (modeled)          0.638        
-#>  Total change              0.429   100.0
-#>  - Intraindividual change  0.247    57.6
-#>  - Population turnover     0.182    42.4
-#>    - Mortality             0.079    18.4
-#>    - Coming-of-age         0.051    11.8
-#>    - In-migration          0.052    12.1
+#>  At initial (modeled)      0.202        
+#>  At end (modeled)          0.622        
+#>  Total change              0.420   100.0
+#>  - Intraindividual change  0.237    56.6
+#>  - Population turnover     0.182    43.4
+#>    - Mortality             0.079    18.8
+#>    - Coming-of-age         0.051    12.0
+#>    - In-migration          0.053    12.6
 ```
 
 Survey cell sizes fluctuate across waves. The function must route that
@@ -305,13 +316,13 @@ print(population_result, detailed = FALSE)
 #> Strategy: sign attribution
 #> 
 #>                 Component  Value Percent
-#>  At initial (modeled)      0.208        
-#>  At end (modeled)          0.633        
-#>  Total change              0.426   100.0
-#>  - Intraindividual change  0.251    59.0
-#>  - Population turnover     0.175    41.0
-#>    - Mortality             0.089    20.8
-#>    - Coming-of-age         0.086    20.1
+#>  At initial (modeled)      0.200        
+#>  At end (modeled)          0.617        
+#>  Total change              0.417   100.0
+#>  - Intraindividual change  0.242    58.2
+#>  - Population turnover     0.174    41.8
+#>    - Mortality             0.089    21.3
+#>    - Coming-of-age         0.085    20.5
 #>    - In-migration          0.000     0.0
 ```
 
@@ -337,14 +348,14 @@ print(mortality_result, detailed = FALSE)
 #> Strategy: residual migration
 #> 
 #>                 Component  Value Percent
-#>  At initial (modeled)      0.208        
-#>  At end (modeled)          0.633        
-#>  Total change              0.426   100.0
-#>  - Intraindividual change  0.251    59.0
-#>  - Population turnover     0.175    41.0
-#>    - Mortality             0.053    12.4
-#>    - Out-migration         0.038     8.9
-#>    - Coming-of-age         0.086    20.2
+#>  At initial (modeled)      0.200        
+#>  At end (modeled)          0.617        
+#>  Total change              0.417   100.0
+#>  - Intraindividual change  0.242    58.1
+#>  - Population turnover     0.175    41.9
+#>    - Mortality             0.053    12.8
+#>    - Out-migration         0.038     9.0
+#>    - Coming-of-age         0.085    20.5
 #>    - In-migration         -0.002    -0.4
 ```
 
@@ -389,14 +400,14 @@ knitr::kable(comparison, digits = 3)
 
 | Specification | Total change | Intraindividual | Turnover | Mortality | Coming-of-age | In-migration | Out-migration |
 |:---|---:|---:|---:|---:|---:|---:|---:|
-| Survey counts | 0.429 | 0.247 | 0.182 | 0.079 | 0.051 | 0.052 | 0.000 |
-| Population frame | 0.426 | 0.251 | 0.175 | 0.089 | 0.086 | 0.000 | 0.000 |
-| Population frame + mortality | 0.426 | 0.251 | 0.175 | 0.053 | 0.086 | -0.002 | 0.038 |
+| Survey counts | 0.420 | 0.237 | 0.182 | 0.079 | 0.051 | 0.053 | 0.000 |
+| Population frame | 0.417 | 0.242 | 0.174 | 0.089 | 0.085 | 0.000 | 0.000 |
+| Population frame + mortality | 0.417 | 0.242 | 0.175 | 0.053 | 0.085 | -0.002 | 0.038 |
 
 ## Substantive findings
 
-The preferred specification attributes about 59% of the modeled increase
-to intraindividual change and 41% to population turnover. The broad
+The preferred specification attributes about 58% of the modeled increase
+to intraindividual change and 42% to population turnover. The broad
 split changes little across the three specifications. In contrast, the
 allocation of turnover between mortality and migration changes
 materially when demographic information is added.
@@ -406,13 +417,13 @@ materially when demographic information is added.
 plot(mortality_result)
 ```
 
-![](gss_homosexuality_files/figure-html/unnamed-chunk-12-1.png)
+![](gss_homosexuality_files/figure-html/unnamed-chunk-13-1.png)
 
-### Two periods of social change
+### Three phases of social change
 
-The cumulative result contains two long periods with distinct patterns,
-followed by a short reversal. The table summarizes these selected
-intervals.
+The cumulative result contains three descriptive phases: two long
+periods with distinct patterns, followed by a short provisional
+reversal. The table summarizes these selected intervals.
 
 Show table code
 
@@ -438,7 +449,7 @@ summarize_period <- function(x, start, end) {
 
 period_comparison <- rbind(
   summarize_period(mortality_result, 1973, 1988),
-  summarize_period(mortality_result, 1988, 2018),
+  summarize_period(mortality_result, 1988, 2021),
   summarize_period(mortality_result, 2021, 2024)
 )
 knitr::kable(period_comparison, digits = 3)
@@ -446,12 +457,12 @@ knitr::kable(period_comparison, digits = 3)
 
 | Period    | Modeled change | Intraindividual change | Population turnover |
 |:----------|---------------:|-----------------------:|--------------------:|
-| 1973–1988 |         -0.027 |                 -0.082 |               0.054 |
-| 1988–2018 |          0.457 |                  0.356 |               0.101 |
-| 2021–2024 |         -0.023 |                 -0.032 |               0.009 |
+| 1973–1988 |         -0.016 |                 -0.070 |               0.054 |
+| 1988–2021 |          0.489 |                  0.378 |               0.111 |
+| 2021–2024 |         -0.056 |                 -0.065 |               0.009 |
 
 From 1973 through 1988, modeled acceptance declined slightly.
-Intraindividual change contributed −0.082, while population turnover
+Intraindividual change contributed −0.070, while population turnover
 contributed +0.054. Turnover was already moving the population toward
 greater acceptance, but change within the surviving population moved in
 the opposite direction. The aggregate trend therefore conceals two
@@ -467,8 +478,8 @@ changing attitudes during the epidemic ([Ruel and Campbell
 2006](#ref-ruelcampbell2006)). These accounts support the periodization,
 but they do not establish the cause of the negative component.
 
-From 1988 through 2018, modeled acceptance rose by 0.457.
-Intraindividual change contributed +0.356, compared with +0.101 from
+From 1988 through 2021, modeled acceptance rose by 0.489.
+Intraindividual change contributed +0.378, compared with +0.111 from
 population turnover. Turnover remained positive, but change within the
 existing population became the main source of rising acceptance. This
 pattern is consistent with a shift from replacement offsetting
@@ -484,16 +495,93 @@ these mechanisms.
 
 #### Post-2021 reversal?
 
-From 2021 through 2024, modeled acceptance fell by 0.023.
-Intraindividual change contributed −0.033, while population turnover
+From 2021 through 2024, modeled acceptance fell by 0.056.
+Intraindividual change contributed −0.065, while population turnover
 contributed +0.009. This resembles the early period: positive turnover
 partly offsets negative intraindividual change.
 
+The decomposition adds a demographic qualification to accounts of recent
+anti-LGBTQ+ backlash. Population turnover continued to move acceptance
+upward after 2021, but modeled change within the surviving population
+moved it downward by a larger amount. Once coming-of-age, mortality, and
+net migration are accounted for, the most plausible substantive
+interpretation is that people already in the adult population became
+less accepting. A panel would observe such changes directly; this
+decomposition supports the inference indirectly through aggregate change
+and demographic accounting.
+
+The timing coincides with organized countermobilization. Jones
+([2024](#ref-jones2024)) identifies 543 state anti-LGBTIQ+ bills
+introduced from 2018 through 2022, commonly framed through parental,
+religious, and women’s rights. McDowell and Ward
+([2023](#ref-mcdowellward2023)) show how evangelical churchgoers framed
+conservative Christians as marginalized to justify religious exemptions
+that permit denial of services to LGBTQ+ people. These studies establish
+a relevant political context, but they do not show that
+countermobilization caused the change estimated here. Much of the recent
+campaign targeted transgender people and youth, so its connection to
+attitudes toward homosexuality remains indirect.
+
 This short reversal does not establish a new sociological period. It
 contains only two transitions, and its boundary follows the observed
-2021 peak. More importantly, the 2021 round had no in-person interviews
-and later rounds used mixed modes. The reversal can therefore reflect
-survey-mode differences as well as attitude change.
+2021 peak. Survey modes also changed after 2021. A sensitivity check
+using the comparable 2022 and 2024 waves finds declines within each mode
+and after standardizing the mode distribution. Changing mode composition
+therefore does not explain the 2022–2024 decline, although other
+measurement effects remain possible.
+
+> **Mode-sensitivity check**
+>
+> The 2021 round had no in-person interviews. The 2022 and 2024 rounds
+> included the same four mode categories, which permits a more direct
+> comparison.
+>
+> ``` r
+>
+> mode_comparison <- gss_homosex[
+>   year %in% c(2022, 2024) & !is.na(mode),
+>   .(
+>     acceptance = weighted.mean(homosex, wtssps),
+>     mode_weight = sum(wtssps)
+>   ),
+>   by = .(year, mode)
+> ]
+>
+> mode_mix_2022 <- mode_comparison[year == 2022, .(
+>   mode,
+>   share = mode_weight / sum(mode_weight)
+> )]
+> mode_standardized <- mode_comparison[mode_mix_2022, on = "mode"][, .(
+>   acceptance = sum(acceptance * share)
+> ), by = year]
+>
+> mode_table <- data.table::dcast(
+>   mode_comparison, mode ~ year, value.var = "acceptance"
+> )
+> mode_table <- rbind(
+>   mode_table[, .(Mode = mode, `2022` = `2022`, `2024` = `2024`)],
+>   data.table::data.table(
+>     Mode = "Standardized to 2022 mode mix",
+>     `2022` = mode_standardized[year == 2022, acceptance],
+>     `2024` = mode_standardized[year == 2024, acceptance]
+>   )
+> )
+> knitr::kable(mode_table, digits = 3)
+> ```
+>
+> | Mode                          |  2022 |  2024 |
+> |:------------------------------|------:|------:|
+> | in-person                     | 0.653 | 0.547 |
+> | multimode                     | 0.795 | 0.533 |
+> | phone                         | 0.675 | 0.524 |
+> | web                           | 0.700 | 0.674 |
+> | Standardized to 2022 mode mix | 0.677 | 0.595 |
+>
+> Acceptance declined within every interview mode. Holding the mode
+> distribution at its 2022 composition increases the estimated decline
+> from 0.062 to 0.082. Mode is a measurement condition rather than a
+> demographic event, so it is not passed to the decomposition as a
+> population cell.
 
 ### Contributions by sex
 
@@ -508,19 +596,19 @@ print(mortality_result, detailed = FALSE, covariate = "sex")
 #> Strategy: residual migration
 #> 
 #>                 Component  Value Percent female   male
-#>  At initial (modeled)      0.208                      
-#>  At end (modeled)          0.633                      
-#>  Total change              0.426   100.0  0.216  0.210
-#>  - Intraindividual change  0.251    59.0  0.126  0.125
-#>  - Population turnover     0.175    41.0  0.090  0.084
-#>    - Mortality             0.053    12.4  0.026  0.027
-#>    - Out-migration         0.038     8.9  0.011  0.026
-#>    - Coming-of-age         0.086    20.2  0.054  0.032
+#>  At initial (modeled)      0.200                      
+#>  At end (modeled)          0.617                      
+#>  Total change              0.417   100.0  0.212  0.205
+#>  - Intraindividual change  0.242    58.1  0.122  0.121
+#>  - Population turnover     0.175    41.9  0.090  0.084
+#>    - Mortality             0.053    12.8  0.026  0.027
+#>    - Out-migration         0.038     9.0  0.011  0.026
+#>    - Coming-of-age         0.085    20.5  0.054  0.032
 #>    - In-migration         -0.002    -0.4 -0.000 -0.001
 plot(mortality_result, covariate = "sex")
 ```
 
-![](gss_homosexuality_files/figure-html/unnamed-chunk-14-1.png)
+![](gss_homosexuality_files/figure-html/unnamed-chunk-16-1.png)
 
 Women and men contribute similar amounts to the total increase.
 Mortality and residual out-migration differ in their point estimates,
@@ -532,8 +620,8 @@ demographic sources.
 
 Passing `R > 0` adds bootstrap draws and empirical 95% intervals. Each
 replicate uses a new random event ordering and a reweighted refit of the
-outcome model. Here, `R = 100` keeps vignette runtime manageable; its
-tail estimates are illustrative.
+outcome model. Here, `R = 100` keeps runtime manageable; its tail
+estimates are illustrative.
 
 ``` r
 
@@ -549,19 +637,19 @@ print(bootstrap_result, detailed = FALSE)
 #> Strategy: residual migration
 #> 
 #>                 Component  Value Percent           95% CI
-#>  At initial (modeled)      0.208                         
-#>  At end (modeled)          0.633                         
-#>  Total change              0.426   100.0 [ 0.393, 0.461 ]
-#>  - Intraindividual change  0.251    59.0 [ 0.213, 0.297 ]
-#>  - Population turnover     0.175    41.0 [ 0.143, 0.201 ]
-#>    - Mortality             0.053    12.4 [ 0.048, 0.058 ]
-#>    - Out-migration         0.038     8.8 [ 0.036, 0.040 ]
-#>    - Coming-of-age         0.086    20.2 [ 0.058, 0.111 ]
+#>  At initial (modeled)      0.200                         
+#>  At end (modeled)          0.617                         
+#>  Total change              0.417   100.0 [ 0.384, 0.455 ]
+#>  - Intraindividual change  0.242    58.1 [ 0.213, 0.300 ]
+#>  - Population turnover     0.175    41.9 [ 0.126, 0.201 ]
+#>    - Mortality             0.053    12.8 [ 0.050, 0.058 ]
+#>    - Out-migration         0.038     9.0 [ 0.035, 0.040 ]
+#>    - Coming-of-age         0.086    20.5 [ 0.040, 0.110 ]
 #>    - In-migration         -0.002    -0.4 [-0.002, -0.002]
 plot(bootstrap_result)
 ```
 
-![](gss_homosexuality_files/figure-html/unnamed-chunk-15-1.png)
+![](gss_homosexuality_files/figure-html/unnamed-chunk-17-1.png)
 
 The intervals quantify combined outcome-model and event-ordering
 uncertainty. They do not include uncertainty in the population frame or
@@ -577,29 +665,29 @@ print(bootstrap_result, detailed = FALSE, covariate = "sex")
 #> Strategy: residual migration
 #> 
 #>                 Component  Value Percent female   male    female 95% CI
-#>  At initial (modeled)      0.208                                       
-#>  At end (modeled)          0.633                                       
-#>  Total change              0.426   100.0  0.216  0.210 [ 0.200, 0.234 ]
-#>  - Intraindividual change  0.251    59.0  0.126  0.125 [ 0.107, 0.149 ]
-#>  - Population turnover     0.175    41.0  0.090  0.084 [ 0.075, 0.103 ]
-#>    - Mortality             0.053    12.4  0.026  0.027 [ 0.023, 0.029 ]
-#>    - Out-migration         0.038     8.8  0.011  0.026 [ 0.010, 0.014 ]
-#>    - Coming-of-age         0.086    20.2  0.054  0.032 [ 0.040, 0.066 ]
+#>  At initial (modeled)      0.200                                       
+#>  At end (modeled)          0.617                                       
+#>  Total change              0.417   100.0  0.212  0.205 [ 0.196, 0.231 ]
+#>  - Intraindividual change  0.242    58.1  0.121  0.121 [ 0.107, 0.150 ]
+#>  - Population turnover     0.175    41.9  0.091  0.084 [ 0.066, 0.103 ]
+#>    - Mortality             0.053    12.8  0.026  0.027 [ 0.024, 0.029 ]
+#>    - Out-migration         0.038     9.0  0.011  0.026 [ 0.009, 0.014 ]
+#>    - Coming-of-age         0.086    20.5  0.054  0.032 [ 0.031, 0.066 ]
 #>    - In-migration         -0.002    -0.4 -0.000 -0.001 [-0.001, -0.000]
 #>       male 95% CI
 #>                  
 #>                  
-#>  [ 0.193, 0.227 ]
-#>  [ 0.106, 0.148 ]
-#>  [ 0.069, 0.098 ]
+#>  [ 0.189, 0.224 ]
+#>  [ 0.106, 0.150 ]
+#>  [ 0.059, 0.098 ]
 #>  [ 0.025, 0.029 ]
 #>  [ 0.024, 0.028 ]
-#>  [ 0.018, 0.045 ]
+#>  [ 0.008, 0.045 ]
 #>  [-0.001, -0.001]
 plot(bootstrap_result, covariate = "sex")
 ```
 
-![](gss_homosexuality_files/figure-html/unnamed-chunk-16-1.png)
+![](gss_homosexuality_files/figure-html/unnamed-chunk-18-1.png)
 
 Marginal intervals for women and men do not test their difference. A sex
 contrast must be calculated within each bootstrap replicate.
@@ -676,7 +764,7 @@ cric_all
 plot(cric_all)
 ```
 
-![](gss_homosexuality_files/figure-html/unnamed-chunk-17-1.png)
+![](gss_homosexuality_files/figure-html/unnamed-chunk-19-1.png)
 
 Using only the first and last survey years changes the decomposition.
 AD+ attributes about 59% to cohort replacement and 41% to intracohort
@@ -754,6 +842,14 @@ Effects.” *Sociological Methodology* 19: 243–62.
 
 Human Mortality Database. 2025. *Human Mortality Database*.
 <https://www.mortality.org/>.
+
+Jones, Tiffany. 2024. “United States of Hate: Mapping Backlash Bills
+Against LGBTIQ+ Youth.” *Sex Education* 24 (6): 816–35.
+<https://doi.org/10.1080/14681811.2023.2241136>.
+
+McDowell, Amy, and Pace T. Ward. 2023. “‘The Tables Are Turning’: The
+Evangelical Defense of Anti-LGBTQ+ Religious Liberty.” *Sociology of
+Religion* 84 (4): 406–25. <https://doi.org/10.1093/socrel/srad007>.
 
 Ruel, Erin, and Richard T. Campbell. 2006. “Homophobia and HIV/AIDS:
 Attitude Change in the Face of an Epidemic.” *Social Forces* 84 (4):

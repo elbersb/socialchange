@@ -79,8 +79,8 @@ print(simresult, detailed = FALSE)
 #>  Total change              0.0000
 #>  - Intraindividual change  0.2500
 #>  - Population turnover    -0.2500
-#>    - Mortality            -0.1208
-#>    - Coming-of-age        -0.1292
+#>    - Mortality            -0.1207
+#>    - Coming-of-age        -0.1293
 ```
 
 We now feed the simulated data into the event-based decomposition:
@@ -142,10 +142,10 @@ print(simresult, detailed = FALSE)
 #>  At initial                0.37580
 #>  At end                    0.37580
 #>  Total change              0.00000
-#>  - Intraindividual change  0.12474
-#>  - Population turnover    -0.12474
-#>    - Mortality            -0.06020
-#>    - Coming-of-age        -0.06454
+#>  - Intraindividual change  0.12500
+#>  - Population turnover    -0.12500
+#>    - Mortality            -0.06040
+#>    - Coming-of-age        -0.06461
 ```
 
 For the event-based decomposition, we first try a misspecified model
@@ -215,10 +215,10 @@ print(simresult, detailed = FALSE)
 #>  At initial                0.2999999999999999889
 #>  At end                    0.8000000000000000444
 #>  Total change              0.5000000000000000000
-#>  - Intraindividual change  0.4999999999999991118
-#>  - Population turnover     0.0000000000000009437
-#>    - Mortality             0.0000579933914742758
-#>    - Coming-of-age        -0.0000579933914733322
+#>  - Intraindividual change  0.4999999999999991673
+#>  - Population turnover     0.0000000000000008882
+#>    - Mortality            -0.0000217757925164430
+#>    - Coming-of-age         0.0000217757925173312
 ```
 
 Again, we first try a misspecified model that ignores gender entirely.
@@ -242,7 +242,7 @@ print(decomp, detailed = FALSE)
 #>  Total change              0.500   100.0
 #>  - Intraindividual change  0.500   100.0
 #>  - Population turnover    -0.000    -0.0
-#>    - Mortality             0.000     0.0
+#>    - Mortality            -0.000    -0.0
 #>    - Coming-of-age        -0.000    -0.0
 ```
 
@@ -263,7 +263,7 @@ print(decomp, detailed = FALSE)
 #>  At end (modeled)          0.800        
 #>  Total change              0.500   100.0
 #>  - Intraindividual change  0.500   100.0
-#>  - Population turnover    -0.000    -0.0
+#>  - Population turnover     0.000     0.0
 #>    - Mortality            -0.000    -0.0
 #>    - Coming-of-age         0.000     0.0
 ```
@@ -288,10 +288,10 @@ print(simresult, detailed = FALSE)
 #>  At initial               0.2999870967741936068
 #>  At end                   0.7999870967741936623
 #>  Total change             0.5000000000000000000
-#>  - Intraindividual change 0.0000000000000008882
-#>  - Population turnover    0.4999999999999991673
-#>    - Mortality            0.2413157095421327725
-#>    - Coming-of-age        0.2586842904578663949
+#>  - Intraindividual change 0.0000000000000003886
+#>  - Population turnover    0.4999999999999996669
+#>    - Mortality            0.2414359694434456416
+#>    - Coming-of-age        0.2585640305565540253
 ```
 
 Again, we first try a misspecified model that ignores gender entirely.
@@ -316,7 +316,7 @@ print(decomp, detailed = FALSE)
 #>  - Intraindividual change  0.000     0.0
 #>  - Population turnover     0.500   100.0
 #>    - Mortality             0.241    48.2
-#>    - Coming-of-age         0.259    51.7
+#>    - Coming-of-age         0.259    51.8
 ```
 
 And here are the results for the fully-specified model:
@@ -338,7 +338,7 @@ print(decomp, detailed = FALSE)
 #>  - Intraindividual change  0.000     0.0
 #>  - Population turnover     0.500   100.0
 #>    - Mortality             0.241    48.2
-#>    - Coming-of-age         0.259    51.7
+#>    - Coming-of-age         0.259    51.8
 ```
 
 ## Smoking (Scenario 5)
@@ -377,14 +377,14 @@ smoking1 <- socialchange::sim_social_change(
     fun_mortality = mortality
 )
 print(smoking1, detailed = FALSE)
-#>                 Component                Value
-#>  At initial                0.86768589298123688
-#>  At end                    0.86768589298123688
-#>  Total change              0.00000000000000000
-#>  - Intraindividual change -0.00000000000000322
-#>  - Population turnover     0.00000000000000322
-#>    - Mortality            -0.00086764867042499
-#>    - Coming-of-age         0.00086764867042821
+#>                 Component                 Value
+#>  At initial                0.867685892981236884
+#>  At end                    0.867685892981236884
+#>  Total change              0.000000000000000000
+#>  - Intraindividual change -0.000000000000002776
+#>  - Population turnover     0.000000000000002776
+#>    - Mortality            -0.000862981358583426
+#>    - Coming-of-age         0.000862981358586201
 ```
 
 Compare to decomposition:
@@ -426,14 +426,14 @@ smoking2 <- socialchange::sim_social_change(
     fun_mortality = mortality
 )
 print(smoking2, detailed = FALSE)
-#>                 Component      Value
-#>  At initial                0.8676859
-#>  At end                    0.5907575
-#>  Total change             -0.2769284
-#>  - Intraindividual change -0.2768139
-#>  - Population turnover    -0.0001146
-#>    - Mortality            -0.0011669
-#>    - Coming-of-age         0.0010523
+#>                 Component       Value
+#>  At initial                0.86768589
+#>  At end                    0.59075747
+#>  Total change             -0.27692842
+#>  - Intraindividual change -0.27691346
+#>  - Population turnover    -0.00001496
+#>    - Mortality            -0.00113434
+#>    - Coming-of-age         0.00111938
 ```
 
 Compare to decomposition:
@@ -479,10 +479,10 @@ print(smoking3, detailed = FALSE)
 #>  At initial                0.86769
 #>  At end                    0.50476
 #>  Total change             -0.36293
-#>  - Intraindividual change -0.29130
-#>  - Population turnover    -0.07163
-#>    - Mortality            -0.01052
-#>    - Coming-of-age        -0.06110
+#>  - Intraindividual change -0.29147
+#>  - Population turnover    -0.07146
+#>    - Mortality            -0.01083
+#>    - Coming-of-age        -0.06063
 ```
 
 Compare to decomposition:

@@ -115,8 +115,8 @@
 <span><span class="co">#&gt;  Total change              0.0000</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.2500</span></span>
 <span><span class="co">#&gt;  - Population turnover    -0.2500</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.1208</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.1292</span></span></code></pre></div>
+<span><span class="co">#&gt;    - Mortality            -0.1207</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.1293</span></span></code></pre></div>
 </div>
 <p>We now feed the simulated data into the event-based decomposition:</p>
 <div class="cell">
@@ -174,10 +174,10 @@
 <span><span class="co">#&gt;  At initial                0.37580</span></span>
 <span><span class="co">#&gt;  At end                    0.37580</span></span>
 <span><span class="co">#&gt;  Total change              0.00000</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.12474</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.12474</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.06020</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06454</span></span></code></pre></div>
+<span><span class="co">#&gt;  - Intraindividual change  0.12500</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.12500</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.06040</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06461</span></span></code></pre></div>
 </div>
 <p>For the event-based decomposition, we first try a misspecified model that ignores gender entirely. Still, the decomposition in this case recovers the result almost exactly:</p>
 <div class="cell">
@@ -240,10 +240,10 @@
 <span><span class="co">#&gt;  At initial                0.2999999999999999889</span></span>
 <span><span class="co">#&gt;  At end                    0.8000000000000000444</span></span>
 <span><span class="co">#&gt;  Total change              0.5000000000000000000</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.4999999999999991118</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.0000000000000009437</span></span>
-<span><span class="co">#&gt;    - Mortality             0.0000579933914742758</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.0000579933914733322</span></span></code></pre></div>
+<span><span class="co">#&gt;  - Intraindividual change  0.4999999999999991673</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.0000000000000008882</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.0000217757925164430</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.0000217757925173312</span></span></code></pre></div>
 </div>
 <p>Again, we first try a misspecified model that ignores gender entirely. Again, the decomposition recovers the result almost exactly despite the misspecification:</p>
 <div class="cell">
@@ -263,7 +263,7 @@
 <span><span class="co">#&gt;  Total change              0.500   100.0</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.500   100.0</span></span>
 <span><span class="co">#&gt;  - Population turnover    -0.000    -0.0</span></span>
-<span><span class="co">#&gt;    - Mortality             0.000     0.0</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.000    -0.0</span></span>
 <span><span class="co">#&gt;    - Coming-of-age        -0.000    -0.0</span></span></code></pre></div>
 </div>
 <p>And here are the results for the fully-specified model:</p>
@@ -282,7 +282,7 @@
 <span><span class="co">#&gt;  At end (modeled)          0.800        </span></span>
 <span><span class="co">#&gt;  Total change              0.500   100.0</span></span>
 <span><span class="co">#&gt;  - Intraindividual change  0.500   100.0</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.000    -0.0</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.000     0.0</span></span>
 <span><span class="co">#&gt;    - Mortality            -0.000    -0.0</span></span>
 <span><span class="co">#&gt;    - Coming-of-age         0.000     0.0</span></span></code></pre></div>
 </div>
@@ -306,10 +306,10 @@
 <span><span class="co">#&gt;  At initial               0.2999870967741936068</span></span>
 <span><span class="co">#&gt;  At end                   0.7999870967741936623</span></span>
 <span><span class="co">#&gt;  Total change             0.5000000000000000000</span></span>
-<span><span class="co">#&gt;  - Intraindividual change 0.0000000000000008882</span></span>
-<span><span class="co">#&gt;  - Population turnover    0.4999999999999991673</span></span>
-<span><span class="co">#&gt;    - Mortality            0.2413157095421327725</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        0.2586842904578663949</span></span></code></pre></div>
+<span><span class="co">#&gt;  - Intraindividual change 0.0000000000000003886</span></span>
+<span><span class="co">#&gt;  - Population turnover    0.4999999999999996669</span></span>
+<span><span class="co">#&gt;    - Mortality            0.2414359694434456416</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        0.2585640305565540253</span></span></code></pre></div>
 </div>
 <p>Again, we first try a misspecified model that ignores gender entirely. Again, the decomposition recovers the result almost exactly despite the misspecification:</p>
 <div class="cell">
@@ -330,7 +330,7 @@
 <span><span class="co">#&gt;  - Intraindividual change  0.000     0.0</span></span>
 <span><span class="co">#&gt;  - Population turnover     0.500   100.0</span></span>
 <span><span class="co">#&gt;    - Mortality             0.241    48.2</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.259    51.7</span></span></code></pre></div>
+<span><span class="co">#&gt;    - Coming-of-age         0.259    51.8</span></span></code></pre></div>
 </div>
 <p>And here are the results for the fully-specified model:</p>
 <div class="cell">
@@ -350,7 +350,7 @@
 <span><span class="co">#&gt;  - Intraindividual change  0.000     0.0</span></span>
 <span><span class="co">#&gt;  - Population turnover     0.500   100.0</span></span>
 <span><span class="co">#&gt;    - Mortality             0.241    48.2</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.259    51.7</span></span></code></pre></div>
+<span><span class="co">#&gt;    - Coming-of-age         0.259    51.8</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="smoking-scenario-5">Smoking (Scenario 5)<a class="anchor" aria-label="anchor" href="#smoking-scenario-5"></a>
 </h2>
@@ -388,14 +388,14 @@
 <span>    fun_mortality <span class="op">=</span> <span class="va">mortality</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">smoking1</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                 Component                Value</span></span>
-<span><span class="co">#&gt;  At initial                0.86768589298123688</span></span>
-<span><span class="co">#&gt;  At end                    0.86768589298123688</span></span>
-<span><span class="co">#&gt;  Total change              0.00000000000000000</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.00000000000000322</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.00000000000000322</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.00086764867042499</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.00086764867042821</span></span></code></pre></div>
+<span><span class="co">#&gt;                 Component                 Value</span></span>
+<span><span class="co">#&gt;  At initial                0.867685892981236884</span></span>
+<span><span class="co">#&gt;  At end                    0.867685892981236884</span></span>
+<span><span class="co">#&gt;  Total change              0.000000000000000000</span></span>
+<span><span class="co">#&gt;  - Intraindividual change -0.000000000000002776</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.000000000000002776</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.000862981358583426</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.000862981358586201</span></span></code></pre></div>
 </div>
 <p>Compare to decomposition:</p>
 <div class="cell">
@@ -434,14 +434,14 @@
 <span>    fun_mortality <span class="op">=</span> <span class="va">mortality</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">smoking2</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt;                 Component      Value</span></span>
-<span><span class="co">#&gt;  At initial                0.8676859</span></span>
-<span><span class="co">#&gt;  At end                    0.5907575</span></span>
-<span><span class="co">#&gt;  Total change             -0.2769284</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.2768139</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.0001146</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.0011669</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.0010523</span></span></code></pre></div>
+<span><span class="co">#&gt;                 Component       Value</span></span>
+<span><span class="co">#&gt;  At initial                0.86768589</span></span>
+<span><span class="co">#&gt;  At end                    0.59075747</span></span>
+<span><span class="co">#&gt;  Total change             -0.27692842</span></span>
+<span><span class="co">#&gt;  - Intraindividual change -0.27691346</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.00001496</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.00113434</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.00111938</span></span></code></pre></div>
 </div>
 <p>Compare to decomposition:</p>
 <div class="cell">
@@ -484,10 +484,10 @@
 <span><span class="co">#&gt;  At initial                0.86769</span></span>
 <span><span class="co">#&gt;  At end                    0.50476</span></span>
 <span><span class="co">#&gt;  Total change             -0.36293</span></span>
-<span><span class="co">#&gt;  - Intraindividual change -0.29130</span></span>
-<span><span class="co">#&gt;  - Population turnover    -0.07163</span></span>
-<span><span class="co">#&gt;    - Mortality            -0.01052</span></span>
-<span><span class="co">#&gt;    - Coming-of-age        -0.06110</span></span></code></pre></div>
+<span><span class="co">#&gt;  - Intraindividual change -0.29147</span></span>
+<span><span class="co">#&gt;  - Population turnover    -0.07146</span></span>
+<span><span class="co">#&gt;    - Mortality            -0.01083</span></span>
+<span><span class="co">#&gt;    - Coming-of-age        -0.06063</span></span></code></pre></div>
 </div>
 <p>Compare to decomposition:</p>
 <div class="cell">

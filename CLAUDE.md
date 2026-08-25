@@ -37,7 +37,12 @@ pkgdown::build_site()     # build docs website
 
 Use a timeout of at least 600 seconds for `devtools::check()` and Quarto
 renders. Vignette builds can exceed 300 seconds with little intermediate
-output.
+output. Direct Quarto renders read installed package data, so reinstall
+after changing an `.rda` file. Run a single-vignette render from
+`vignettes/` (for example,
+`cd vignettes && quarto render gss_homosexuality.qmd --to html`);
+passing `vignettes/file.qmd` from the root fails after knitting because
+Quarto looks for the source in the root.
 
 ## Architecture
 
@@ -93,7 +98,9 @@ elbersb/weightedcontrasts). roxygen2 8.0.0; S3 methods registered with
 ## Datasets (`data/`, docs in `R/data.R`, prep in `data-raw/`)
 
 - `gss_rac.rda` — GSS racial attitudes, white Americans (1972–1984)
-- `gss_homosex.rda` — GSS attitudes toward homosexual sex (1973–2024)
+- `gss_homosex.rda` — GSS attitudes toward homosexual sex (1973–2024).
+  Young-adult (ages 18–24) cohort means start with the 1949 cohort;
+  earlier cohorts reached age 24 before the GSS series.
 - `eu_membership.rda` — EU entry/exit dates
 - `wpp_data.rda` — UN World Population Prospects (1950+)
 - `mortality_us.rda` — US mortality rates (1933–2024)

@@ -77,9 +77,9 @@
 <blockquote>
 <p><strong>Key findings</strong></p>
 <ul>
-<li>Acceptance increased by about 42 percentage points. The model attributes about 59% of this rise to modeled change within the surviving adult population (<strong>intraindividual change</strong>). The other 41% came from changes in who made up the population (<strong>population turnover</strong>): more accepting younger people entered adulthood, less accepting older people died, and the population changed through migration.</li>
-<li>From 1973 through 1988, people already in the adult population became less accepting. Their opinion change pushed acceptance down, while the entry of younger people and the death of older people limited the decline. From 1988 through 2018, people already in the adult population became more accepting. This broad opinion change became the main source of rising acceptance, while generational replacement continued to add to it.</li>
-<li>From 2021 through 2024, intraindividual change was negative while turnover remained positive. Survey-mode changes prevent a clear sociological interpretation of this short reversal.</li>
+<li>Acceptance increased by about 42 percentage points. The model attributes about 58% of this rise to modeled change within the surviving adult population (<strong>intraindividual change</strong>). The other 42% came from changes in who made up the population (<strong>population turnover</strong>): more accepting younger people entered adulthood, less accepting older people died, and the population changed through migration.</li>
+<li>From 1973 through 1988, people already in the adult population became less accepting. Their opinion change pushed acceptance down, while the entry of younger people and the death of older people limited the decline. From 1988 through 2021, people already in the adult population became more accepting. This broad opinion change became the main source of rising acceptance, while generational replacement continued to add to it.</li>
+<li>From 2021 through 2024, intraindividual change was negative while turnover remained positive. This provisional reversal forms a short third phase.</li>
 <li>The broad split is stable across the demographic inputs used below. The allocation within turnover is not stable: population estimates and mortality probabilities improve the attribution of mortality and residual migration.</li>
 </ul>
 </blockquote>
@@ -259,6 +259,15 @@
 </div>
 </div>
 <p>Ekstam <span class="citation" data-cites="ekstam2021">(<a href="#ref-ekstam2021" role="doc-biblioref">2021</a>)</span> describes higher tolerance among cohorts born from 1942 through 1951 than among adjacent cohorts, and lower tolerance among cohorts born from 1957 through 1966. He relates these descriptive patterns to formative exposure to the counterculture era and to the HIV/AIDS crisis and conservative climate of the 1980s. Neither this surface nor an APC model can identify that socialization explanation from age, period, and cohort patterns alone.</p>
+<p>The figure below provides the closest direct comparison available in the GSS: weighted cohort means at ages 18–24. Because the series starts in 1973, it cannot show most of the 1942–1951 cohorts during young adulthood. The means also combine cohort and survey-period differences.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-5-1.png" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
 </section><section class="level2"><h2 id="what-the-decomposition-measures">What the decomposition measures<a class="anchor" aria-label="anchor" href="#what-the-decomposition-measures"></a>
 </h2>
 <p><code><a href="../reference/decompose_aggregated.html">decompose_aggregated()</a></code> represents aggregate change as the sum of two broad components:</p>
@@ -304,13 +313,14 @@
 <span>  <span class="fu">.</span><span class="op">(</span>age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmin</a></span><span class="op">(</span><span class="va">age</span>, <span class="fl">81</span><span class="op">)</span>, period <span class="op">=</span> <span class="va">year</span>, <span class="va">sex</span>, y <span class="op">=</span> <span class="va">homosex</span>, <span class="va">wtssps</span><span class="op">)</span></span>
 <span><span class="op">]</span></span></code></pre></div>
 </div>
-<p>We model acceptance as an additive smooth function of age and period, with a term for sex. The outcome model supplies predicted acceptance for each cell; it does not determine the number of people in each cell.</p>
+<p>We model acceptance as an additive smooth function of age and period, with a term for sex. We allow up to 15 basis functions for each smooth. This flexibility captures the sharp change in the final waves without materially changing the full-period split. The outcome model supplies predicted acceptance for each cell; it does not determine the number of people in each cell.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu">mgcv</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">gam</a></span><span class="op">(</span></span>
-<span>  <span class="va">y</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">age</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">period</span><span class="op">)</span> <span class="op">+</span> <span class="va">sex</span>,</span>
+<span>  <span class="va">y</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">age</span>, k <span class="op">=</span> <span class="fl">15</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/pkg/mgcv/man/s.html" class="external-link">s</a></span><span class="op">(</span><span class="va">period</span>, k <span class="op">=</span> <span class="fl">15</span><span class="op">)</span> <span class="op">+</span> <span class="va">sex</span>,</span>
 <span>  data <span class="op">=</span> <span class="va">gss_all</span>,</span>
-<span>  weights <span class="op">=</span> <span class="va">wtssps</span></span>
+<span>  weights <span class="op">=</span> <span class="va">wtssps</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"REML"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>The package also includes two demographic inputs:</p>
@@ -366,14 +376,14 @@
 <span><span class="co">#&gt; Strategy: sign attribution</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                 Component  Value Percent</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.210        </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.638        </span></span>
-<span><span class="co">#&gt;  Total change              0.429   100.0</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.247    57.6</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.182    42.4</span></span>
-<span><span class="co">#&gt;    - Mortality             0.079    18.4</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.051    11.8</span></span>
-<span><span class="co">#&gt;    - In-migration          0.052    12.1</span></span></code></pre></div>
+<span><span class="co">#&gt;  At initial (modeled)      0.202        </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.622        </span></span>
+<span><span class="co">#&gt;  Total change              0.420   100.0</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.237    56.6</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.182    43.4</span></span>
+<span><span class="co">#&gt;    - Mortality             0.079    18.8</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.051    12.0</span></span>
+<span><span class="co">#&gt;    - In-migration          0.053    12.6</span></span></code></pre></div>
 </div>
 <p>Survey cell sizes fluctuate across waves. The function must route that fluctuation to mortality or in-migration. These detailed components must not be read as demographic estimates.</p>
 </section><section class="level3"><h3 id="population-frame">2. Population frame<a class="anchor" aria-label="anchor" href="#population-frame"></a>
@@ -391,13 +401,13 @@
 <span><span class="co">#&gt; Strategy: sign attribution</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                 Component  Value Percent</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.208        </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.633        </span></span>
-<span><span class="co">#&gt;  Total change              0.426   100.0</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.251    59.0</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.175    41.0</span></span>
-<span><span class="co">#&gt;    - Mortality             0.089    20.8</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.086    20.1</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.200        </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.617        </span></span>
+<span><span class="co">#&gt;  Total change              0.417   100.0</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.242    58.2</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.174    41.8</span></span>
+<span><span class="co">#&gt;    - Mortality             0.089    21.3</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.085    20.5</span></span>
 <span><span class="co">#&gt;    - In-migration          0.000     0.0</span></span></code></pre></div>
 </div>
 <p>The smoother population structure removes most survey cell-size noise. Net in-migration becomes small, but the mortality estimate still uses sign attribution.</p>
@@ -416,14 +426,14 @@
 <span><span class="co">#&gt; Strategy: residual migration</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                 Component  Value Percent</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.208        </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.633        </span></span>
-<span><span class="co">#&gt;  Total change              0.426   100.0</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.251    59.0</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.175    41.0</span></span>
-<span><span class="co">#&gt;    - Mortality             0.053    12.4</span></span>
-<span><span class="co">#&gt;    - Out-migration         0.038     8.9</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.086    20.2</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.200        </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.617        </span></span>
+<span><span class="co">#&gt;  Total change              0.417   100.0</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.242    58.1</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.175    41.9</span></span>
+<span><span class="co">#&gt;    - Mortality             0.053    12.8</span></span>
+<span><span class="co">#&gt;    - Out-migration         0.038     9.0</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.085    20.5</span></span>
 <span><span class="co">#&gt;    - In-migration         -0.002    -0.4</span></span></code></pre></div>
 </div>
 <p>This specification uses the most complete demographic information available here. Its out-migration term is not a direct migration estimate. It combines net migration with inconsistency between the population estimates and mortality-based survival.</p>
@@ -482,31 +492,31 @@
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Survey counts</td>
-<td style="text-align: right;">0.429</td>
-<td style="text-align: right;">0.247</td>
+<td style="text-align: right;">0.420</td>
+<td style="text-align: right;">0.237</td>
 <td style="text-align: right;">0.182</td>
 <td style="text-align: right;">0.079</td>
 <td style="text-align: right;">0.051</td>
-<td style="text-align: right;">0.052</td>
+<td style="text-align: right;">0.053</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Population frame</td>
-<td style="text-align: right;">0.426</td>
-<td style="text-align: right;">0.251</td>
-<td style="text-align: right;">0.175</td>
+<td style="text-align: right;">0.417</td>
+<td style="text-align: right;">0.242</td>
+<td style="text-align: right;">0.174</td>
 <td style="text-align: right;">0.089</td>
-<td style="text-align: right;">0.086</td>
+<td style="text-align: right;">0.085</td>
 <td style="text-align: right;">0.000</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Population frame + mortality</td>
-<td style="text-align: right;">0.426</td>
-<td style="text-align: right;">0.251</td>
+<td style="text-align: right;">0.417</td>
+<td style="text-align: right;">0.242</td>
 <td style="text-align: right;">0.175</td>
 <td style="text-align: right;">0.053</td>
-<td style="text-align: right;">0.086</td>
+<td style="text-align: right;">0.085</td>
 <td style="text-align: right;">-0.002</td>
 <td style="text-align: right;">0.038</td>
 </tr>
@@ -516,20 +526,20 @@
 </div>
 </section></section><section class="level2"><h2 id="substantive-findings">Substantive findings<a class="anchor" aria-label="anchor" href="#substantive-findings"></a>
 </h2>
-<p>The preferred specification attributes about 59% of the modeled increase to intraindividual change and 41% to population turnover. The broad split changes little across the three specifications. In contrast, the allocation of turnover between mortality and migration changes materially when demographic information is added.</p>
+<p>The preferred specification attributes about 58% of the modeled increase to intraindividual change and 42% to population turnover. The broad split changes little across the three specifications. In contrast, the allocation of turnover between mortality and migration changes materially when demographic information is added.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mortality_result</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
-<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-12-1.png" width="672"></p>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-13-1.png" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
-<section class="level3"><h3 id="two-periods-of-social-change">Two periods of social change<a class="anchor" aria-label="anchor" href="#two-periods-of-social-change"></a>
+<section class="level3"><h3 id="three-phases-of-social-change">Three phases of social change<a class="anchor" aria-label="anchor" href="#three-phases-of-social-change"></a>
 </h3>
-<p>The cumulative result contains two long periods with distinct patterns, followed by a short reversal. The table summarizes these selected intervals.</p>
+<p>The cumulative result contains three descriptive phases: two long periods with distinct patterns, followed by a short provisional reversal. The table summarizes these selected intervals.</p>
 <div class="cell">
 <details class="code-fold"><summary>Show table code</summary><div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">summarize_period</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">start</span>, <span class="va">end</span><span class="op">)</span> <span class="op">{</span></span>
@@ -552,7 +562,7 @@
 <span></span>
 <span><span class="va">period_comparison</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span>
 <span>  <span class="fu">summarize_period</span><span class="op">(</span><span class="va">mortality_result</span>, <span class="fl">1973</span>, <span class="fl">1988</span><span class="op">)</span>,</span>
-<span>  <span class="fu">summarize_period</span><span class="op">(</span><span class="va">mortality_result</span>, <span class="fl">1988</span>, <span class="fl">2018</span><span class="op">)</span>,</span>
+<span>  <span class="fu">summarize_period</span><span class="op">(</span><span class="va">mortality_result</span>, <span class="fl">1988</span>, <span class="fl">2021</span><span class="op">)</span>,</span>
 <span>  <span class="fu">summarize_period</span><span class="op">(</span><span class="va">mortality_result</span>, <span class="fl">2021</span>, <span class="fl">2024</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">period_comparison</span>, digits <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
@@ -573,56 +583,133 @@
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">1973–1988</td>
-<td style="text-align: right;">-0.027</td>
-<td style="text-align: right;">-0.082</td>
+<td style="text-align: right;">-0.016</td>
+<td style="text-align: right;">-0.070</td>
 <td style="text-align: right;">0.054</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">1988–2018</td>
-<td style="text-align: right;">0.457</td>
-<td style="text-align: right;">0.356</td>
-<td style="text-align: right;">0.101</td>
+<td style="text-align: left;">1988–2021</td>
+<td style="text-align: right;">0.489</td>
+<td style="text-align: right;">0.378</td>
+<td style="text-align: right;">0.111</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">2021–2024</td>
-<td style="text-align: right;">-0.023</td>
-<td style="text-align: right;">-0.032</td>
+<td style="text-align: right;">-0.056</td>
+<td style="text-align: right;">-0.065</td>
 <td style="text-align: right;">0.009</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<p>From 1973 through 1988, modeled acceptance declined slightly. Intraindividual change contributed −0.082, while population turnover contributed +0.054. Turnover was already moving the population toward greater acceptance, but change within the surviving population moved in the opposite direction. The aggregate trend therefore conceals two opposing social processes.</p>
+<p>From 1973 through 1988, modeled acceptance declined slightly. Intraindividual change contributed −0.070, while population turnover contributed +0.054. Turnover was already moving the population toward greater acceptance, but change within the surviving population moved in the opposite direction. The aggregate trend therefore conceals two opposing social processes.</p>
 <p>This early pattern matches the historical sequence described by Ekstam <span class="citation" data-cites="ekstam2021">(<a href="#ref-ekstam2021" role="doc-biblioref">2021</a>)</span>: advances associated with gay-rights mobilization met organized conservative countermobilization in the 1970s, followed by a more hostile climate during the HIV/AIDS crisis of the 1980s. Research documents both the role of the religious right in shaping countermobilization <span class="citation" data-cites="fetner2008">(<a href="#ref-fetner2008" role="doc-biblioref">Fetner 2008</a>)</span> and changing attitudes during the epidemic <span class="citation" data-cites="ruelcampbell2006">(<a href="#ref-ruelcampbell2006" role="doc-biblioref">Ruel and Campbell 2006</a>)</span>. These accounts support the periodization, but they do not establish the cause of the negative component.</p>
-<p>From 1988 through 2018, modeled acceptance rose by 0.457. Intraindividual change contributed +0.356, compared with +0.101 from population turnover. Turnover remained positive, but change within the existing population became the main source of rising acceptance. This pattern is consistent with a shift from replacement offsetting resistance to broader cultural diffusion across the population.</p>
+<p>From 1988 through 2021, modeled acceptance rose by 0.489. Intraindividual change contributed +0.378, compared with +0.111 from population turnover. Turnover remained positive, but change within the existing population became the main source of rising acceptance. This pattern is consistent with a shift from replacement offsetting resistance to broader cultural diffusion across the population.</p>
 <p>Proposed mechanisms for this diffusion include gay-rights movement campaigns <span class="citation" data-cites="epstein1999">(<a href="#ref-epstein1999" role="doc-biblioref">Epstein 1999</a>)</span>, changing elite messages <span class="citation" data-cites="brewer2003">(<a href="#ref-brewer2003" role="doc-biblioref">Brewer 2003</a>)</span>, greater media visibility and parasocial contact <span class="citation" data-cites="schiappa2006">(<a href="#ref-schiappa2006" role="doc-biblioref">Schiappa et al. 2006</a>)</span>, and declining religious opposition <span class="citation" data-cites="sherkat2011">(<a href="#ref-sherkat2011" role="doc-biblioref">Sherkat et al. 2011</a>)</span>. The decomposition does not distinguish among these mechanisms.</p>
 <section class="level4"><h4 id="post-2021-reversal">Post-2021 reversal?<a class="anchor" aria-label="anchor" href="#post-2021-reversal"></a>
 </h4>
-<p>From 2021 through 2024, modeled acceptance fell by 0.023. Intraindividual change contributed −0.033, while population turnover contributed +0.009. This resembles the early period: positive turnover partly offsets negative intraindividual change.</p>
-<p>This short reversal does not establish a new sociological period. It contains only two transitions, and its boundary follows the observed 2021 peak. More importantly, the 2021 round had no in-person interviews and later rounds used mixed modes. The reversal can therefore reflect survey-mode differences as well as attitude change.</p>
+<p>From 2021 through 2024, modeled acceptance fell by 0.056. Intraindividual change contributed −0.065, while population turnover contributed +0.009. This resembles the early period: positive turnover partly offsets negative intraindividual change.</p>
+<p>The decomposition adds a demographic qualification to accounts of recent anti-LGBTQ+ backlash. Population turnover continued to move acceptance upward after 2021, but modeled change within the surviving population moved it downward by a larger amount. Once coming-of-age, mortality, and net migration are accounted for, the most plausible substantive interpretation is that people already in the adult population became less accepting. A panel would observe such changes directly; this decomposition supports the inference indirectly through aggregate change and demographic accounting.</p>
+<p>The timing coincides with organized countermobilization. Jones <span class="citation" data-cites="jones2024">(<a href="#ref-jones2024" role="doc-biblioref">2024</a>)</span> identifies 543 state anti-LGBTIQ+ bills introduced from 2018 through 2022, commonly framed through parental, religious, and women’s rights. McDowell and Ward <span class="citation" data-cites="mcdowellward2023">(<a href="#ref-mcdowellward2023" role="doc-biblioref">2023</a>)</span> show how evangelical churchgoers framed conservative Christians as marginalized to justify religious exemptions that permit denial of services to LGBTQ+ people. These studies establish a relevant political context, but they do not show that countermobilization caused the change estimated here. Much of the recent campaign targeted transgender people and youth, so its connection to attitudes toward homosexuality remains indirect.</p>
+<p>This short reversal does not establish a new sociological period. It contains only two transitions, and its boundary follows the observed 2021 peak. Survey modes also changed after 2021. A sensitivity check using the comparable 2022 and 2024 waves finds declines within each mode and after standardizing the mode distribution. Changing mode composition therefore does not explain the 2022–2024 decline, although other measurement effects remain possible.</p>
+<div>
+<blockquote>
+<p><strong>Mode-sensitivity check</strong></p>
+<p>The 2021 round had no in-person interviews. The 2022 and 2024 rounds included the same four mode categories, which permits a more direct comparison.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">mode_comparison</span> <span class="op">&lt;-</span> <span class="va">gss_homosex</span><span class="op">[</span></span>
+<span>  <span class="va">year</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2022</span>, <span class="fl">2024</span><span class="op">)</span> <span class="op">&amp;</span> <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">mode</span><span class="op">)</span>,</span>
+<span>  <span class="fu">.</span><span class="op">(</span></span>
+<span>    acceptance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/weighted.mean.html" class="external-link">weighted.mean</a></span><span class="op">(</span><span class="va">homosex</span>, <span class="va">wtssps</span><span class="op">)</span>,</span>
+<span>    mode_weight <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">wtssps</span><span class="op">)</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  by <span class="op">=</span> <span class="fu">.</span><span class="op">(</span><span class="va">year</span>, <span class="va">mode</span><span class="op">)</span></span>
+<span><span class="op">]</span></span>
+<span></span>
+<span><span class="va">mode_mix_2022</span> <span class="op">&lt;-</span> <span class="va">mode_comparison</span><span class="op">[</span><span class="va">year</span> <span class="op">==</span> <span class="fl">2022</span>, <span class="fu">.</span><span class="op">(</span></span>
+<span>  <span class="va">mode</span>,</span>
+<span>  share <span class="op">=</span> <span class="va">mode_weight</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">mode_weight</span><span class="op">)</span></span>
+<span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">mode_standardized</span> <span class="op">&lt;-</span> <span class="va">mode_comparison</span><span class="op">[</span><span class="va">mode_mix_2022</span>, on <span class="op">=</span> <span class="st">"mode"</span><span class="op">]</span><span class="op">[</span>, <span class="fu">.</span><span class="op">(</span></span>
+<span>  acceptance <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">acceptance</span> <span class="op">*</span> <span class="va">share</span><span class="op">)</span></span>
+<span><span class="op">)</span>, by <span class="op">=</span> <span class="va">year</span><span class="op">]</span></span>
+<span></span>
+<span><span class="va">mode_table</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/dcast.data.table.html" class="external-link">dcast</a></span><span class="op">(</span></span>
+<span>  <span class="va">mode_comparison</span>, <span class="va">mode</span> <span class="op">~</span> <span class="va">year</span>, value.var <span class="op">=</span> <span class="st">"acceptance"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">mode_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span>
+<span>  <span class="va">mode_table</span><span class="op">[</span>, <span class="fu">.</span><span class="op">(</span>Mode <span class="op">=</span> <span class="va">mode</span>, `2022` <span class="op">=</span> <span class="va">`2022`</span>, `2024` <span class="op">=</span> <span class="va">`2024`</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>  <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
+<span>    Mode <span class="op">=</span> <span class="st">"Standardized to 2022 mode mix"</span>,</span>
+<span>    `2022` <span class="op">=</span> <span class="va">mode_standardized</span><span class="op">[</span><span class="va">year</span> <span class="op">==</span> <span class="fl">2022</span>, <span class="va">acceptance</span><span class="op">]</span>,</span>
+<span>    `2024` <span class="op">=</span> <span class="va">mode_standardized</span><span class="op">[</span><span class="va">year</span> <span class="op">==</span> <span class="fl">2024</span>, <span class="va">acceptance</span><span class="op">]</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">mode_table</span>, digits <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
+<div class="cell-output-display">
+<table class="table caption-top">
+<thead><tr class="header">
+<th style="text-align: left;">Mode</th>
+<th style="text-align: right;">2022</th>
+<th style="text-align: right;">2024</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">in-person</td>
+<td style="text-align: right;">0.653</td>
+<td style="text-align: right;">0.547</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">multimode</td>
+<td style="text-align: right;">0.795</td>
+<td style="text-align: right;">0.533</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">phone</td>
+<td style="text-align: right;">0.675</td>
+<td style="text-align: right;">0.524</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">web</td>
+<td style="text-align: right;">0.700</td>
+<td style="text-align: right;">0.674</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Standardized to 2022 mode mix</td>
+<td style="text-align: right;">0.677</td>
+<td style="text-align: right;">0.595</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Acceptance declined within every interview mode. Holding the mode distribution at its 2022 composition increases the estimated decline from 0.062 to 0.082. Mode is a measurement condition rather than a demographic event, so it is not passed to the decomposition as a population cell.</p>
+</blockquote>
+</div>
 </section></section><section class="level3"><h3 id="contributions-by-sex">Contributions by sex<a class="anchor" aria-label="anchor" href="#contributions-by-sex"></a>
 </h3>
 <p>The decomposition is additive across the supplied cells. Passing <code>covariate = "sex"</code> attributes each component to the sex cells that produced it. These are contributions to aggregate change, not sex-specific rates of change.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">mortality_result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Strategy: residual migration</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                 Component  Value Percent female   male</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.208                      </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.633                      </span></span>
-<span><span class="co">#&gt;  Total change              0.426   100.0  0.216  0.210</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.251    59.0  0.126  0.125</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.175    41.0  0.090  0.084</span></span>
-<span><span class="co">#&gt;    - Mortality             0.053    12.4  0.026  0.027</span></span>
-<span><span class="co">#&gt;    - Out-migration         0.038     8.9  0.011  0.026</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.086    20.2  0.054  0.032</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.200                      </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.617                      </span></span>
+<span><span class="co">#&gt;  Total change              0.417   100.0  0.212  0.205</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.242    58.1  0.122  0.121</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.175    41.9  0.090  0.084</span></span>
+<span><span class="co">#&gt;    - Mortality             0.053    12.8  0.026  0.027</span></span>
+<span><span class="co">#&gt;    - Out-migration         0.038     9.0  0.011  0.026</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.085    20.5  0.054  0.032</span></span>
 <span><span class="co">#&gt;    - In-migration         -0.002    -0.4 -0.000 -0.001</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mortality_result</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
-<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-14-1.png" width="672"></p>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-16-1.png" width="672"></p>
 </figure>
 </div>
 </div>
@@ -630,9 +717,9 @@
 <p>Women and men contribute similar amounts to the total increase. Mortality and residual out-migration differ in their point estimates, but these values do not identify sex differences in emigration. The migration component remains a residual difference between two demographic sources.</p>
 </section></section><section class="level2"><h2 id="uncertainty">Uncertainty<a class="anchor" aria-label="anchor" href="#uncertainty"></a>
 </h2>
-<p>Passing <code>R &gt; 0</code> adds bootstrap draws and empirical 95% intervals. Each replicate uses a new random event ordering and a reweighted refit of the outcome model. Here, <code>R = 100</code> keeps vignette runtime manageable; its tail estimates are illustrative.</p>
+<p>Passing <code>R &gt; 0</code> adds bootstrap draws and empirical 95% intervals. Each replicate uses a new random event ordering and a reweighted refit of the outcome model. Here, <code>R = 100</code> keeps runtime manageable; its tail estimates are illustrative.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">bootstrap_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/decompose_aggregated.html">decompose_aggregated</a></span><span class="op">(</span></span>
 <span>  <span class="va">gss_all</span>, <span class="va">model</span>,</span>
@@ -645,19 +732,19 @@
 <span><span class="co">#&gt; Strategy: residual migration</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                 Component  Value Percent           95% CI</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.208                         </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.633                         </span></span>
-<span><span class="co">#&gt;  Total change              0.426   100.0 [ 0.393, 0.461 ]</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.251    59.0 [ 0.213, 0.297 ]</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.175    41.0 [ 0.143, 0.201 ]</span></span>
-<span><span class="co">#&gt;    - Mortality             0.053    12.4 [ 0.048, 0.058 ]</span></span>
-<span><span class="co">#&gt;    - Out-migration         0.038     8.8 [ 0.036, 0.040 ]</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.086    20.2 [ 0.058, 0.111 ]</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.200                         </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.617                         </span></span>
+<span><span class="co">#&gt;  Total change              0.417   100.0 [ 0.384, 0.455 ]</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.242    58.1 [ 0.213, 0.300 ]</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.175    41.9 [ 0.126, 0.201 ]</span></span>
+<span><span class="co">#&gt;    - Mortality             0.053    12.8 [ 0.050, 0.058 ]</span></span>
+<span><span class="co">#&gt;    - Out-migration         0.038     9.0 [ 0.035, 0.040 ]</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.086    20.5 [ 0.040, 0.110 ]</span></span>
 <span><span class="co">#&gt;    - In-migration         -0.002    -0.4 [-0.002, -0.002]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">bootstrap_result</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
-<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-15-1.png" width="672"></p>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-17-1.png" width="672"></p>
 </figure>
 </div>
 </div>
@@ -665,34 +752,34 @@
 <p>The intervals quantify combined outcome-model and event-ordering uncertainty. They do not include uncertainty in the population frame or mortality probabilities. The reweighted bootstrap also does not reproduce the GSS sample design or resample primary sampling units. It must not be interpreted as a full design-based uncertainty estimate.</p>
 <p>Sex-specific contributions and intervals are:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">bootstrap_result</span>, detailed <span class="op">=</span> <span class="cn">FALSE</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Strategy: residual migration</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;                 Component  Value Percent female   male    female 95% CI</span></span>
-<span><span class="co">#&gt;  At initial (modeled)      0.208                                       </span></span>
-<span><span class="co">#&gt;  At end (modeled)          0.633                                       </span></span>
-<span><span class="co">#&gt;  Total change              0.426   100.0  0.216  0.210 [ 0.200, 0.234 ]</span></span>
-<span><span class="co">#&gt;  - Intraindividual change  0.251    59.0  0.126  0.125 [ 0.107, 0.149 ]</span></span>
-<span><span class="co">#&gt;  - Population turnover     0.175    41.0  0.090  0.084 [ 0.075, 0.103 ]</span></span>
-<span><span class="co">#&gt;    - Mortality             0.053    12.4  0.026  0.027 [ 0.023, 0.029 ]</span></span>
-<span><span class="co">#&gt;    - Out-migration         0.038     8.8  0.011  0.026 [ 0.010, 0.014 ]</span></span>
-<span><span class="co">#&gt;    - Coming-of-age         0.086    20.2  0.054  0.032 [ 0.040, 0.066 ]</span></span>
+<span><span class="co">#&gt;  At initial (modeled)      0.200                                       </span></span>
+<span><span class="co">#&gt;  At end (modeled)          0.617                                       </span></span>
+<span><span class="co">#&gt;  Total change              0.417   100.0  0.212  0.205 [ 0.196, 0.231 ]</span></span>
+<span><span class="co">#&gt;  - Intraindividual change  0.242    58.1  0.121  0.121 [ 0.107, 0.150 ]</span></span>
+<span><span class="co">#&gt;  - Population turnover     0.175    41.9  0.091  0.084 [ 0.066, 0.103 ]</span></span>
+<span><span class="co">#&gt;    - Mortality             0.053    12.8  0.026  0.027 [ 0.024, 0.029 ]</span></span>
+<span><span class="co">#&gt;    - Out-migration         0.038     9.0  0.011  0.026 [ 0.009, 0.014 ]</span></span>
+<span><span class="co">#&gt;    - Coming-of-age         0.086    20.5  0.054  0.032 [ 0.031, 0.066 ]</span></span>
 <span><span class="co">#&gt;    - In-migration         -0.002    -0.4 -0.000 -0.001 [-0.001, -0.000]</span></span>
 <span><span class="co">#&gt;       male 95% CI</span></span>
 <span><span class="co">#&gt;                  </span></span>
 <span><span class="co">#&gt;                  </span></span>
-<span><span class="co">#&gt;  [ 0.193, 0.227 ]</span></span>
-<span><span class="co">#&gt;  [ 0.106, 0.148 ]</span></span>
-<span><span class="co">#&gt;  [ 0.069, 0.098 ]</span></span>
+<span><span class="co">#&gt;  [ 0.189, 0.224 ]</span></span>
+<span><span class="co">#&gt;  [ 0.106, 0.150 ]</span></span>
+<span><span class="co">#&gt;  [ 0.059, 0.098 ]</span></span>
 <span><span class="co">#&gt;  [ 0.025, 0.029 ]</span></span>
 <span><span class="co">#&gt;  [ 0.024, 0.028 ]</span></span>
-<span><span class="co">#&gt;  [ 0.018, 0.045 ]</span></span>
+<span><span class="co">#&gt;  [ 0.008, 0.045 ]</span></span>
 <span><span class="co">#&gt;  [-0.001, -0.001]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">bootstrap_result</span>, covariate <span class="op">=</span> <span class="st">"sex"</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
-<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-16-1.png" width="672"></p>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-18-1.png" width="672"></p>
 </figure>
 </div>
 </div>
@@ -710,7 +797,7 @@
 <p>Using the same GSS item through 2016, Ekstam <span class="citation" data-cites="ekstam2021">(<a href="#ref-ekstam2021" role="doc-biblioref">2021</a>)</span> shows that estimated linear age, period, and cohort trends change substantially with the identifying constraints imposed by an APC model. <code><a href="../reference/decompose_aggregated.html">decompose_aggregated()</a></code> does not fit a conventional APC model. It defines components through modeled outcome trajectories and demographic events, with the assumptions described above.</p>
 <p>Using all waves, AD+ attributes about 60% of the increase to intracohort change and 40% to cohort replacement. The Model method gives 46% and 54%. These estimates bracket the broad split from <code><a href="../reference/decompose_aggregated.html">decompose_aggregated()</a></code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">form</span> <span class="op">&lt;-</span> <span class="va">homosex</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">cohort</span><span class="op">)</span></span>
 <span><span class="va">cric_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cr_ic.html">cr_ic</a></span><span class="op">(</span></span>
 <span>  <span class="va">gss_homosex</span>,</span>
@@ -748,14 +835,14 @@
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cric_all</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div>
-<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-17-1.png" width="672"></p>
+<figure><p><img src="gss_homosexuality_files/figure-html/unnamed-chunk-19-1.png" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>Using only the first and last survey years changes the decomposition. AD+ attributes about 59% to cohort replacement and 41% to intracohort change; the Model method gives 55% and 45%. This sensitivity shows why the selected waves and functional form must be reported.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">form</span> <span class="op">&lt;-</span> <span class="va">homosex</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">as.factor</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span> <span class="op">+</span> <span class="fu">splines</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/splines/bs.html" class="external-link">bs</a></span><span class="op">(</span><span class="va">cohort</span>, <span class="fl">10</span><span class="op">)</span></span>
 <span><span class="va">cric_endpoints</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/cr_ic.html">cr_ic</a></span><span class="op">(</span></span>
 <span>  <span class="va">gss_homosex</span><span class="op">[</span><span class="va">year</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">year</span><span class="op">)</span><span class="op">)</span><span class="op">]</span>,</span>
@@ -815,6 +902,12 @@ Firebaugh, Glenn. 1989. <span>“Methods for Estimating Cohort Replacement Effec
 </div>
 <div id="ref-hmd2025" class="csl-entry" role="listitem">
 Human Mortality Database. 2025. <em>Human Mortality Database</em>. <a href="https://www.mortality.org/" class="external-link">https://www.mortality.org/</a>.
+</div>
+<div id="ref-jones2024" class="csl-entry" role="listitem">
+Jones, Tiffany. 2024. <span>“United States of Hate: Mapping Backlash Bills Against <span>LGBTIQ+</span> Youth.”</span> <em>Sex Education</em> 24 (6): 816–35. <a href="https://doi.org/10.1080/14681811.2023.2241136" class="external-link">https://doi.org/10.1080/14681811.2023.2241136</a>.
+</div>
+<div id="ref-mcdowellward2023" class="csl-entry" role="listitem">
+McDowell, Amy, and Pace T. Ward. 2023. <span>“<span>‘The Tables Are Turning’</span>: The Evangelical Defense of Anti-<span>LGBTQ+</span> Religious Liberty.”</span> <em>Sociology of Religion</em> 84 (4): 406–25. <a href="https://doi.org/10.1093/socrel/srad007" class="external-link">https://doi.org/10.1093/socrel/srad007</a>.
 </div>
 <div id="ref-ruelcampbell2006" class="csl-entry" role="listitem">
 Ruel, Erin, and Richard T. Campbell. 2006. <span>“Homophobia and <span>HIV/AIDS</span>: Attitude Change in the Face of an Epidemic.”</span> <em>Social Forces</em> 84 (4): 2167–78.

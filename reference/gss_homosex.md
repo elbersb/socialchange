@@ -18,7 +18,7 @@ gss_homosex
 
 ## Format
 
-A data.table with 44,153 rows and 18 variables:
+A data.table with 44,153 rows and 19 variables:
 
 - id:
 
@@ -39,6 +39,11 @@ A data.table with 44,153 rows and 18 variables:
 - vpsu:
 
   Variance primary sampling unit (NA for many years).
+
+- mode:
+
+  Interview mode (in-person, phone, multimode, or web; NA when
+  unavailable).
 
 - homosex:
 
