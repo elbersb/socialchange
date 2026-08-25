@@ -104,14 +104,14 @@
 #' US population by age and sex, 1973--2024
 #'
 #' United States population by single year of age and sex, from the UN World
-#' Population Prospects (WPP) 2022, for every year from 1973 to 2024 (the span
+#' Population Prospects (WPP) 2024, for every year from 1973 to 2024 (the span
 #' of the \code{\link{gss_homosex}} survey waves). Ages run from 18 to 89, with
 #' 89 representing "89 or older" to match the GSS age top-code. Counts are in
 #' thousands and reflect the true US age/sex structure; they are intended for
 #' use as the \code{population} frame in \code{\link{decompose_aggregated}},
 #' where only the relative cell structure matters (rescale per period as needed).
 #' Prepared from data distributed by the
-#' \href{https://github.com/PPgp/tidywpp}{tidywpp} project.
+#' \href{https://github.com/PPgp/wpp2024}{wpp2024} project.
 #'
 #' @format A data.table with 7,488 rows and 4 variables:
 #' \describe{
@@ -122,7 +122,7 @@
 #'   \item{n}{Population in thousands (numeric).}
 #' }
 #' @source United Nations, Department of Economic and Social Affairs,
-#'   Population Division. World Population Prospects 2022.
+#'   Population Division. World Population Prospects 2024.
 #'   \url{https://population.un.org/wpp/}
 "wpp_us"
 

@@ -1,7 +1,8 @@
 ---
-title: "Decomposing General Social Survey data: Attitudes on Homosexuality"
+title: "Decomposing General Social Survey data: Attitudes toward homosexuality"
+bibliography: references.bib
 vignette: >
-  %\VignetteIndexEntry{Decomposing General Social Survey data: Attitudes on Homosexuality}
+  %\VignetteIndexEntry{Decomposing General Social Survey data: Attitudes toward homosexuality}
   %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 knitr:
@@ -10,9 +11,33 @@ knitr:
     comment: '#>'
 ---
 
-The package includes `gss_homosex`, covering General Social Survey data on attitudes
-towards homosexuality in the U.S. from 1973 through 2024. A similar analysis of earlier
-waves was done by Ekstam (2021).
+The package includes `gss_homosex`, which covers General Social Survey (GSS)
+data on attitudes toward homosexuality in the United States from 1973 through
+2024. Ekstam [-@ekstam2021] analyzes the same GSS item through 2016. This
+vignette uses `decompose_aggregated()` to ask how much of the increase in
+acceptance reflects modeled change within the surviving population and how much
+reflects population turnover.
+
+::: {.callout-tip title="Key findings"}
+- Acceptance increased by about 42 percentage points. The model attributes
+  about 59% of this rise to modeled change within the surviving adult population
+  (**intraindividual change**). The other 41% came from changes in who
+  made up the population (**population turnover**): more accepting younger
+  people entered adulthood, less accepting older people died, and the population
+  changed through migration.
+- From 1973 through 1988, people already in the adult population became less
+  accepting. Their opinion change pushed acceptance down, while the entry of
+  younger people and the death of older people limited the decline. From 1988
+  through 2018, people already in the adult population became more accepting.
+  This broad opinion change became the main source of rising acceptance, while
+  generational replacement continued to add to it.
+- From 2021 through 2024, intraindividual change was negative while turnover
+  remained positive. Survey-mode changes prevent a clear sociological
+  interpretation of this short reversal.
+- The broad split is stable across the demographic inputs used below. The
+  allocation within turnover is not stable: population estimates and mortality
+  probabilities improve the attribution of mortality and residual migration.
+:::
 
 ## Packages
 
@@ -26,210 +51,462 @@ library("mgcv")
 data(gss_homosex)
 ```
 
-## Descriptives
+## Observed change
 
-The `homosex` outcome is rescaled to [0, 1], where 0 means "always wrong" and 1 means "not wrong at all". The question was not asked in 1972, 1975, 1978, 1983, or 1986, so those years are absent. In included years, rows without a valid response are excluded. Most such rows reflect planned ballot assignment; the remainder are item nonresponse. The table below gives summary statistics; the line plot shows the trend in acceptance over the survey period.
+The `homosex` outcome is rescaled to [0, 1], where 0 means "always wrong" and 1
+means "not wrong at all." The question was not asked in 1972, 1975, 1978, 1983,
+or 1986, so those years are absent. In included years, rows without a valid
+response are excluded. Most exclusions reflect planned ballot assignment; the
+remainder are item nonresponse [@gss2024].
 
 ```{r}
 modelsummary::datasummary(
   homosex + year + cohort + age + educ ~ mean + SD + min + max,
   data = gss_homosex, output = "markdown", fmt = 3)
 
-# sex and race are categorical, so show their level breakdown instead
+# Sex and race are categorical, so show their level breakdown.
 modelsummary::datasummary(
   sex + race ~ N + Percent(),
   data = gss_homosex, output = "markdown", fmt = 1)
-
-by_year <- gss_homosex[, list(y = weighted.mean(homosex, wtssps)), by = c("year")]
-ggplot(by_year, aes(x = year, y = y)) + geom_line() + ylim(0, 1) + theme_light()
 ```
 
-`wtssps` is the GSS post-stratification weight recommended for analyses spanning the full series. It incorporates the 1982 and 1987 Black oversamples, so those respondents remain in the data. Data collection changed after 2018: the 2021 round had no in-person interviews, and later rounds used mixed modes. Changes in the final waves can therefore reflect mode effects as well as attitude change.
+`wtssps` is the GSS post-stratification weight recommended for analyses that
+span the full series. It incorporates the 1982 and 1987 Black oversamples, so
+those respondents remain in the data [@gss2024].
 
-To separate period and cohort effects, we fit a GAM with a two-dimensional smooth over survey year and birth cohort. The 3D surface and the contour plot below both show that acceptance increased more strongly among younger cohorts and in later periods.
+The weighted mean rose from about 0.20 in 1973 to 0.61 in 2024. The final waves
+need special care. The 2021 round had no in-person interviews, and later rounds
+used mixed modes. Their changes can reflect mode effects as well as attitude
+change [@gss2024].
 
 ```{r}
-splinemodel = gam(homosex ~ s(year, cohort), data = gss_homosex)
-vis.gam(splinemodel, theta = 40)
-plot_gam_surface(splinemodel)
+by_year <- gss_homosex[, .(acceptance = weighted.mean(homosex, wtssps)), by = year]
+
+ggplot(by_year, aes(x = year, y = acceptance)) +
+  geom_line() +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(
+    title = "Acceptance of homosexuality increased substantially",
+    subtitle = "Weighted General Social Survey mean",
+    x = "Survey year", y = "Mean acceptance"
+  ) +
+  theme_light()
 ```
 
-## CR-IC decomposition
-
-The `cr_ic()` function implements four methods for separating intracohort change (IC) from cohort replacement (CR): algebraic decomposition (AD), linear decomposition (LD), and two model-based improvements (AD+ and Model). For a detailed explanation of each method, including a replication of Firebaugh (1989), see the [Replications: Firebaugh](replicating_firebaugh.html) vignette.
-
-Acceptance rose by about 42 percentage points between 1973 and 2024 (from 0.20 to 0.61). Using all waves, AD+ attributes about 60% to intracohort change and 40% to cohort replacement, while the Model method gives 46% and 54%, respectively.
+A smooth surface provides a descriptive view of period and cohort variation.
+Acceptance is higher in later periods and younger cohorts. This surface is not
+the outcome model used in the decomposition below and does not, by itself,
+identify causal period or cohort effects.
 
 ```{r}
-# complete period
-form <- homosex ~ as.factor(year) + as.factor(cohort)
-(res <- cr_ic(gss_homosex, homosex ~ year + cohort, weight = "wtssps", model = form))
+splinemodel <- gam(
+  homosex ~ s(year, cohort),
+  data = gss_homosex,
+  weights = wtssps
+)
+vis.gam(
+  splinemodel,
+  view = c("year", "cohort"),
+  type = "response", theta = 40,
+  ticktype = "detailed",
+  xlab = "Survey year", ylab = "Birth cohort", zlab = "Acceptance",
+  cex.axis = 0.8, cex.lab = 0.9
+)
 ```
 
+Ekstam [-@ekstam2021] describes higher tolerance among cohorts born from 1942
+through 1951 than among adjacent cohorts, and lower tolerance among cohorts born
+from 1957 through 1966. He relates these descriptive patterns to formative
+exposure to the counterculture era and to the HIV/AIDS crisis and conservative
+climate of the 1980s. Neither this surface nor an APC model can identify that
+socialization explanation from age, period, and cohort patterns alone.
+
+## What the decomposition measures
+
+`decompose_aggregated()` represents aggregate change as the sum of two broad
+components:
+
+| Component | Interpretation |
+|---|---|
+| Intraindividual change | Change in the modeled outcome among the surviving population as age and period advance |
+| Population turnover | Change caused by mortality, coming-of-age, and net migration |
+
+The method combines an outcome model with period-specific population cells. It
+places the demographic events between survey waves in random order and records
+each event's contribution to the population mean.
+
+::: {.callout-important title="Interpretation"}
+The GSS is a repeated cross-section. It does not follow the same respondents
+over time. "Intraindividual change" is therefore a model-based component, not a
+direct estimate of within-person change from panel observations. The
+plain-language descriptions below interpret this component as people changing.
+That plausible inference is an assumption that these data cannot test.
+:::
+
+::: {.callout-note collapse="true" title="Technical background: event attribution"}
+Every change in a cell count must be assigned to an event. Without supplied
+mortality probabilities, a shrinking survivor cell is assigned to mortality and
+a growing survivor cell is assigned to net in-migration. This **sign
+attribution** leaves no residual, but it cannot identify offsetting deaths and
+migration. With supplied mortality probabilities, deaths are calculated first
+and migration becomes the signed residual of the population-balancing identity.
+:::
+
+## Prepare the outcome model and demographic inputs
+
+All waves cover ages 18--89+. We pool ages 81 and older into a common open
+outcome cell. A common open cell prevents respondents from aging out of the
+observed range.
+
 ```{r}
-plot(res)
-```
-
-When only the first and last survey years are used, AD+ attributes about 59% to cohort replacement and 41% to intracohort change; the Model method gives 55% and 45%. This illustrates how the choice of time points can affect the decomposition and why the model-based methods are preferred over the simpler AD.
-
-```{r}
-# only beginning and end year (also compare to Baunach 2011)
-form <- homosex ~ as.factor(year) + splines::bs(cohort, 10)
-(res <- cr_ic(gss_homosex[year %in% c(min(year), max(year))], homosex ~ year + cohort, weight = "wtssps", model = form))
-```
-
-## Event-based decomposition
-
-The `decompose_aggregated()` function separates change in the aggregate outcome into intraindividual change (attitude shifts within respondents already in the population) and population turnover (mortality and coming-of-age effects). We rename `year` and `homosex` to the column names the function expects, then pass the full dataset directly.
-
-```{r}
-# All waves span ages 18--89+. Pool ages 81 and older into a stable open
-# outcome cell.
 gss_all <- gss_homosex[,
-    .(age = pmin(age, 81), period = year, sex, y = homosex, wtssps)]
+  .(age = pmin(age, 81), period = year, sex, y = homosex, wtssps)
+]
 ```
 
-We fit a GAM to the individual responses to model acceptance as a smooth function of age and period.
+We model acceptance as an additive smooth function of age and period, with a
+term for sex. The outcome model supplies predicted acceptance for each cell; it
+does not determine the number of people in each cell.
 
 ```{r}
-set.seed(42)
-model <- mgcv::gam(y ~ s(age) + s(period), data = gss_all, weights = wtssps)
+model <- mgcv::gam(
+  y ~ s(age) + s(period) + sex,
+  data = gss_all,
+  weights = wtssps
+)
 ```
 
-### The simplest decomposition
+The package also includes two demographic inputs:
 
-We can run the simplest case of the event decomposition with the following commmand:
+- `wpp_us`: U.S. population estimates by age and sex from the United Nations
+  World Population Prospects [@unwpp2024].
+- `mortality_us`: U.S. central death rates by year, age, and sex from the Human
+  Mortality Database [@hmd2025].
 
-```{r}
-result <- decompose_aggregated(gss_all, model, weight = "wtssps")
-print(result, detailed = FALSE)
-```
-
-This decomposition compares cells across years, attributing shrinking cohorts to mortality and the youngest cohorts to coming-of-age. Every change in a cell's size must be attributed to *some* demographic event — the decomposition never leaves a residual — so a survivor cohort that *grows* between two waves is credited to net in-migration. With only the survey to work from, this in-migration contribution (about 0.057, or 13% of total change) largely reflects sampling fluctuation in cell sizes across waves rather than genuine immigration. It becomes meaningful only once a true population frame is supplied (see below).
-
-Of the roughly 43 percentage point modeled rise between 1973 and 2024, the decomposition attributes about 58% to intraindividual change and 42% to population turnover. This turnover share is within the 41--54% range from the CR-IC model-based methods above.
-
-```{r}
-plot(result)
-```
-
-The components also differ over time. Intraindividual change was negative through much of the 1970s and 1980s, while turnover was positive. From the early 1990s through 2018, intraindividual change became the main source of rising acceptance. It turned negative again in 2022 and 2024, alongside the decline in the observed mean after 2021. The survey-design changes in these final waves prevent a purely attitudinal interpretation of that reversal.
-
-One speculative reading of the early decline in intraindividual acceptance is the backlash associated with the AIDS epidemic of the 1980s. The decomposition itself cannot establish this, but it does isolate a within-person decline that is invisible in the raw trend line.
-
-### Adding a covariate
-
-We can split the population into covariate cells with the `cells` argument. Adding `sex` lets the outcome model predict differently for men and women, and — more consequentially for the decomposition — derives the demographic events (mortality, coming-of-age, migration) separately within each sex cell rather than from the pooled age structure.
-
-```{r}
-model <- mgcv::gam(y ~ s(age) + s(period) + sex, data = gss_all, weights = wtssps)
-set.seed(42)
-result <- decompose_aggregated(gss_all, model, cells = "sex", weight = "wtssps")
-print(result, detailed = FALSE)
-plot(result)
-```
-
-The headline split is essentially unchanged from the pooled model: about 58% intraindividual change and 42% turnover. Conditioning on sex barely moves the population-weighted mean because the sex composition is roughly stable across waves.
-
-What the covariate also adds is an *attribution* of every component to the cells that produced it. Passing `covariate = "sex"` to `print()` or `plot()` splits each row into the contribution of each sex to the overall change. The split is fully additive, so this is a genuine decomposition of the aggregate change.
-
-```{r}
-print(result, detailed = FALSE, covariate = "sex")
-plot(result, covariate = "sex")
-```
-
-Women and men contribute similar amounts to total change (0.217 and 0.212), intraindividual change (0.121 and 0.126), and turnover (0.096 and 0.086).
-
-The structure within turnover needs a caveat. Mortality contributes −0.036 for women and 0.115 for men, offset by in-migration contributions of 0.102 and −0.050. This asymmetry should not be read demographically. On survey data, each survivor cell's net size change is routed entirely to mortality if it shrank or to in-migration if it grew. Splitting noisy survey cells by sex amplifies sampling fluctuation, so this division is largely an artifact of survey cell sizes. A population frame improves the attribution.
-
-### Adding a population frame
-
-So far the cell counts `n` have come from the survey itself, so the demographic events are inferred from the noisy survey cell sizes across waves. When true population counts are available, the `population` argument lets the survey supply only the outcome `model`, while an external frame supplies the cell counts that drive the demographic events.
-
-The package ships `wpp_us`, US population by age and sex from the UN World Population Prospects for each survey year. Only the *relative* cell structure matters, so we rescale each wave to a tractable per-period total before passing it in.
+Only relative population structure matters. We therefore rescale each
+population wave to a tractable total. Ages 81--88 and the terminal 89+ group
+remain separate for demographic calculations. Their outcome predictions use
+the survey's 81+ cell.
 
 ```{r}
 data(wpp_us)
+data(mortality_us)
 
 survey_years <- sort(unique(gss_all$period))
 pop <- wpp_us[period %in% survey_years]
-# Keep ages 81--88 and the terminal 89+ group separate for demographic
-# calculations. Outcome predictions for all these ages use the survey's 81+ cell.
 scale_total <- round(mean(gss_all[, .N, by = period]$N))
 pop[, n := n / sum(n) * scale_total, by = period]
 
-set.seed(42)
-result <- decompose_aggregated(gss_all, model, cells = "sex",
-                               weight = "wtssps", population = pop)
-print(result, detailed = FALSE)
-plot(result)
+# decompose_aggregated() requires annual death probabilities rather than
+# central death rates.
+mort <- mortality_us[,
+  .(period = year, age, sex, prob = 1 - exp(-death_rate))
+]
 ```
 
-The population frame gives about 59% intraindividual change and 41% turnover. Its smooth age structure removes survey cell-size noise: mortality contributes 0.084, coming-of-age contributes 0.088, and net in-migration falls to 0.004.
+::: {.callout-note collapse="true" title="Technical background: open age groups"}
+The survey outcome model has an open 81+ cell. The population and mortality
+frames retain their constituent ages through a terminal 89+ group. The method
+uses those constituent ages for aging and mortality, clamps their outcome
+predictions to age 81, and reports their contributions in the 81+ outcome cell.
+The terminal ages in the population and mortality frames must describe the same
+open group.
+:::
 
-The clearest payoff shows up in the per-sex breakdown, which we can compare directly with the survey-counts version above.
+::: {.callout-note collapse="true" title="Technical background: survey weights"}
+When no population frame is supplied, survey weights are normalized within each
+period to sum to the sample size. Rounded cell totals then preserve relative
+survey structure while keeping the simulation tractable. They are not population
+counts. A population frame is preferred when suitable estimates are available.
+:::
 
-```{r}
-print(result, detailed = FALSE, covariate = "sex")
-plot(result, covariate = "sex")
-```
+## Build the decomposition in three stages
 
-Mortality now splits into demographically plausible contributions of 0.033 for women and 0.051 for men. The large offsetting in-migration terms collapse to 0.003 and 0.001. This confirms that the earlier mortality/migration pattern came from small survey cells.
+The stages below hold the outcome model and sex cells constant. They change only
+the information used to derive demographic events.
 
-### Adding mortality data
+### 1. Survey counts
 
-Even with a population frame, the split of each survivor cell's change between mortality and migration rests on a sign heuristic: per cell the balancing identity is $n_2 = n_1 - \text{deaths} + \text{net migration}$ — one equation, two unknowns — and the default closes it by routing the whole net change to mortality if the cell shrank and to in-migration if it grew. External mortality data closes the identity directly: deaths come from real death probabilities, and migration becomes the *signed residual*, so out-migration can appear for the first time.
-
-The package ships `mortality_us`, HMD central death rates $m(x)$ by year, age, and sex. The `mortality` argument expects annual death *probabilities* $q(x)$, so we convert with $q = 1 - e^{-m}$ and rename `year` to `period`; the `sex` column matches `cells = "sex"`. Both WPP and HMD end in a matching 89+ open group. The decomposition retains WPP's true ages 81--89 for mortality, while clamping their outcome predictions to the survey's 81+ cell.
-
-```{r}
-data(mortality_us)
-mort <- mortality_us[, .(period = year, age, sex, prob = 1 - exp(-death_rate))]
-
-set.seed(42)
-result <- decompose_aggregated(gss_all, model, cells = "sex",
-                               weight = "wtssps", population = pop,
-                               mortality = mort)
-print(result, detailed = FALSE)
-plot(result)
-```
-
-The headline split is stable, but annual death timing causes small compensating changes across path-dependent components. Mortality falls from 0.084 under sign attribution to 0.053 with HMD probabilities, while a new out-migration term contributes 0.033. The WPP cohorts shrink across waves by more than HMD survival accounts for, so residual migration records the difference instead of folding all shrinkage into mortality.
-
-That out-migration term is not a direct migration estimate. It combines genuine net migration with inconsistency between WPP cohort counts and HMD survival. About 0.008 of its 0.033 contribution sits in the survey's 81+ outcome cell, where deaths are calculated from WPP's constituent ages 81--89. With that qualification, supplied mortality probabilities attribute about 0.053, or 12% of total attitude change, to mortality itself.
-
-```{r}
-print(result, detailed = FALSE, covariate = "sex")
-```
-
-The mortality contribution is nearly even by sex (0.025 for women and 0.028 for men). Out-migration contributes more among men (0.024 versus 0.009), but this remains a residual difference rather than an identified sex difference in emigration.
-
-### Standard errors
-
-Passing `R > 0` attaches standard errors and 95% confidence bands to every component. Each replicate re-runs the decomposition under a fresh random ordering of the interleaved demographic events and a refit of the outcome `model` on a reweighted bootstrap sample of the survey; the spread across the `R` replicates is the band that `print()` reports and `plot()` shades.
+The simplest specification derives cell counts from the survey.
 
 ```{r}
 set.seed(42)
-result <- decompose_aggregated(gss_all, model, cells = "sex",
-                               weight = "wtssps", population = pop, R = 100,
-                               seed = 42)
-print(result, detailed = FALSE)
-plot(result)
+survey_result <- decompose_aggregated(
+  gss_all, model,
+  cells = "sex", weight = "wtssps"
+)
+print(survey_result, detailed = FALSE)
 ```
 
-The bands separate the roughly 59% intraindividual and 41% turnover contributions: both are well above zero, and their intervals do not overlap. Intraindividual change and coming-of-age have the widest intervals; mortality and the small net in-migration term are estimated more tightly.
+Survey cell sizes fluctuate across waves. The function must route that
+fluctuation to mortality or in-migration. These detailed components must not be
+read as demographic estimates.
 
-Second, the bands combine model uncertainty with event-ordering uncertainty only. Because the population frame supplies the cell counts, those counts are treated as fixed, so the intervals do not include demographic sampling error in the turnover the counts drive — they would understate total uncertainty if the cell sizes were themselves noisy (as they are when the counts come from the survey, for instance, rather than a population frame).
+### 2. Population frame
 
-Standard errors can also be obtained when we split by covariate:
+The `population` argument lets the survey supply the outcome model while the
+external frame supplies the cell counts.
 
 ```{r}
-print(result, detailed = FALSE, covariate = "sex")
-plot(result, covariate = "sex")
+set.seed(42)
+population_result <- decompose_aggregated(
+  gss_all, model,
+  cells = "sex", weight = "wtssps",
+  population = pop
+)
+print(population_result, detailed = FALSE)
 ```
 
-The female and male intervals overlap for the total change and for every component except mortality (and the tiny net in-migration term), so the apparent differences in intraindividual change and coming-of-age are within sampling noise rather than distinguishable differences. Mortality is the exception: the male contribution is clearly larger, in line with men's excess mortality.
+The smoother population structure removes most survey cell-size noise. Net
+in-migration becomes small, but the mortality estimate still uses sign
+attribution.
 
-## Further reading
+### 3. Population frame and mortality probabilities
 
-For APC analysis of the same `gss_homosex` dataset, see the [APC vignette](apc.html).
+Supplied mortality probabilities determine deaths directly. Migration becomes
+the signed residual between estimated cohort survival and the next population
+count.
+
+```{r}
+set.seed(42)
+mortality_result <- decompose_aggregated(
+  gss_all, model,
+  cells = "sex", weight = "wtssps",
+  population = pop, mortality = mort
+)
+print(mortality_result, detailed = FALSE)
+```
+
+This specification uses the most complete demographic information available
+here. Its out-migration term is not a direct migration estimate. It combines
+net migration with inconsistency between the population estimates and
+mortality-based survival.
+
+```{r}
+#| code-fold: true
+#| code-summary: "Show table code"
+summarize_result <- function(x, specification) {
+  s <- x$summary
+  total <- s[.N, modeled_mean] - s[1, modeled_mean]
+  intraindividual <- s[, sum(intraindividual, na.rm = TRUE)]
+  mortality <- s[, sum(mortality, na.rm = TRUE)]
+  coming_of_age <- s[, sum(coming_of_age, na.rm = TRUE)]
+  inmigration <- s[, sum(inmigration, na.rm = TRUE)]
+  outmigration <- s[, sum(outmigration, na.rm = TRUE)]
+
+  data.frame(
+    Specification = specification,
+    `Total change` = total,
+    `Intraindividual` = intraindividual,
+    `Turnover` = mortality + coming_of_age + inmigration + outmigration,
+    `Mortality` = mortality,
+    `Coming-of-age` = coming_of_age,
+    `In-migration` = inmigration,
+    `Out-migration` = outmigration,
+    check.names = FALSE
+  )
+}
+
+comparison <- rbind(
+  summarize_result(survey_result, "Survey counts"),
+  summarize_result(population_result, "Population frame"),
+  summarize_result(mortality_result, "Population frame + mortality")
+)
+knitr::kable(comparison, digits = 3)
+```
+
+## Substantive findings
+
+The preferred specification attributes about 59% of the modeled increase to
+intraindividual change and 41% to population turnover. The broad split changes
+little across the three specifications. In contrast, the allocation of turnover
+between mortality and migration changes materially when demographic information
+is added.
+
+```{r}
+plot(mortality_result)
+```
+
+### Two periods of social change
+
+The cumulative result contains two long periods with distinct patterns,
+followed by a short reversal. The table summarizes these selected intervals.
+
+```{r}
+#| code-fold: true
+#| code-summary: "Show table code"
+summarize_period <- function(x, start, end) {
+  s <- x$summary
+  changes <- s[period > start & period <= end]
+
+  data.frame(
+    Period = paste(start, end, sep = "--"),
+    `Modeled change` =
+      s[period == end, modeled_mean] - s[period == start, modeled_mean],
+    `Intraindividual change` =
+      changes[, sum(intraindividual, na.rm = TRUE)],
+    `Population turnover` = changes[, sum(
+      mortality + outmigration + coming_of_age + inmigration,
+      na.rm = TRUE
+    )],
+    check.names = FALSE
+  )
+}
+
+period_comparison <- rbind(
+  summarize_period(mortality_result, 1973, 1988),
+  summarize_period(mortality_result, 1988, 2018),
+  summarize_period(mortality_result, 2021, 2024)
+)
+knitr::kable(period_comparison, digits = 3)
+```
+
+From 1973 through 1988, modeled acceptance declined slightly. Intraindividual
+change contributed −0.082, while population turnover contributed +0.054.
+Turnover was already moving the population toward greater acceptance, but
+change within the surviving population moved in the opposite direction. The
+aggregate trend therefore conceals two opposing social processes.
+
+This early pattern matches the historical sequence described by Ekstam
+[-@ekstam2021]: advances associated with gay-rights mobilization met organized
+conservative countermobilization in the 1970s, followed by a more hostile climate
+during the HIV/AIDS crisis of the 1980s. Research documents both the role of the
+religious right in shaping countermobilization [@fetner2008] and changing
+attitudes during the epidemic [@ruelcampbell2006]. These accounts support the
+periodization, but they do not establish the cause of the negative component.
+
+From 1988 through 2018, modeled acceptance rose by 0.457. Intraindividual change
+contributed +0.356, compared with +0.101 from population turnover. Turnover
+remained positive, but change within the existing population became the main
+source of rising acceptance. This pattern is consistent with a shift from
+replacement offsetting resistance to broader cultural diffusion across the
+population.
+
+Proposed mechanisms for this diffusion include gay-rights movement campaigns
+[@epstein1999], changing elite messages [@brewer2003], greater media visibility
+and parasocial contact [@schiappa2006], and declining religious opposition
+[@sherkat2011]. The decomposition does not distinguish among these mechanisms.
+
+#### Post-2021 reversal?
+
+From 2021 through 2024, modeled acceptance fell by 0.023. Intraindividual change
+contributed −0.033, while population turnover contributed +0.009. This resembles
+the early period: positive turnover partly offsets negative intraindividual
+change.
+
+This short reversal does not establish a new sociological period. It contains
+only two transitions, and its boundary follows the observed 2021 peak.
+More importantly, the 2021 round had no in-person interviews and later rounds
+used mixed modes. The reversal can therefore reflect survey-mode differences as
+well as attitude change.
+
+### Contributions by sex
+
+The decomposition is additive across the supplied cells. Passing
+`covariate = "sex"` attributes each component to the sex cells that produced it.
+These are contributions to aggregate change, not sex-specific rates of change.
+
+```{r}
+print(mortality_result, detailed = FALSE, covariate = "sex")
+plot(mortality_result, covariate = "sex")
+```
+
+Women and men contribute similar amounts to the total increase. Mortality and
+residual out-migration differ in their point estimates, but these values do not
+identify sex differences in emigration. The migration component remains a
+residual difference between two demographic sources.
+
+## Uncertainty
+
+Passing `R > 0` adds bootstrap draws and empirical 95% intervals. Each replicate
+uses a new random event ordering and a reweighted refit of the outcome model.
+Here, `R = 100` keeps vignette runtime manageable; its tail estimates are
+illustrative.
+
+```{r}
+set.seed(42)
+bootstrap_result <- decompose_aggregated(
+  gss_all, model,
+  cells = "sex", weight = "wtssps",
+  population = pop, mortality = mort,
+  R = 100, seed = 42
+)
+print(bootstrap_result, detailed = FALSE)
+plot(bootstrap_result)
+```
+
+The intervals quantify combined outcome-model and event-ordering uncertainty.
+They do not include uncertainty in the population frame or mortality
+probabilities. The reweighted bootstrap also does not reproduce the GSS sample
+design or resample primary sampling units. It must not be interpreted as a full
+design-based uncertainty estimate.
+
+Sex-specific contributions and intervals are:
+
+```{r}
+print(bootstrap_result, detailed = FALSE, covariate = "sex")
+plot(bootstrap_result, covariate = "sex")
+```
+
+Marginal intervals for women and men do not test their difference. A sex
+contrast must be calculated within each bootstrap replicate.
+
+::: {.callout-note collapse="true" title="Technical background: event ordering"}
+The timing and order of demographic events between survey waves are not
+observed. The method assigns events to evenly spaced positions in random order.
+With `R = 0`, the point estimate uses one ordering. With `R > 0`, it averages
+over `R` orderings and pairs each ordering with one model refit.
+:::
+
+## Comparison with CR-IC decomposition
+
+The classical cohort-replacement and intracohort-change framework provides a
+useful benchmark. `cr_ic()` implements algebraic decomposition (AD), linear
+decomposition (LD), and two model-based improvements (AD+ and Model). For a
+detailed explanation and a replication of Firebaugh [-@firebaugh1989], see the
+[Replications: Firebaugh](replicating_firebaugh.html) vignette.
+
+Using the same GSS item through 2016, Ekstam [-@ekstam2021] shows that estimated
+linear age, period, and cohort trends change substantially with the identifying
+constraints imposed by an APC model. `decompose_aggregated()` does not fit a
+conventional APC model. It defines components through modeled outcome
+trajectories and demographic events, with the assumptions described above.
+
+Using all waves, AD+ attributes about 60% of the increase to intracohort change
+and 40% to cohort replacement. The Model method gives 46% and 54%. These
+estimates bracket the broad split from `decompose_aggregated()`.
+
+```{r}
+form <- homosex ~ as.factor(year) + as.factor(cohort)
+cric_all <- cr_ic(
+  gss_homosex,
+  homosex ~ year + cohort,
+  weight = "wtssps", model = form
+)
+cric_all
+plot(cric_all)
+```
+
+Using only the first and last survey years changes the decomposition. AD+
+attributes about 59% to cohort replacement and 41% to intracohort change; the
+Model method gives 55% and 45%. This sensitivity shows why the selected waves
+and functional form must be reported.
+
+```{r}
+form <- homosex ~ as.factor(year) + splines::bs(cohort, 10)
+cric_endpoints <- cr_ic(
+  gss_homosex[year %in% c(min(year), max(year))],
+  homosex ~ year + cohort,
+  weight = "wtssps", model = form
+)
+cric_endpoints
+```
+
+CR-IC summarizes change as intracohort change and cohort replacement.
+`decompose_aggregated()` instead tracks coming-of-age, mortality, and residual
+migration and shows when each component accumulated.
+
+## References
+
+::: {#refs}
+:::
