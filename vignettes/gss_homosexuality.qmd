@@ -85,6 +85,49 @@ vis.gam(
 
 Ekstam [-@ekstam2021] describes higher tolerance among cohorts born from 1942 through 1951 than among adjacent cohorts, and lower tolerance among cohorts born from 1957 through 1966. He relates these descriptive patterns to formative exposure to the counterculture era and to the HIV/AIDS crisis and conservative climate of the 1980s. Neither this surface nor an APC model can identify that socialization explanation from age, period, and cohort patterns alone.
 
+The figure below provides the closest direct comparison available in the GSS: weighted cohort means at ages 18--24. Because the series starts in 1973, it cannot show most of the 1942--1951 cohorts during young adulthood. The means also combine cohort and survey-period differences.
+
+```{r}
+#| echo: false
+young_cohorts <- gss_homosex[
+  age >= 18 & age <= 24,
+  .(acceptance = weighted.mean(homosex, wtssps)),
+  by = cohort
+]
+young_cohorts[, group := data.table::fifelse(
+  cohort >= 1942 & cohort <= 1951, "1942--1951",
+  data.table::fifelse(
+    cohort >= 1957 & cohort <= 1966, "1957--1966", "Other cohorts"
+  )
+)]
+
+ggplot(young_cohorts, aes(x = cohort, y = acceptance)) +
+  annotate(
+    "rect", xmin = 1941.5, xmax = 1951.5, ymin = -Inf, ymax = Inf,
+    fill = "#0072B2", alpha = 0.08
+  ) +
+  annotate(
+    "rect", xmin = 1956.5, xmax = 1966.5, ymin = -Inf, ymax = Inf,
+    fill = "#D55E00", alpha = 0.08
+  ) +
+  geom_line(color = "grey65") +
+  geom_point(aes(color = group), size = 2) +
+  scale_color_manual(values = c(
+    "1942-1951" = "#0072B2",
+    "1957-1966" = "#D55E00",
+    "Other cohorts" = "grey35"
+  )) +
+  coord_cartesian(xlim = c(1942, 2006), ylim = c(0, 1)) +
+  labs(
+    title = "Acceptance in young adulthood varies by birth cohort",
+    subtitle = "Weighted GSS means among respondents aged 18-24",
+    x = "Birth cohort", y = "Mean acceptance", color = "Birth cohort",
+    caption = "The GSS starts in 1973; cohorts before 1949 are not observed at ages 18-24."
+  ) +
+  theme_light() +
+  theme(legend.position = "bottom")
+```
+
 ## What the decomposition measures
 
 `decompose_aggregated()` represents aggregate change as the sum of two broad components:
