@@ -21,7 +21,7 @@ devtools::install()       # install locally
 pkgdown::build_site()     # build docs website
 ```
 
-Use a timeout of at least 600 seconds for `devtools::check()` and Quarto renders. Vignette builds can exceed 300 seconds with little intermediate output.
+Use a timeout of at least 600 seconds for `devtools::check()` and Quarto renders. Vignette builds can exceed 300 seconds with little intermediate output. Direct Quarto renders read installed package data, so reinstall after changing an `.rda` file.
 
 ## Architecture
 

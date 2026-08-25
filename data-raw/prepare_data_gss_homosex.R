@@ -3,7 +3,7 @@ library("data.table")
 data(gss_all)
 
 cols <- c(
-    "id", "year", "wtssps", "vstrat", "vpsu", "homosex",
+    "id", "year", "wtssps", "vstrat", "vpsu", "mode", "homosex",
     "age", "cohort", "sex", "educ", "marital", "race", "region",
     "born", "physhlth", "compuse", "relig16", "pray"
 )
@@ -22,6 +22,12 @@ gss_homosex <- gss_homosex[!is.na(homosex) & homosex %in% 1:4]
 gss_homosex <- gss_homosex[!is.na(cohort)]
 gss_homosex <- gss_homosex[!is.na(sex) & sex %in% 1:2]
 gss_homosex[, homosex := scales::rescale(homosex)]
+gss_homosex[, mode := fcase(
+    mode == 1, "in-person",
+    mode == 2, "phone",
+    mode == 3, "multimode",
+    mode == 4, "web"
+)]
 gss_homosex[, sex := fcase(sex == 1, "male", sex == 2, "female")]
 gss_homosex[, race := fcase(race == 1, "white", race == 2, "black", race == 3, "other")]
 

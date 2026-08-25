@@ -9,13 +9,15 @@
 #' its original 1--4 coding to a 0--1 scale. Prepared from the
 #' \href{https://cran.r-project.org/package=gssr}{gssr} package.
 #'
-#' @format A data.table with 44,153 rows and 18 variables:
+#' @format A data.table with 44,153 rows and 19 variables:
 #' \describe{
 #'   \item{id}{Respondent ID number.}
 #'   \item{year}{GSS survey year.}
 #'   \item{wtssps}{Post-stratification survey weight.}
 #'   \item{vstrat}{Variance stratum (NA for many years).}
 #'   \item{vpsu}{Variance primary sampling unit (NA for many years).}
+#'   \item{mode}{Interview mode (in-person, phone, multimode, or web; NA when
+#'     unavailable).}
 #'   \item{homosex}{Attitude toward sexual relations between two adults of the
 #'     same sex, rescaled to 0--1 (0 = always wrong, 1 = not wrong at all).
 #'     Original 4-point scale: 1 = Always Wrong, 2 = Almost Always Wrong,
