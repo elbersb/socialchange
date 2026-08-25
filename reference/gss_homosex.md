@@ -2,10 +2,13 @@
 
 A subset of the General Social Survey (GSS) containing respondents with
 valid responses to the `homosex` question, covering survey years
-1973–2018 and birth cohorts 1892–1995. Oversample designs (samples 4, 5,
-and 7) are excluded. The outcome variable has been rescaled from its
-original 1–4 coding to a 0–1 scale. Prepared from the
-[gssr](https://cran.r-project.org/package=gssr) package.
+1973–2024 and birth cohorts 1884–2006. The question was not asked in
+1972, 1975, 1978, 1983, or 1986, so those years are omitted. Within
+included years, rows without a valid response are excluded; these
+include planned questionnaire non-assignment and item nonresponse. The
+outcome variable has been rescaled from its original 1–4 coding to a 0–1
+scale. Prepared from the [gssr](https://cran.r-project.org/package=gssr)
+package.
 
 ## Usage
 
@@ -15,7 +18,7 @@ gss_homosex
 
 ## Format
 
-A data.table with 36,494 rows and 19 variables:
+A data.table with 44,153 rows and 18 variables:
 
 - id:
 
@@ -25,13 +28,9 @@ A data.table with 36,494 rows and 19 variables:
 
   GSS survey year.
 
-- wtssall:
+- wtssps:
 
-  Survey weight.
-
-- sample:
-
-  Sampling frame and method code.
+  Post-stratification survey weight.
 
 - vstrat:
 
@@ -50,7 +49,7 @@ A data.table with 36,494 rows and 19 variables:
 
 - age:
 
-  Age of respondent at time of interview.
+  Age of respondent at time of interview; 89 means 89 or older.
 
 - cohort:
 
@@ -103,5 +102,5 @@ A data.table with 36,494 rows and 19 variables:
 ## Source
 
 Smith, Tom W., Davern, Michael, Freese, Jeremy, and Morgan, Stephen L.
-General Social Surveys, 1972–2018. NORC, Chicago. Accessed via the
+General Social Surveys, 1972–2024. NORC, Chicago. Accessed via the
 [gssr](https://cran.r-project.org/package=gssr) R package.

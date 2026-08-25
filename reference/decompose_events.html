@@ -22,7 +22,7 @@ Separates aggregate change into within-unit change and population replacement co
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/apc.html">APC Models</a></li>
     <li><a class="dropdown-item" href="../articles/decompose_aggregated.html">Decomposing social change on aggregated data</a></li>
-    <li><a class="dropdown-item" href="../articles/gss_homosexuality.html">Decomposing General Social Survey data: Attitudes on Homosexuality</a></li>
+    <li><a class="dropdown-item" href="../articles/gss_homosexuality.html">Decomposing General Social Survey data: Attitudes toward homosexuality</a></li>
     <li><a class="dropdown-item" href="../articles/replicating_firebaugh.html">Replications: Firebaugh</a></li>
     <li><a class="dropdown-item" href="../articles/simulate.html">Simulating social change</a></li>
   </ul></li>
@@ -117,10 +117,10 @@ event (e.g. <code>"initial"</code>) marks a unit as part of the founding populat
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">decompose_events</span><span class="op">(</span><span class="va">events</span>, <span class="va">outcomes</span>, <span class="va">gdp</span> <span class="op">~</span> <span class="va">country</span> <span class="op">+</span> <span class="va">year</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     event_type       term      total      pct</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;char&gt;      &lt;num&gt;      &lt;num&gt;    &lt;num&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1:      change -0.3032191 -0.4281657 70.81816</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2: replacement -0.1249466 -0.4281657 29.18184</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     event_type       term     total      pct</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         &lt;char&gt;      &lt;num&gt;     &lt;num&gt;    &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:      change 0.03588737 0.3469903 10.34247</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2: replacement 0.31110298 0.3469903 89.65753</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

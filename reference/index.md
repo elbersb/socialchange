@@ -28,7 +28,7 @@
 - [`gss_rac`](https://elbersb.github.io/socialchange/reference/gss_rac.md)
   : GSS racial attitudes of white Americans
 - [`mortality_us`](https://elbersb.github.io/socialchange/reference/mortality_us.md)
-  : US mortality rates, 1933–2019
+  : US mortality rates, 1933–2024
 - [`plot(`*`<cr_ic_decomposition>`*`)`](https://elbersb.github.io/socialchange/reference/plot.cr_ic_decomposition.md)
   : Plot a CR/IC decomposition
 - [`plot(`*`<decompose_events>`*`)`](https://elbersb.github.io/socialchange/reference/plot.decompose_events.md)
@@ -46,4 +46,4 @@
 - [`wpp_data`](https://elbersb.github.io/socialchange/reference/wpp_data.md)
   : UN World Population Prospects population data
 - [`wpp_us`](https://elbersb.github.io/socialchange/reference/wpp_us.md)
-  : US population by age and sex, 1973–2016
+  : US population by age and sex, 1973–2024

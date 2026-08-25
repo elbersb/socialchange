@@ -16,6 +16,7 @@ decompose_aggregated(
   tol = 0.05,
   weight = NULL,
   population = NULL,
+  mortality = NULL,
   seed = NULL
 )
 
@@ -52,9 +53,10 @@ plot(x, covariate = NULL, ...)
   Dirichlet-reweighted refit of `model`; the spread of the resulting
   decompositions gives per-component standard errors and cumulative
   confidence bands. The band is the *combined* event-ordering and model
-  uncertainty, not demographic uncertainty in the cell counts. For `gam`
-  models each replicate is a full refit plus prediction, so large `R`
-  can be slow.
+  uncertainty, not demographic uncertainty: the cell counts and any
+  supplied `population` or `mortality` inputs are held fixed across
+  replicates. For `gam` models each replicate is a full refit plus
+  prediction, so large `R` can be slow.
 
 - tol:
 
@@ -90,9 +92,35 @@ plot(x, covariate = NULL, ...)
   rounded to whole counts for the microsimulation, so rescale large
   frames (e.g. raw population counts in the millions) to a tractable
   per-period total first – only the relative cell structure matters. The
-  frame must match the survey's minimum age and the level set of each
-  `cells` column, and cover every survey period (extra periods are
-  dropped); these are compared over rows with `n > 0`.
+  frame must share the survey's minimum age, reach at least its maximum
+  age, share the level set of each `cells` column, and cover every
+  survey period (extra periods are dropped); these are compared over
+  rows with `n > 0`. Population ages above the survey maximum remain
+  separate for demographic calculations, but their outcome predictions
+  and reported contributions are pooled into the survey's open
+  maximum-age cell. Ages from the survey maximum through the frame's
+  terminal age must be gap-free in every period. The final age must be
+  common across periods and is treated as the terminal open age.
+
+- mortality:
+
+  Optional data frame of annual death probabilities; supplying it
+  switches the attribution of survivor-cell change from sign attribution
+  to residual migration (see Details). Columns `period`, `age`, `prob`,
+  plus optionally any subset of the `cells` columns: probabilities are
+  joined on the columns present and broadcast over the rest (e.g. rates
+  by age and sex apply to all age x sex x education cells). `prob` is
+  the annual death probability q(x) in \[0, 1\]; convert central death
+  rates m(x) (e.g. `mortality_us$death_rate`) via
+  `prob = 1 - exp(-death_rate)`. The table must cover every calendar
+  year from the first survey period up to (but not including) the last
+  and every age from the shared minimum through the terminal age in
+  `population`, or in `stacked_data` when `population` is omitted,
+  without gaps. The mortality table must have the same terminal age;
+  both final rows are interpreted as the same open group. Works with or
+  without `population`, but is most meaningful with it: on raw survey
+  counts the expected deaths round to zero for most small cells and the
+  migration residual mostly reflects sampling noise.
 
 - seed:
 
@@ -139,6 +167,10 @@ S3 object of class `social_change_decomp` with components:
   the cell covariates) from which any aggregate's confidence band can be
   computed; `NULL` when `R = 0`.
 
+- `strategy`: how survivor-cell change was attributed –
+  `"sign attribution"` (default) or `"residual migration"` (when
+  `mortality` is supplied).
+
 ## Details
 
 The function estimates mortality, coming-of-age, and net in-migration
@@ -159,6 +191,19 @@ age (the youngest age observed with a non-zero count); this single
 threshold separates entering cohorts from survivors, and a mismatch
 across periods is an error.
 
+Survey waves must also share a common maximum outcome age T, interpreted
+as an open cell T+. If raw maxima are ragged, create a genuine common
+open group first with `age = pmin(age, T)`; a hard eligibility cutoff is
+not an open group and is unsupported. A supplied population frame can
+extend above T. Its single-age constituents remain separate for aging
+and mortality, while the outcome model receives `pmin(age, T)` and all
+reported contributions at ages T and above appear at T. Between waves,
+all constituents reaching T are matched to the period-2 T+ pool, so they
+do not age out of the observed range. The population frame's final age
+is itself treated as an open demographic group and must be common across
+periods. When mortality is supplied, its final age must represent the
+same open group.
+
 By default the survey itself supplies both the cell counts and the
 outcomes. Supplying `population` decouples these: the population frame
 supplies the cell counts `n` (and hence the inferred demographic
@@ -167,22 +212,42 @@ events), while `model` supplies the outcomes. The reported
 `observed_mean` remains the survey's own observed mean, so the two lines
 may diverge when the survey and population age structures differ.
 
-Within a cell, a survivor cohort that shrinks between periods loses
-people to mortality, while one that grows gains people through net
-in-migration. Only *net* migration is recovered: gross out-migration is
-not separable from deaths (a survivor loss could be either), so it is
-folded into mortality and the reported out-migration is always zero.
-Each cell's net change is attributed to a single event type by sign: a
-shrinking cell records only mortality (any concurrent in-migration is
-invisible) and a growing cell records only net in-migration (any
-concurrent deaths are folded in), so offsetting flows within a cell
-cannot be seen. New cohorts (below the minimum age) attribute all their
-growth to coming-of-age; migration among entering cohorts is not
-modeled. On noisy survey cells this strategy relabels sampling
-fluctuation as in-migration and mortality, so the inferred in-migration
-is most meaningful when `population` supplies a true population frame,
-where growing cohorts reflect genuine net immigration rather than survey
-noise.
+Within each survivor cell the balancing identity is
+`n2 = n1 - deaths + net migration`: one equation, two unknowns. The
+supplied inputs determine the strategy recorded on the result:
+
+- **Sign attribution** (default; no mortality input): each survivor
+  cell's net change is routed by sign. A shrinking cell records only
+  mortality (any concurrent in-migration is invisible) and a growing
+  cell records only net in-migration (any concurrent deaths are folded
+  in), so offsetting flows within a cell cannot be seen and the reported
+  out-migration is always zero. On noisy survey cells this relabels
+  sampling fluctuation as in-migration and mortality, so the inferred
+  in-migration is most meaningful when `population` supplies a true
+  population frame, where growing cohorts reflect genuine net
+  immigration rather than survey noise.
+
+- **Residual migration** (`mortality` supplied): deaths come from the
+  supplied probabilities. A survivor cell aged `a` in year `t` compounds
+  annual survival over the gap years,
+  `qtilde = 1 - prod_j (1 - q(a + j, t + j))` for `j = 0..gap-1` (lookup
+  ages clamped at the mortality table's maximum age), and books
+  `deaths = round(n1 * qtilde)`; annual death events are assigned to the
+  year implied by that survival path. When `population` extends above
+  the survey maximum, the survey's open outcome group sums expected
+  deaths over those separate constituent ages, each compounding its own
+  path; only the terminal constituent uses the terminal open-group
+  probability. Migration is then the *signed* residual
+  `n2 - (n1 - deaths)`, so out-migration appears and a cell can carry
+  both deaths and in-migration. Approximations: deaths are computed on
+  the period-start count `n1` (within-gap mortality of migrants and
+  entrants is ignored), migrants take the receiving cell's mean outcome,
+  and migration remains net per cell. Bootstrap replicates (`R > 0`)
+  hold the mortality input fixed.
+
+Under either strategy, new cohorts (below the minimum age) attribute all
+their growth to coming-of-age; migration among entering cohorts is not
+modeled.
 
 **Limitation**: Does not properly handle within-cell state transitions.
 Transition effects are absorbed into the intraindividual change
@@ -206,78 +271,89 @@ library(data.table)
 #> 
 #>     %notin%
 data("gss_homosex", package = "socialchange")
-# restrict to age >= 21 so every wave shares a common minimum age
-stacked <- as.data.table(gss_homosex)[age >= 21, .(age, period = year, y = homosex)]
+# Top-code at 81 ("81+") so sparse older ages form one open group.
+stacked <- as.data.table(gss_homosex)[,
+    .(age = pmin(age, 81), period = year, y = homosex)]
 model <- stats::lm(y ~ age + period, data = stacked)
-result <- decompose_aggregated(stacked, model, tol = 0.1)
+result <- decompose_aggregated(stacked, model, tol = 0.11)
 print(result)
+#> Strategy: sign attribution
+#> 
 #> Overview by period:
-#>  period observed_mean modeled_mean intraindividual coming_of_age  mortality
-#>    1973         0.184        0.126              NA            NA         NA
-#>    1974         0.206        0.135         0.00438       0.00310  0.0037499
-#>    1976         0.229        0.149         0.00876       0.00503  0.0024760
-#>    1977         0.214        0.161         0.00438       0.00237  0.0036233
-#>    1980         0.203        0.188         0.01313       0.00911  0.0036892
-#>    1982         0.208        0.206         0.00876       0.00561  0.0021342
-#>    1984         0.208        0.230         0.00876       0.00584  0.0083601
-#>    1985         0.197        0.231         0.00438       0.00210 -0.0000644
-#>    1987         0.183        0.252         0.00876       0.00441  0.0069815
-#>    1988         0.183        0.260         0.00438       0.00178  0.0033264
-#>    1989         0.211        0.265         0.00438       0.00301  0.0044047
-#>    1990         0.183        0.274         0.00438       0.00201  0.0052257
-#>    1991         0.207        0.289         0.00438       0.00409  0.0070398
-#>    1993         0.282        0.304         0.00876       0.00365  0.0044900
-#>    1994         0.284        0.318         0.00438       0.00218  0.0009825
-#>    1996         0.337        0.341         0.00876       0.00392  0.0080203
-#>    1998         0.357        0.354         0.00876       0.00406  0.0045233
-#>    2000         0.351        0.368         0.00876       0.00373  0.0040311
-#>    2002         0.397        0.386         0.00876       0.00349  0.0057825
-#>    2004         0.367        0.409         0.00876       0.00362  0.0094769
-#>    2006         0.388        0.421         0.00876       0.00611  0.0014395
-#>    2008         0.432        0.436         0.00876       0.00246  0.0048131
-#>    2010         0.488        0.459         0.00876       0.00320  0.0079013
-#>    2012         0.496        0.473         0.00876       0.00424  0.0036194
-#>    2014         0.546        0.488         0.00876       0.00332  0.0026143
-#>    2016         0.572        0.504         0.00876       0.00365  0.0036220
-#>  period observed_mean modeled_mean intraindividual coming_of_age  mortality
+#>  period observed_mean modeled_mean intraindividual coming_of_age mortality
+#>    1973         0.187        0.103              NA            NA        NA
+#>    1974         0.207        0.112         0.00612      0.000956  0.003526
+#>    1976         0.232        0.131         0.01232      0.003827  0.001812
+#>    1977         0.218        0.145         0.00615      0.000279  0.004640
+#>    1980         0.207        0.176         0.01843      0.005063  0.003495
+#>    1982         0.195        0.199         0.01237      0.003471  0.000958
+#>    1984         0.210        0.225         0.01238      0.001684  0.008891
+#>    1985         0.197        0.228         0.00620      0.000372 -0.001906
+#>    1987         0.172        0.253         0.01238      0.002863  0.004183
+#>    1988         0.182        0.262         0.00620      0.000189  0.001667
+#>    1989         0.211        0.268         0.00621      0.000292  0.001921
+#>    1990         0.185        0.279         0.00624      0.000300  0.003663
+#>    1991         0.203        0.293         0.00626      0.000304  0.004905
+#>    1993         0.285        0.313         0.01243      0.002011  0.002510
+#>    1994         0.288        0.328         0.00620      0.000545  0.000116
+#>    1996         0.340        0.354         0.01236      0.001679  0.006760
+#>    1998         0.359        0.370         0.01240      0.002052  0.001982
+#>    2000         0.357        0.389         0.01249      0.002560  0.002202
+#>    2002         0.394        0.408         0.01251      0.000612  0.004989
+#>    2004         0.370        0.436         0.01245      0.003060  0.008133
+#>    2006         0.391        0.450         0.01244      0.003632  0.000000
+#>    2008         0.438        0.470         0.01249      0.002186  0.003608
+#>    2010         0.492        0.492         0.01247      0.001185  0.004805
+#>    2012         0.500        0.513         0.01252      0.002285  0.000862
+#>    2014         0.549        0.530         0.01248      0.002498  0.000597
+#>    2016         0.571        0.547         0.01245      0.001191  0.001427
+#>    2018         0.621        0.579         0.01251      0.002997  0.010593
+#>    2021         0.686        0.591         0.01875      0.002143 -0.000412
+#>    2022         0.668        0.618         0.00622      0.001005  0.009832
+#>    2024         0.604        0.634         0.01240      0.003345  0.001099
+#>  period observed_mean modeled_mean intraindividual coming_of_age mortality
 #>  outmigration inmigration
 #>            NA          NA
-#>             0  -0.0020913
-#>             0  -0.0020617
-#>             0   0.0015009
-#>             0   0.0011810
-#>             0   0.0014766
-#>             0   0.0014155
-#>             0  -0.0054232
-#>             0   0.0008668
-#>             0  -0.0019195
-#>             0  -0.0067985
-#>             0  -0.0026122
-#>             0  -0.0008854
-#>             0  -0.0010237
-#>             0   0.0059980
-#>             0   0.0021870
-#>             0  -0.0040857
-#>             0  -0.0023738
-#>             0  -0.0001275
-#>             0   0.0005306
-#>             0  -0.0036859
-#>             0  -0.0010664
-#>             0   0.0025789
-#>             0  -0.0016415
-#>             0   0.0000155
-#>             0  -0.0006973
+#>             0   -0.001845
+#>             0    0.001363
+#>             0    0.002871
+#>             0    0.004242
+#>             0    0.006325
+#>             0    0.002510
+#>             0   -0.001409
+#>             0    0.005582
+#>             0    0.000858
+#>             0   -0.001794
+#>             0    0.000413
+#>             0    0.002993
+#>             0    0.002286
+#>             0    0.007936
+#>             0    0.005236
+#>             0    0.000176
+#>             0    0.001799
+#>             0    0.000382
+#>             0    0.004805
+#>             0   -0.001947
+#>             0    0.001371
+#>             0    0.003983
+#>             0    0.004602
+#>             0    0.002197
+#>             0    0.001518
+#>             0    0.006191
+#>             0   -0.008541
+#>             0    0.009485
+#>             0   -0.000700
 #>  outmigration inmigration
 #> 
 #> Decomposition of total change:
 #>                 Component  Value Percent
-#>  At initial (modeled)      0.126        
-#>  At end (modeled)          0.504        
-#>  Total change              0.378   100.0
-#>  - Intraindividual change  0.188    49.8
-#>  - Population turnover     0.190    50.2
-#>    - Mortality             0.112    29.7
-#>    - Coming-of-age         0.096    25.4
-#>    - In-migration         -0.019    -5.0
+#>  At initial (modeled)      0.103        
+#>  At end (modeled)          0.634        
+#>  Total change              0.531   100.0
+#>  - Intraindividual change  0.317    59.6
+#>  - Population turnover     0.214    40.4
+#>    - Mortality             0.097    18.2
+#>    - Coming-of-age         0.055    10.3
+#>    - In-migration          0.063    11.8
 # }
 ```

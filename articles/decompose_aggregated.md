@@ -79,8 +79,8 @@ print(simresult, detailed = FALSE)
 #>  Total change              0.0000
 #>  - Intraindividual change  0.2500
 #>  - Population turnover    -0.2500
-#>    - Mortality            -0.1207
-#>    - Coming-of-age        -0.1293
+#>    - Mortality            -0.1208
+#>    - Coming-of-age        -0.1292
 ```
 
 We now feed the simulated data into the event-based decomposition:
@@ -93,6 +93,8 @@ model <- lm(y ~ age, data = stacked_data)
 
 decompresult <- decompose_aggregated(stacked_data, model)
 print(decompresult, detailed = FALSE)
+#> Strategy: sign attribution
+#> 
 #>                 Component  Value Percent
 #>  At initial (modeled)      0.376        
 #>  At end (modeled)          0.376        
@@ -140,10 +142,10 @@ print(simresult, detailed = FALSE)
 #>  At initial                0.37580
 #>  At end                    0.37580
 #>  Total change              0.00000
-#>  - Intraindividual change  0.12511
-#>  - Population turnover    -0.12511
-#>    - Mortality            -0.06045
-#>    - Coming-of-age        -0.06467
+#>  - Intraindividual change  0.12474
+#>  - Population turnover    -0.12474
+#>    - Mortality            -0.06020
+#>    - Coming-of-age        -0.06454
 ```
 
 For the event-based decomposition, we first try a misspecified model
@@ -159,6 +161,8 @@ cor(stacked_data$y, predict(model_no_gender))
 
 decomp <- decompose_aggregated(stacked_data, model_no_gender)
 print(decomp, detailed = FALSE)
+#> Strategy: sign attribution
+#> 
 #>                 Component  Value Percent
 #>  At initial (modeled)      0.376        
 #>  At end (modeled)          0.376        
@@ -179,6 +183,8 @@ cor(stacked_data$y, predict(model_gender))
 
 decomp <- decompose_aggregated(stacked_data, model_gender, "gender")
 print(decomp, detailed = FALSE)
+#> Strategy: sign attribution
+#> 
 #>                 Component  Value Percent
 #>  At initial (modeled)      0.376        
 #>  At end (modeled)          0.376        
@@ -209,10 +215,10 @@ print(simresult, detailed = FALSE)
 #>  At initial                0.2999999999999999889
 #>  At end                    0.8000000000000000444
 #>  Total change              0.5000000000000000000
-#>  - Intraindividual change  0.5000000000000004441
-#>  - Population turnover    -0.0000000000000003331
-#>    - Mortality             0.0000395296245210286
-#>    - Coming-of-age        -0.0000395296245213617
+#>  - Intraindividual change  0.4999999999999991118
+#>  - Population turnover     0.0000000000000009437
+#>    - Mortality             0.0000579933914742758
+#>    - Coming-of-age        -0.0000579933914733322
 ```
 
 Again, we first try a misspecified model that ignores gender entirely.
@@ -228,14 +234,16 @@ cor(stacked_data$y, predict(model_no_gender))
 
 decomp <- decompose_aggregated(stacked_data, model_no_gender)
 print(decomp, detailed = FALSE)
+#> Strategy: sign attribution
+#> 
 #>                 Component  Value Percent
 #>  At initial (modeled)      0.300        
 #>  At end (modeled)          0.800        
 #>  Total change              0.500   100.0
 #>  - Intraindividual change  0.500   100.0
-#>  - Population turnover     0.000     0.0
-#>    - Mortality            -0.000    -0.0
-#>    - Coming-of-age         0.000     0.0
+#>  - Population turnover    -0.000    -0.0
+#>    - Mortality             0.000     0.0
+#>    - Coming-of-age        -0.000    -0.0
 ```
 
 And here are the results for the fully-specified model:
@@ -248,14 +256,16 @@ cor(stacked_data$y, predict(model_gender))
 
 decomp <- decompose_aggregated(stacked_data, model_gender, "gender")
 print(decomp, detailed = FALSE)
+#> Strategy: sign attribution
+#> 
 #>                 Component  Value Percent
 #>  At initial (modeled)      0.300        
 #>  At end (modeled)          0.800        
 #>  Total change              0.500   100.0
 #>  - Intraindividual change  0.500   100.0
 #>  - Population turnover    -0.000    -0.0
-#>    - Mortality             0.000     0.0
-#>    - Coming-of-age        -0.000    -0.0
+#>    - Mortality            -0.000    -0.0
+#>    - Coming-of-age         0.000     0.0
 ```
 
 ## Only population turnover (Scenario 4)
@@ -278,10 +288,10 @@ print(simresult, detailed = FALSE)
 #>  At initial               0.2999870967741936068
 #>  At end                   0.7999870967741936623
 #>  Total change             0.5000000000000000000
-#>  - Intraindividual change 0.0000000000000003886
-#>  - Population turnover    0.4999999999999996669
-#>    - Mortality            0.2412192499252359124
-#>    - Coming-of-age        0.2587807500747637546
+#>  - Intraindividual change 0.0000000000000008882
+#>  - Population turnover    0.4999999999999991673
+#>    - Mortality            0.2413157095421327725
+#>    - Coming-of-age        0.2586842904578663949
 ```
 
 Again, we first try a misspecified model that ignores gender entirely.
@@ -297,13 +307,15 @@ cor(stacked_data$y, predict(model_no_gender))
 
 decomp <- decompose_aggregated(stacked_data, model_no_gender)
 print(decomp, detailed = FALSE)
+#> Strategy: sign attribution
+#> 
 #>                 Component  Value Percent
 #>  At initial (modeled)      0.300        
 #>  At end (modeled)          0.800        
 #>  Total change              0.500   100.0
 #>  - Intraindividual change  0.000     0.0
 #>  - Population turnover     0.500   100.0
-#>    - Mortality             0.241    48.3
+#>    - Mortality             0.241    48.2
 #>    - Coming-of-age         0.259    51.7
 ```
 
@@ -317,13 +329,15 @@ cor(stacked_data$y, predict(model_gender))
 
 decomp <- decompose_aggregated(stacked_data, model_gender, "gender")
 print(decomp, detailed = FALSE)
+#> Strategy: sign attribution
+#> 
 #>                 Component  Value Percent
 #>  At initial (modeled)      0.300        
 #>  At end (modeled)          0.800        
 #>  Total change              0.500   100.0
 #>  - Intraindividual change  0.000     0.0
 #>  - Population turnover     0.500   100.0
-#>    - Mortality             0.241    48.3
+#>    - Mortality             0.241    48.2
 #>    - Coming-of-age         0.259    51.7
 ```
 
@@ -363,14 +377,14 @@ smoking1 <- socialchange::sim_social_change(
     fun_mortality = mortality
 )
 print(smoking1, detailed = FALSE)
-#>                 Component                 Value
-#>  At initial                0.867685892981236884
-#>  At end                    0.867685892981236884
-#>  Total change              0.000000000000000000
-#>  - Intraindividual change -0.000000000000003886
-#>  - Population turnover     0.000000000000003886
-#>    - Mortality            -0.000807858739446998
-#>    - Coming-of-age         0.000807858739450884
+#>                 Component                Value
+#>  At initial                0.86768589298123688
+#>  At end                    0.86768589298123688
+#>  Total change              0.00000000000000000
+#>  - Intraindividual change -0.00000000000000322
+#>  - Population turnover     0.00000000000000322
+#>    - Mortality            -0.00086764867042499
+#>    - Coming-of-age         0.00086764867042821
 ```
 
 Compare to decomposition:
@@ -384,12 +398,14 @@ cor(stacked_data$y, predict(model))
 
 decomp <- decompose_aggregated(stacked_data, model, "smoking")
 print(decomp, detailed = FALSE)
+#> Strategy: sign attribution
+#> 
 #>                 Component  Value Percent
 #>  At initial (modeled)      0.868        
 #>  At end (modeled)          0.868        
 #>  Total change              0.000        
-#>  - Intraindividual change  0.000        
-#>  - Population turnover     0.000        
+#>  - Intraindividual change -0.000        
+#>  - Population turnover    -0.000        
 #>    - Mortality            -0.001        
 #>    - Coming-of-age         0.001
 ```
@@ -410,14 +426,14 @@ smoking2 <- socialchange::sim_social_change(
     fun_mortality = mortality
 )
 print(smoking2, detailed = FALSE)
-#>                 Component       Value
-#>  At initial                0.86768589
-#>  At end                    0.59075747
-#>  Total change             -0.27692842
-#>  - Intraindividual change -0.27701098
-#>  - Population turnover     0.00008256
-#>    - Mortality            -0.00103498
-#>    - Coming-of-age         0.00111754
+#>                 Component      Value
+#>  At initial                0.8676859
+#>  At end                    0.5907575
+#>  Total change             -0.2769284
+#>  - Intraindividual change -0.2768139
+#>  - Population turnover    -0.0001146
+#>    - Mortality            -0.0011669
+#>    - Coming-of-age         0.0010523
 ```
 
 Compare to decomposition:
@@ -431,14 +447,16 @@ cor(stacked_data$y, predict(model))
 
 decomp <- decompose_aggregated(stacked_data, model, "smoking")
 print(decomp, detailed = FALSE)
+#> Strategy: sign attribution
+#> 
 #>                 Component  Value Percent
 #>  At initial (modeled)      0.868        
 #>  At end (modeled)          0.591        
 #>  Total change             -0.277   100.0
-#>  - Intraindividual change -0.277    99.9
-#>  - Population turnover    -0.000     0.1
+#>  - Intraindividual change -0.277   100.0
+#>  - Population turnover    -0.000     0.0
 #>    - Mortality            -0.001     0.4
-#>    - Coming-of-age         0.001    -0.3
+#>    - Coming-of-age         0.001    -0.4
 ```
 
 ### Coming of age (Scenario 5c)
@@ -461,10 +479,10 @@ print(smoking3, detailed = FALSE)
 #>  At initial                0.86769
 #>  At end                    0.50476
 #>  Total change             -0.36293
-#>  - Intraindividual change -0.29111
-#>  - Population turnover    -0.07181
-#>    - Mortality            -0.01061
-#>    - Coming-of-age        -0.06121
+#>  - Intraindividual change -0.29130
+#>  - Population turnover    -0.07163
+#>    - Mortality            -0.01052
+#>    - Coming-of-age        -0.06110
 ```
 
 Compare to decomposition:
@@ -478,12 +496,14 @@ cor(stacked_data$y, predict(model))
 
 decomp <- decompose_aggregated(stacked_data, model, "smoking")
 print(decomp, detailed = FALSE)
+#> Strategy: sign attribution
+#> 
 #>                 Component  Value Percent
 #>  At initial (modeled)      0.868        
 #>  At end (modeled)          0.505        
 #>  Total change             -0.363   100.0
 #>  - Intraindividual change -0.291    80.3
 #>  - Population turnover    -0.072    19.7
-#>    - Mortality            -0.011     2.9
+#>    - Mortality            -0.011     3.0
 #>    - Coming-of-age        -0.061    16.8
 ```
